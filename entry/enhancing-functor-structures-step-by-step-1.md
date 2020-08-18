@@ -10,8 +10,8 @@ designed pattern. This is the interest that culminated in my [Functor
 Combinatorpedia](https://blog.jle.im/entry/functor-combinatorpedia.html) post
 last year and the
 *[functor-combinators](https://hackage.haskell.org/package/functor-combinators)*
-library. But I've never really explored the more exotic types of lowercase-f
-functors in Hask --- contravariant functors and invariant functors.
+library. But I've never really explored the less commonly used lowercase-f
+functor abstractions in Hask --- contravariant functors and invariant functors.
 
 In this post we're going to be exploring these different types of functor
 structures step-by-step, by starting with a simple useful structure and
@@ -37,7 +37,7 @@ Let's start with the simplest level of describing our schema: a plain ol' AST
 describing the possibilities our schema can take.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L11-L33
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L9-L31
 
 data Schema =
       RecordType  [Field]
@@ -74,7 +74,7 @@ boolean.
 Our end goal is to be able to write a schema for a type like
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L35-L38
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L33-L36
 
 data Customer =
       CPerson   { cpName :: String, cpAge :: Int }
@@ -86,7 +86,7 @@ and be able to represent documenting, parsing, and printing it all within
 `Schema`. For our basic `Schema` above, this looks like:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L40-L54
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L38-L52
 
 customerSchema :: Schema
 customerSchema = SumType
@@ -137,7 +137,7 @@ Let's build things up by defining documentation generators for our individual
 types, so they'll be easier to assemble.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L56-L81
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L54-L79
 
 schemaDoc
     :: String       -- ^ name
@@ -156,14 +156,18 @@ So `schemaDoc` will take the name of our type and a schema, and generate a
 `fieldDoc`, `choiceDoc`, and `primDoc` just generate the documentation for each
 individual field or constructor.
 
+The `\case` syntax is known as *LambdaCase syntax*, and `\case blah -> blah` is
+just sugar for `\x -> case x of blah -> blah`; we use it extensively here to
+save us from having to think of a throwaway variable name.
+
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L75-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L73-L83
 
 fieldDoc :: Field -> PP.Doc x
-fieldDoc Field{..} = schemaDoc fieldName fieldValue
+fieldDoc (Field name val) = schemaDoc name val
 
 choiceDoc :: Choice -> PP.Doc x
-choiceDoc Choice{..} = schemaDoc choiceName choiceValue
+choiceDoc (Choice name val) = schemaDoc name val
 
 primDoc :: Primitive -> PP.Doc x
 primDoc = \case
@@ -179,7 +183,7 @@ leaf documentation, so we can just print what type they have.
 We tie it all together with `schemaDoc`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L56-L73
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L54-L71
 
 schemaDoc
     :: String       -- ^ name
@@ -254,7 +258,7 @@ with `parse :: Parse err a -> ByteString -> Either (ParseError err) a`. So our
 final interface will look like:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L156-L157
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L153-L154
 
 parseSchema :: Schema a -> ByteString -> Either (A.ParseError ErrType) a
 parseSchema sc = A.parse (schemaParser sc)
@@ -268,7 +272,7 @@ when we encounter them in the json. And so, the main thing we need to modify is
 just `Primitive`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L45-L49
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L42-L46
 
 data Primitive a =
       PString (String -> Maybe a)
@@ -288,7 +292,7 @@ represent valid JSON numbers (it's basically `Either Integer Double`).
 We can write some helper primitives:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L51-L58
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L48-L55
 
 pString :: Primitive String
 pString = PString Just
@@ -318,7 +322,7 @@ withBool       :: (Bool       -> Either ErrType a) -> Parse ErrType a
 ```
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L133-L140
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L130-L137
 
 primParser :: Primitive a -> A.Parse String a
 primParser = \case
@@ -346,7 +350,7 @@ data Schema a =
     | SchemaLeaf  (Primitive a)
   deriving Functor
 
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L33-L39
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L30-L36
 
 data Field a = Field
 
@@ -424,7 +428,7 @@ type parsers to have)
 With this, we can write our final `Schema` type.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L27-L49
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L24-L46
 
 data Schema a =
       RecordType  (Ap Field a)
@@ -463,7 +467,7 @@ how product types and sum types are "opposites" in a nice clean way.
 We can now make our `Customer` schema:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L65-L79
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L62-L76
 
 customerSchema :: Schema Customer
 customerSchema = SumType $
@@ -517,10 +521,10 @@ parse a `ListF Choice a`.
 Let's write those individual parsers for each smaller type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L130-L131
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L127-L128
 
 fieldParser :: Field a -> A.Parse String a
-fieldParser Field{..} = A.key (T.pack fieldName) (schemaParser fieldValue)
+fieldParser (Field name val) = A.key (T.pack name) (schemaParser val)
 ```
 
 Here we use *aeson-better-errors*'s `key :: Text -> Parser a -> Parser a`, which
@@ -528,14 +532,14 @@ takes a key and a parser, and runs that parser on whatever is under that key.
 For `fieldParser`, we run the schema parser for our sub-schema under that key.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L123-L128
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L120-L125
 
 choiceParser :: Choice a -> A.Parse String a
-choiceParser Choice{..} = do
+choiceParser (Choice name val) = do
   tag <- A.key "tag" A.asString
-  unless (tag == choiceName) $
+  unless (tag == name) $
     A.throwCustomError "Tag does not match"
-  A.key "contents" $ schemaParser choiceValue
+  A.key "contents" $ schemaParser val
 ```
 
 Our sum type encoding is a bit more involved, because json doesn't have any
@@ -548,7 +552,7 @@ Finally, to wrap bring it all together, we use the `interpret` functions we
 talked about:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L117-L121
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L114-L118
 
 schemaParser :: Schema a -> A.Parse ErrType a
 schemaParser = \case
@@ -565,7 +569,7 @@ orphans here just because this is a fun learning experience (but we usually do
 like to avoid defining instances for types or typeclasses that aren't ours).
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L110-L113
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L107-L110
 
 instance Monad f => Alt (A.ParseT e f) where
     (<!>) = (A.<|>)
@@ -629,14 +633,14 @@ Our `ListF Choice a` is just `[Choice a]`. This is something we can work with!
 Let's write a better `ListF Choice a` processor by working with the list itself.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L142-L154
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L139-L151
 
-schemaParser2 :: forall a. Schema a -> A.Parse ErrType a
+schemaParser2 :: Schema a -> A.Parse ErrType a
 schemaParser2 = \case
     RecordType fs -> interpret fieldParser fs
     SumType    cs -> do
-      let schemaMap :: M.Map String (Schema a)
-          schemaMap = M.fromList [ (choiceName, choiceValue) | Choice{..} <- runListF cs ]
+      let schemaMap = M.fromList 
+            [ (nm, vl) | Choice nm vl <- runListF cs ]
       tag <- A.key "tag" A.asString
       case M.lookup tag schemaMap of
         Nothing -> A.throwCustomError $
@@ -692,7 +696,7 @@ icollect :: (forall x. Field x -> b) -> Ap Field a -> [b]
 So it looks like `icollect` should work as a drop-in replacement for `map` ...
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L81-L108
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L78-L105
 
 schemaDoc
     :: String       -- ^ name
@@ -714,9 +718,9 @@ schemaDoc title = \case
               PP.<+> primDoc p
   where
     fieldDoc :: Field x -> PP.Doc a
-    fieldDoc Field{..} = schemaDoc fieldName fieldValue
+    fieldDoc (Field name val) = schemaDoc name val
     choiceDoc :: Choice x -> PP.Doc a
-    choiceDoc Choice{..} = schemaDoc choiceName choiceValue
+    choiceDoc (Choice name val) = schemaDoc name val
     primDoc :: Primitive x -> PP.Doc a
     primDoc = \case
       PString _ -> "string"
@@ -751,7 +755,7 @@ ADT, and all of the variations outside of the structure itself comes from how
 each leaf is serialized.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L42-L45
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L35-L38
 
 data Primitive a =
       PString (a -> String)
@@ -768,7 +772,7 @@ into a `String`.
 Again, it can be useful to add some helper primitives:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L64-L71
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L57-L64
 
 pString :: Primitive String
 pString = PString id
@@ -788,7 +792,7 @@ We can start off by writing the serializer for `Primitive` just go get a feel
 for how our serializer will work:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L144-L148
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L137-L141
 
 primToValue :: Primitive a -> a -> Aeson.Value
 primToValue = \case
@@ -836,7 +840,7 @@ data Schema a =
     | SumType     [Choice a]
     | SchemaLeaf  (Primitive a)
   deriving Functor
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L32-L37
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L25-L30
 
 data Field a = Field
 
@@ -908,7 +912,7 @@ want to use for `RecordType`.
 With this, we can write our final `Schema` type.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L27-L45
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L20-L38
 
 data Schema a =
       RecordType  (Div Field a)
@@ -944,7 +948,7 @@ We can assemble our `Customer` schema, in a way that looks a lot like our parser
 schema:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L78-L93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L71-L86
 
 customerSchema :: Schema Customer
 customerSchema = SumType $
@@ -1057,12 +1061,12 @@ interpret choiceToValue :: Dec Choice a -> a -> Aeson.Value
 Let's write it!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L134-L138
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L127-L131
 
 choiceToValue :: Choice a -> Op Aeson.Value a
-choiceToValue Choice{..} = Op $ \x -> Aeson.object
-    [ "tag"      Aeson..= T.pack choiceName
-    , "contents" Aeson..= schemaToValue choiceValue x
+choiceToValue (Choice name val) = Op $ \x -> Aeson.object
+    [ "tag"      Aeson..= T.pack name
+    , "contents" Aeson..= schemaToValue val x
     ]
 ```
 
@@ -1088,11 +1092,11 @@ interpret fieldToValue :: Div Field a -> a -> [Aeson.Pair]
 We can go ahead and write it out actually:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L140-L142
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L133-L135
 
 fieldToValue :: Field a -> Op [Aeson.Pair] a
-fieldToValue Field{..} = Op $ \x ->
-    [T.pack fieldName Aeson..= schemaToValue fieldValue x]
+fieldToValue (Field name val) = Op $ \x ->
+    [T.pack name Aeson..= schemaToValue val x]
 ```
 
 Note that this behavior relies on the fact that the `interpret` instance for
@@ -1103,7 +1107,7 @@ list monoidally, concatenating the results of calling `fieldToValue` on every
 And now we should have enough to write our entire serializer:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L125-L132
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L118-L125
 
 schemaToValue
     :: Schema a
@@ -1153,7 +1157,7 @@ by functor combinators), and `Div`/`Dec` support `icollect` just like
 word-for-word identical as it was for our parser schema:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L95-L122
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L88-L115
 
 schemaDoc
     :: String       -- ^ name
@@ -1175,9 +1179,9 @@ schemaDoc title = \case
               PP.<+> primDoc p
   where
     fieldDoc :: Field x -> PP.Doc a
-    fieldDoc Field{..} = schemaDoc fieldName fieldValue
+    fieldDoc (Field name val) = schemaDoc name val
     choiceDoc :: Choice x -> PP.Doc a
-    choiceDoc Choice{..} = schemaDoc choiceName choiceValue
+    choiceDoc (Choice name val) = schemaDoc name val
     primDoc :: Primitive x -> PP.Doc a
     primDoc = \case
       PString _ -> "string"

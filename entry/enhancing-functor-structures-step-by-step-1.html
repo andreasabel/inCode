@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
 <html><head><title>Enhancing Functor Structures Step-By-Step (Part 1) · in Code</title><meta name="description" content="Weblog of Justin Le, covering various adventures in programming and explorations in the worlds of computation physics, and knowledge.
-"><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="flattr:id" content="3p9jqr"><meta property="og:site_name" content="in Code"><meta property="og:description" content="A style of Haskell programming that I’ve been pretty excited about with over the past year or so is something that I can maybe call a “functor structure” designed pattern. This is the interest that culminated in my Functor Combinatorpedia post last year and the functor-combinators library. But I’ve never really explored the more exotic types of lowercase-f functors in Hask — contravariant functors and invariant functors. In this post we’re going to be exploring these different types of functor structures step-by-step, by starting with a simple useful structure and enhancing it piece by piece. This process reflects a lot of the way I personally work through these things — I normally don’t get the whole powerful structure all the way; instead I incrementally add things as I see how things fit together. We’re going build the tools to describe a data type schema, which can represent algebraic data types — sums and products. We’ll start off just building things we can use to describe the schema (by printing out documentation), and by the end of the journey we’ll also be able to use our schema to generate parsers and serializers through json. This series is designed for an intermediate Haskeller with familiarity in things like product/sum types, using Applicative/Alternative, and monadic parser combinators, and is written in sync with functor-combinators-0.3.5.1."><meta property="og:type" content="article"><meta property="og:title" content="Enhancing Functor Structures Step-By-Step (Part 1)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-1.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-1.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
+"><meta http-equiv="Content-Type" content="text/html;charset=utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><meta name="flattr:id" content="3p9jqr"><meta property="og:site_name" content="in Code"><meta property="og:description" content="A style of Haskell programming that I’ve been pretty excited about with over the past year or so is something that I can maybe call a “functor structure” designed pattern. This is the interest that culminated in my Functor Combinatorpedia post last year and the functor-combinators library. But I’ve never really explored the less commonly used lowercase-f functor abstractions in Hask — contravariant functors and invariant functors. In this post we’re going to be exploring these different types of functor structures step-by-step, by starting with a simple useful structure and enhancing it piece by piece. This process reflects a lot of the way I personally work through these things — I normally don’t get the whole powerful structure all the way; instead I incrementally add things as I see how things fit together. We’re going build the tools to describe a data type schema, which can represent algebraic data types — sums and products. We’ll start off just building things we can use to describe the schema (by printing out documentation), and by the end of the journey we’ll also be able to use our schema to generate parsers and serializers through json. This series is designed for an intermediate Haskeller with familiarity in things like product/sum types, using Applicative/Alternative, and monadic parser combinators, and is written in sync with functor-combinators-0.3.5.1."><meta property="og:type" content="article"><meta property="og:title" content="Enhancing Functor Structures Step-By-Step (Part 1)"><meta property="og:image" content="https://blog.jle.im/img/site_logo.jpg"><meta property="og:locale" content="en_US"><meta property="og:url" content="https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-1.html"><meta name="twitter:card" content="summary"><meta name="twitter:creator:id" content="mstk"><link rel="author" href="https://plus.google.com/107705320197444500140"><link rel="alternate" type="application/rss+xml" title="in Code (RSS Feed)" href="http://feeds.feedburner.com/incodeblog"><link rel="canonical" href="https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-1.html"><link href="https://blog.jle.im/favicon.ico" rel="shortcut icon"><link href="https://blog.jle.im/css/toast.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/font.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/main.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/page/entry.css" rel="stylesheet" type="text/css"><link href="https://blog.jle.im/css/pygments.css" rel="stylesheet" type="text/css"><script type="text/javascript">var page_data = {};
 var disqus_shortname='incode';
 </script><script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -16,13 +16,13 @@ ga('send', 'pageview');
  fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));
 </script></div><div id="header-container"><div id="navbar-container" class="tile"><nav id="navbar-content"><div class="nav-info"><h1 class="site-title"><a href="https://blog.jle.im/" class="nav-title">in Code</a></h1><span class="nav-author">Justin Le</span></div><ul class="nav-links"><li><a href="https://blog.jle.im/">home</a></li><li><a href="https://blog.jle.im/entries.html">archives</a></li><li><a href="https://cv.jle.im">cv</a></li><div class="clear"></div></ul></nav></div><div id="header-content"></div></div><div id="body-container" class="container"><div id="main-container" class="grid"><div class="entry-section unit span-grid" role="main"><article class="tile article"><header><div class="unposted-banner">Unposted entry</div><h1 id="title">Enhancing Functor Structures Step-By-Step (Part 1)</h1><p class="entry-info">by <a class="author" href="https://blog.jle.im/">Justin Le</a></p><p><span class="source-info"><a class="source-link" href="https://github.com/mstksg/inCode/tree/master/copy/entries/functor-structures-1.md">Source</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://github.com/mstksg/inCode/tree/gh-pages/entry/enhancing-functor-structures-step-by-step-1.md">Markdown</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-1.tex">LaTeX</a><span class="info-separator"> &diams; </span></span>Posted in <a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category" title="Functional, pure, non-strict, statically and strongly typed, natively
-compiled...really just the king of great languages.">Haskell</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>A style of Haskell programming that I’ve been pretty excited about with over the past year or so is something that I can maybe call a “functor structure” designed pattern. This is the interest that culminated in my <a href="https://blog.jle.im/entry/functor-combinatorpedia.html">Functor Combinatorpedia</a> post last year and the <em><a href="https://hackage.haskell.org/package/functor-combinators">functor-combinators</a></em> library. But I’ve never really explored the more exotic types of lowercase-f functors in Hask — contravariant functors and invariant functors.</p>
+compiled...really just the king of great languages.">Haskell</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>A style of Haskell programming that I’ve been pretty excited about with over the past year or so is something that I can maybe call a “functor structure” designed pattern. This is the interest that culminated in my <a href="https://blog.jle.im/entry/functor-combinatorpedia.html">Functor Combinatorpedia</a> post last year and the <em><a href="https://hackage.haskell.org/package/functor-combinators">functor-combinators</a></em> library. But I’ve never really explored the less commonly used lowercase-f functor abstractions in Hask — contravariant functors and invariant functors.</p>
 <p>In this post we’re going to be exploring these different types of functor structures step-by-step, by starting with a simple useful structure and enhancing it piece by piece. This process reflects a lot of the way I personally work through these things — I normally don’t get the whole powerful structure all the way; instead I incrementally add things as I see how things fit together.</p>
 <p>We’re going build the tools to describe a <em>data type schema</em>, which can represent algebraic data types — sums and products. We’ll start off just building things we can use to <em>describe</em> the schema (by printing out documentation), and by the end of the journey we’ll also be able to use our schema to generate parsers and serializers through json.</p>
 <p>This series is designed for an intermediate Haskeller with familiarity in things like product/sum types, using <code>Applicative</code>/<code>Alternative</code>, and monadic parser combinators, and is written in sync with <em>functor-combinators-0.3.5.1</em>.</p>
 <h2 id="the-schema">The Schema</h2>
 <p>Let’s start with the simplest level of describing our schema: a plain ol’ AST describing the possibilities our schema can take.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L11-L33</span></span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L9-L31</span></span>
 <span id="cb1-2"><a href="#cb1-2"></a></span>
 <span id="cb1-3"><a href="#cb1-3"></a><span class="kw">data</span> <span class="dt">Schema</span> <span class="ot">=</span></span>
 <span id="cb1-4"><a href="#cb1-4"></a>      <span class="dt">RecordType</span>  [<span class="dt">Field</span>]</span>
@@ -49,14 +49,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb1-25"><a href="#cb1-25"></a>  <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
 <p>Our schema will either represent a record of many different fields, a sum of many different options, or a primitive value. If it’s a sum type, it’ll be described by a list of <code>Choice</code>, which describes each branch. If it’s a record type, it’ll be described by a list of <code>Field</code>, which describes each field. If it’s a primitive type, it’ll a <code>Primitive</code>, which is either a string, number, or boolean.</p>
 <p>Our end goal is to be able to write a schema for a type like</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L35-L38</span></span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L33-L36</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a></span>
 <span id="cb2-3"><a href="#cb2-3"></a><span class="kw">data</span> <span class="dt">Customer</span> <span class="ot">=</span></span>
 <span id="cb2-4"><a href="#cb2-4"></a>      <span class="dt">CPerson</span>   {<span class="ot"> cpName ::</span> <span class="dt">String</span>,<span class="ot"> cpAge ::</span> <span class="dt">Int</span> }</span>
 <span id="cb2-5"><a href="#cb2-5"></a>    <span class="op">|</span> <span class="dt">CBusiness</span> {<span class="ot"> cbEmployees ::</span> <span class="dt">Int</span> }</span>
 <span id="cb2-6"><a href="#cb2-6"></a>  <span class="kw">deriving</span> <span class="dt">Show</span></span></code></pre></div>
 <p>and be able to represent documenting, parsing, and printing it all within <code>Schema</code>. For our basic <code>Schema</code> above, this looks like:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L40-L54</span></span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L38-L52</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a></span>
 <span id="cb3-3"><a href="#cb3-3"></a><span class="ot">customerSchema ::</span> <span class="dt">Schema</span></span>
 <span id="cb3-4"><a href="#cb3-4"></a>customerSchema <span class="ot">=</span> <span class="dt">SumType</span></span>
@@ -86,7 +86,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Using our schema type, let’s make a documentation generator. It’ll take a <code>Schema</code> and nicely formatted documentation describing the schema itself.</p>
 <p>To make our lives easier, we’ll be using the <em><a href="https://hackage.haskell.org/package/prettyprinter">prettyprinter</a></em> library, which will handle indentation, horizontal and vertical concatenation, and other printing concerns for us.</p>
 <p>Let’s build things up by defining documentation generators for our individual types, so they’ll be easier to assemble.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L56-L81</span></span>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L54-L79</span></span>
 <span id="cb6-2"><a href="#cb6-2"></a></span>
 <span id="cb6-3"><a href="#cb6-3"></a>schemaDoc</span>
 <span id="cb6-4"><a href="#cb6-4"></a><span class="ot">    ::</span> <span class="dt">String</span>       <span class="co">-- ^ name</span></span>
@@ -99,13 +99,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb6-11"><a href="#cb6-11"></a></span>
 <span id="cb6-12"><a href="#cb6-12"></a><span class="ot">primDoc ::</span> <span class="dt">Primitive</span> <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> x</span></code></pre></div>
 <p>So <code>schemaDoc</code> will take the name of our type and a schema, and generate a <code>PP.Doc x</code>, the type of a text document in the <em>prettyprinter</em> library.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> And <code>fieldDoc</code>, <code>choiceDoc</code>, and <code>primDoc</code> just generate the documentation for each individual field or constructor.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L75-L85</span></span>
+<p>The <code>\case</code> syntax is known as <em>LambdaCase syntax</em>, and <code>\case blah -&gt; blah</code> is just sugar for <code>\x -&gt; case x of blah -&gt; blah</code>; we use it extensively here to save us from having to think of a throwaway variable name.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L73-L83</span></span>
 <span id="cb7-2"><a href="#cb7-2"></a></span>
 <span id="cb7-3"><a href="#cb7-3"></a><span class="ot">fieldDoc ::</span> <span class="dt">Field</span> <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> x</span>
-<span id="cb7-4"><a href="#cb7-4"></a>fieldDoc <span class="dt">Field</span>{<span class="op">..</span>} <span class="ot">=</span> schemaDoc fieldName fieldValue</span>
+<span id="cb7-4"><a href="#cb7-4"></a>fieldDoc (<span class="dt">Field</span> name val) <span class="ot">=</span> schemaDoc name val</span>
 <span id="cb7-5"><a href="#cb7-5"></a></span>
 <span id="cb7-6"><a href="#cb7-6"></a><span class="ot">choiceDoc ::</span> <span class="dt">Choice</span> <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> x</span>
-<span id="cb7-7"><a href="#cb7-7"></a>choiceDoc <span class="dt">Choice</span>{<span class="op">..</span>} <span class="ot">=</span> schemaDoc choiceName choiceValue</span>
+<span id="cb7-7"><a href="#cb7-7"></a>choiceDoc (<span class="dt">Choice</span> name val) <span class="ot">=</span> schemaDoc name val</span>
 <span id="cb7-8"><a href="#cb7-8"></a></span>
 <span id="cb7-9"><a href="#cb7-9"></a><span class="ot">primDoc ::</span> <span class="dt">Primitive</span> <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> x</span>
 <span id="cb7-10"><a href="#cb7-10"></a>primDoc <span class="ot">=</span> \<span class="kw">case</span></span>
@@ -114,7 +115,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb7-13"><a href="#cb7-13"></a>  <span class="dt">PBool</span>   <span class="ot">-&gt;</span> <span class="st">&quot;bool&quot;</span></span></code></pre></div>
 <p>Nothing too fancy here — since <code>Field</code> and <code>Choice</code> just have a name and a sub-schema, we can have them call <code>schemaDoc</code>. <code>primDoc</code> requires making our leaf documentation, so we can just print what type they have.</p>
 <p>We tie it all together with <code>schemaDoc</code>:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L56-L73</span></span>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/doc.hs#L54-L71</span></span>
 <span id="cb8-2"><a href="#cb8-2"></a></span>
 <span id="cb8-3"><a href="#cb8-3"></a>schemaDoc</span>
 <span id="cb8-4"><a href="#cb8-4"></a><span class="ot">    ::</span> <span class="dt">String</span>       <span class="co">-- ^ name</span></span>
@@ -151,12 +152,12 @@ Choice of:
 <p>To do this, we’re going to rewrite <code>Schema</code> to take a type parameter to represent the type we want to parse into. A <code>Schema a</code> will be a schema that can be used to generate documentation <em>and</em> describe a parser of <code>a</code>s. In the end, we want <code>customerSchema :: Schema Customer</code>, and a function like</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1"></a><span class="ot">schemaParser ::</span> <span class="dt">Schema</span> a <span class="ot">-&gt;</span> <span class="dt">Parse</span> <span class="dt">ErrType</span> a</span></code></pre></div>
 <p>to generate a json parser of <code>a</code>s. We’ll be using the json parser type <code>Parse err a</code> from <em><a href="https://hackage.haskell.org/package/aeson-better-errors">aeson-better-errors</a></em> (not because of the better errors, but just because it’s closer to an actual incremental/stateful parser than other alternatives out there), which can be run with <code>parse :: Parse err a -&gt; ByteString -&gt; Either (ParseError err) a</code>. So our final interface will look like:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L156-L157</span></span>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L153-L154</span></span>
 <span id="cb11-2"><a href="#cb11-2"></a></span>
 <span id="cb11-3"><a href="#cb11-3"></a><span class="ot">parseSchema ::</span> <span class="dt">Schema</span> a <span class="ot">-&gt;</span> <span class="dt">ByteString</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> (<span class="dt">A.ParseError</span> <span class="dt">ErrType</span>) a</span>
 <span id="cb11-4"><a href="#cb11-4"></a>parseSchema sc <span class="ot">=</span> A.parse (schemaParser sc)</span></code></pre></div>
 <p>To do this, we now have to include information on “how to parse an <code>a</code>” in our schema. “How to parse a record” and “how to parse a sum” are going to be handled universally for all schemas…so the only thing that really will vary from type to type (aside from the structure) is how to parse those primitive leaf types when we encounter them in the json. And so, the main thing we need to modify is just <code>Primitive</code>:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L45-L49</span></span>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L42-L46</span></span>
 <span id="cb12-2"><a href="#cb12-2"></a></span>
 <span id="cb12-3"><a href="#cb12-3"></a><span class="kw">data</span> <span class="dt">Primitive</span> a <span class="ot">=</span></span>
 <span id="cb12-4"><a href="#cb12-4"></a>      <span class="dt">PString</span> (<span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a)</span>
@@ -165,7 +166,7 @@ Choice of:
 <span id="cb12-7"><a href="#cb12-7"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span></code></pre></div>
 <p>A <code>Primitive a</code> now encodes a way to <em>parse</em> an <code>a</code> if given the appropriate json primitive. It can be <code>PString</code>, <code>PNumber</code>, or <code>PBool</code>. To create a “String Parser”, you need to use <code>PString</code> with a function on “what to do with the string you get”. To create a “Bool parser”, you need <code>PBool</code> with a function on what to do with the bool you get. Note that the <code>PNumber</code> parser takes a <code>Scientific</code>, which is the type <em>aeson</em> (the underlying json library) uses to represent valid JSON numbers (it’s basically <code>Either Integer Double</code>).</p>
 <p>We can write some helper primitives:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L51-L58</span></span>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L48-L55</span></span>
 <span id="cb13-2"><a href="#cb13-2"></a></span>
 <span id="cb13-3"><a href="#cb13-3"></a><span class="ot">pString ::</span> <span class="dt">Primitive</span> <span class="dt">String</span></span>
 <span id="cb13-4"><a href="#cb13-4"></a>pString <span class="ot">=</span> <span class="dt">PString</span> <span class="dt">Just</span></span>
@@ -183,7 +184,7 @@ Choice of:
 <span id="cb14-4"><a href="#cb14-4"></a></span>
 <span id="cb14-5"><a href="#cb14-5"></a><span class="ot">withScientific ::</span> (<span class="dt">Scientific</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">ErrType</span> a) <span class="ot">-&gt;</span> <span class="dt">Parse</span> <span class="dt">ErrType</span> a</span>
 <span id="cb14-6"><a href="#cb14-6"></a><span class="ot">withBool       ::</span> (<span class="dt">Bool</span>       <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">ErrType</span> a) <span class="ot">-&gt;</span> <span class="dt">Parse</span> <span class="dt">ErrType</span> a</span></code></pre></div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L133-L140</span></span>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L130-L137</span></span>
 <span id="cb15-2"><a href="#cb15-2"></a></span>
 <span id="cb15-3"><a href="#cb15-3"></a><span class="ot">primParser ::</span> <span class="dt">Primitive</span> a <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">String</span> a</span>
 <span id="cb15-4"><a href="#cb15-4"></a>primParser <span class="ot">=</span> \<span class="kw">case</span></span>
@@ -203,7 +204,7 @@ Choice of:
 <span id="cb16-4"><a href="#cb16-4"></a>    <span class="op">|</span> <span class="dt">SchemaLeaf</span>  (<span class="dt">Primitive</span> a)</span>
 <span id="cb16-5"><a href="#cb16-5"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span>
 <span id="cb16-6"><a href="#cb16-6"></a></span>
-<span id="cb16-7"><a href="#cb16-7"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L33-L39</span></span>
+<span id="cb16-7"><a href="#cb16-7"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L30-L36</span></span>
 <span id="cb16-8"><a href="#cb16-8"></a></span>
 <span id="cb16-9"><a href="#cb16-9"></a><span class="kw">data</span> <span class="dt">Field</span> a <span class="ot">=</span> <span class="dt">Field</span></span>
 <span id="cb16-10"><a href="#cb16-10"></a></span>
@@ -225,7 +226,7 @@ Choice of:
 <p>The description here also gives a clue for what we might want to use for <code>SumType</code> (<code>ListF</code> sounds like a good companion for the behavior we want sum type parsers to have)</p>
 <h3 id="building-ap">Building Ap</h3>
 <p>With this, we can write our final <code>Schema</code> type.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L27-L49</span></span>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L24-L46</span></span>
 <span id="cb17-2"><a href="#cb17-2"></a></span>
 <span id="cb17-3"><a href="#cb17-3"></a><span class="kw">data</span> <span class="dt">Schema</span> a <span class="ot">=</span></span>
 <span id="cb17-4"><a href="#cb17-4"></a>      <span class="dt">RecordType</span>  (<span class="dt">Ap</span> <span class="dt">Field</span> a)</span>
@@ -252,7 +253,7 @@ Choice of:
 <span id="cb17-25"><a href="#cb17-25"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span></code></pre></div>
 <p>Note that I switched from <code>[Choice a]</code> to <code>ListF Choice a</code> as hinted earlier — the two are the same, but the latter has the <code>Functor</code> instance we want (<code>fmap :: (a -&gt; b) -&gt; ListF Choice a -&gt; ListF Choice b</code>), and is an instance of useful functor combinator typeclasses. Furthermore, it illustrates the symmetry between sum types and record, since <code>Ap</code> and <code>ListF</code> are contrasting types: <code>Ap</code> can be used to a represent the “product” between many required fields, and <code>ListF</code> can be used to the option between many possible choices. It’s more clear how product types and sum types are “opposites” in a nice clean way.</p>
 <p>We can now make our <code>Customer</code> schema:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L65-L79</span></span>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L62-L76</span></span>
 <span id="cb18-2"><a href="#cb18-2"></a></span>
 <span id="cb18-3"><a href="#cb18-3"></a><span class="ot">customerSchema ::</span> <span class="dt">Schema</span> <span class="dt">Customer</span></span>
 <span id="cb18-4"><a href="#cb18-4"></a>customerSchema <span class="ot">=</span> <span class="dt">SumType</span> <span class="op">$</span></span>
@@ -280,22 +281,22 @@ Choice of:
 <span id="cb20-2"><a href="#cb20-2"></a><span class="ot">interpret ::</span> (<span class="kw">forall</span> x<span class="op">.</span> <span class="dt">Choice</span> x <span class="ot">-&gt;</span> <span class="dt">Parse</span> <span class="dt">ErrType</span> x) <span class="ot">-&gt;</span> <span class="dt">ListF</span> <span class="dt">Choice</span> a <span class="ot">-&gt;</span> <span class="dt">Parse</span> <span class="dt">ErrType</span> x</span></code></pre></div>
 <p>Basically, if we have a way to parse each <code>Field</code>, then we have a way to parse an <code>Ap Field a</code>. If we have a way to parse each <code>Choice</code>, then we have a way to parse a <code>ListF Choice a</code>.</p>
 <p>Let’s write those individual parsers for each smaller type:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L130-L131</span></span>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L127-L128</span></span>
 <span id="cb21-2"><a href="#cb21-2"></a></span>
 <span id="cb21-3"><a href="#cb21-3"></a><span class="ot">fieldParser ::</span> <span class="dt">Field</span> a <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">String</span> a</span>
-<span id="cb21-4"><a href="#cb21-4"></a>fieldParser <span class="dt">Field</span>{<span class="op">..</span>} <span class="ot">=</span> A.key (T.pack fieldName) (schemaParser fieldValue)</span></code></pre></div>
+<span id="cb21-4"><a href="#cb21-4"></a>fieldParser (<span class="dt">Field</span> name val) <span class="ot">=</span> A.key (T.pack name) (schemaParser val)</span></code></pre></div>
 <p>Here we use <em>aeson-better-errors</em>’s <code>key :: Text -&gt; Parser a -&gt; Parser a</code>, which takes a key and a parser, and runs that parser on whatever is under that key. For <code>fieldParser</code>, we run the schema parser for our sub-schema under that key.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L123-L128</span></span>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L120-L125</span></span>
 <span id="cb22-2"><a href="#cb22-2"></a></span>
 <span id="cb22-3"><a href="#cb22-3"></a><span class="ot">choiceParser ::</span> <span class="dt">Choice</span> a <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">String</span> a</span>
-<span id="cb22-4"><a href="#cb22-4"></a>choiceParser <span class="dt">Choice</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb22-4"><a href="#cb22-4"></a>choiceParser (<span class="dt">Choice</span> name val) <span class="ot">=</span> <span class="kw">do</span></span>
 <span id="cb22-5"><a href="#cb22-5"></a>  tag <span class="ot">&lt;-</span> A.key <span class="st">&quot;tag&quot;</span> A.asString</span>
-<span id="cb22-6"><a href="#cb22-6"></a>  unless (tag <span class="op">==</span> choiceName) <span class="op">$</span></span>
+<span id="cb22-6"><a href="#cb22-6"></a>  unless (tag <span class="op">==</span> name) <span class="op">$</span></span>
 <span id="cb22-7"><a href="#cb22-7"></a>    A.throwCustomError <span class="st">&quot;Tag does not match&quot;</span></span>
-<span id="cb22-8"><a href="#cb22-8"></a>  A.key <span class="st">&quot;contents&quot;</span> <span class="op">$</span> schemaParser choiceValue</span></code></pre></div>
+<span id="cb22-8"><a href="#cb22-8"></a>  A.key <span class="st">&quot;contents&quot;</span> <span class="op">$</span> schemaParser val</span></code></pre></div>
 <p>Our sum type encoding is a bit more involved, because json doesn’t have any native sum type construct. So we’re going to parse whatever is in the key <code>"tag"</code>, and if that tag matches our current choice’s constructor, we parse the schema parser for our sub-schema under that key. Otherwise, this choice isn’t what is currently in our json value.</p>
 <p>Finally, to wrap bring it all together, we use the <code>interpret</code> functions we talked about:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L117-L121</span></span>
+<div class="sourceCode" id="cb23"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb23-1"><a href="#cb23-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L114-L118</span></span>
 <span id="cb23-2"><a href="#cb23-2"></a></span>
 <span id="cb23-3"><a href="#cb23-3"></a><span class="ot">schemaParser ::</span> <span class="dt">Schema</span> a <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">ErrType</span> a</span>
 <span id="cb23-4"><a href="#cb23-4"></a>schemaParser <span class="ot">=</span> \<span class="kw">case</span></span>
@@ -304,7 +305,7 @@ Choice of:
 <span id="cb23-7"><a href="#cb23-7"></a>    <span class="dt">SchemaLeaf</span> p  <span class="ot">-&gt;</span> primParser p</span></code></pre></div>
 <p>And that’s it!</p>
 <p>Ah well, not exactly so fast. Even though they could support it, <em>aeson-better-errors</em> doesn’t provide <code>Plus</code> a for <code>Parse</code>. We can write them as orphans here just because this is a fun learning experience (but we usually do like to avoid defining instances for types or typeclasses that aren’t ours).</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L110-L113</span></span>
+<div class="sourceCode" id="cb24"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L107-L110</span></span>
 <span id="cb24-2"><a href="#cb24-2"></a></span>
 <span id="cb24-3"><a href="#cb24-3"></a><span class="kw">instance</span> <span class="dt">Monad</span> f <span class="ot">=&gt;</span> <span class="dt">Alt</span> (<span class="dt">A.ParseT</span> e f) <span class="kw">where</span></span>
 <span id="cb24-4"><a href="#cb24-4"></a>    (<span class="op">&lt;!&gt;</span>) <span class="ot">=</span> (<span class="op">A.&lt;|&gt;</span>)</span>
@@ -328,14 +329,14 @@ Choice of:
 <p>So <code>interpret</code> for <code>ListF</code>, while convenient, isn’t necessarily the best way to tear down a <code>ListF</code>. Luckily, most functor combinators are just ADTs that we can pattern match and break down and access the structures manually. In the case of <code>ListF</code>, the structure is pretty simple:</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb27-1"><a href="#cb27-1"></a><span class="kw">data</span> <span class="dt">ListF</span> f a <span class="ot">=</span> <span class="dt">ListF</span> {<span class="ot"> runListF ::</span> [f a] }</span></code></pre></div>
 <p>Our <code>ListF Choice a</code> is just <code>[Choice a]</code>. This is something we can work with! Let’s write a better <code>ListF Choice a</code> processor by working with the list itself.</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L142-L154</span></span>
+<div class="sourceCode" id="cb28"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L139-L151</span></span>
 <span id="cb28-2"><a href="#cb28-2"></a></span>
-<span id="cb28-3"><a href="#cb28-3"></a><span class="ot">schemaParser2 ::</span> <span class="kw">forall</span> a<span class="op">.</span> <span class="dt">Schema</span> a <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">ErrType</span> a</span>
+<span id="cb28-3"><a href="#cb28-3"></a><span class="ot">schemaParser2 ::</span> <span class="dt">Schema</span> a <span class="ot">-&gt;</span> <span class="dt">A.Parse</span> <span class="dt">ErrType</span> a</span>
 <span id="cb28-4"><a href="#cb28-4"></a>schemaParser2 <span class="ot">=</span> \<span class="kw">case</span></span>
 <span id="cb28-5"><a href="#cb28-5"></a>    <span class="dt">RecordType</span> fs <span class="ot">-&gt;</span> interpret fieldParser fs</span>
 <span id="cb28-6"><a href="#cb28-6"></a>    <span class="dt">SumType</span>    cs <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb28-7"><a href="#cb28-7"></a>      <span class="kw">let</span><span class="ot"> schemaMap ::</span> <span class="dt">M.Map</span> <span class="dt">String</span> (<span class="dt">Schema</span> a)</span>
-<span id="cb28-8"><a href="#cb28-8"></a>          schemaMap <span class="ot">=</span> M.fromList [ (choiceName, choiceValue) <span class="op">|</span> <span class="dt">Choice</span>{<span class="op">..</span>} <span class="ot">&lt;-</span> runListF cs ]</span>
+<span id="cb28-7"><a href="#cb28-7"></a>      <span class="kw">let</span> schemaMap <span class="ot">=</span> M.fromList </span>
+<span id="cb28-8"><a href="#cb28-8"></a>            [ (nm, vl) <span class="op">|</span> <span class="dt">Choice</span> nm vl <span class="ot">&lt;-</span> runListF cs ]</span>
 <span id="cb28-9"><a href="#cb28-9"></a>      tag <span class="ot">&lt;-</span> A.key <span class="st">&quot;tag&quot;</span> A.asString</span>
 <span id="cb28-10"><a href="#cb28-10"></a>      <span class="kw">case</span> M.lookup tag schemaMap <span class="kw">of</span></span>
 <span id="cb28-11"><a href="#cb28-11"></a>        <span class="dt">Nothing</span> <span class="ot">-&gt;</span> A.throwCustomError <span class="op">$</span></span>
@@ -361,7 +362,7 @@ Choice of:
 <span id="cb32-3"><a href="#cb32-3"></a><span class="co">-- what we can use now</span></span>
 <span id="cb32-4"><a href="#cb32-4"></a><span class="ot">icollect ::</span> (<span class="kw">forall</span> x<span class="op">.</span> <span class="dt">Field</span> x <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Ap</span> <span class="dt">Field</span> a <span class="ot">-&gt;</span> [b]</span></code></pre></div>
 <p>So it looks like <code>icollect</code> should work as a drop-in replacement for <code>map</code> …</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L81-L108</span></span>
+<div class="sourceCode" id="cb33"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb33-1"><a href="#cb33-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L78-L105</span></span>
 <span id="cb33-2"><a href="#cb33-2"></a></span>
 <span id="cb33-3"><a href="#cb33-3"></a>schemaDoc</span>
 <span id="cb33-4"><a href="#cb33-4"></a><span class="ot">    ::</span> <span class="dt">String</span>       <span class="co">-- ^ name</span></span>
@@ -383,9 +384,9 @@ Choice of:
 <span id="cb33-20"><a href="#cb33-20"></a>              <span class="op">PP.&lt;+&gt;</span> primDoc p</span>
 <span id="cb33-21"><a href="#cb33-21"></a>  <span class="kw">where</span></span>
 <span id="cb33-22"><a href="#cb33-22"></a><span class="ot">    fieldDoc ::</span> <span class="dt">Field</span> x <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
-<span id="cb33-23"><a href="#cb33-23"></a>    fieldDoc <span class="dt">Field</span>{<span class="op">..</span>} <span class="ot">=</span> schemaDoc fieldName fieldValue</span>
+<span id="cb33-23"><a href="#cb33-23"></a>    fieldDoc (<span class="dt">Field</span> name val) <span class="ot">=</span> schemaDoc name val</span>
 <span id="cb33-24"><a href="#cb33-24"></a><span class="ot">    choiceDoc ::</span> <span class="dt">Choice</span> x <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
-<span id="cb33-25"><a href="#cb33-25"></a>    choiceDoc <span class="dt">Choice</span>{<span class="op">..</span>} <span class="ot">=</span> schemaDoc choiceName choiceValue</span>
+<span id="cb33-25"><a href="#cb33-25"></a>    choiceDoc (<span class="dt">Choice</span> name val) <span class="ot">=</span> schemaDoc name val</span>
 <span id="cb33-26"><a href="#cb33-26"></a><span class="ot">    primDoc ::</span> <span class="dt">Primitive</span> x <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
 <span id="cb33-27"><a href="#cb33-27"></a>    primDoc <span class="ot">=</span> \<span class="kw">case</span></span>
 <span id="cb33-28"><a href="#cb33-28"></a>      <span class="dt">PString</span> _ <span class="ot">-&gt;</span> <span class="st">&quot;string&quot;</span></span>
@@ -397,7 +398,7 @@ Choice of:
 <div class="sourceCode" id="cb34"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb34-1"><a href="#cb34-1"></a><span class="ot">schemaToValue ::</span> <span class="dt">Schema</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Aeson.Value</span></span></code></pre></div>
 <p>To keep things simple, let’s forget all the parsing stuff for now; we’ll add it back in later. Let’s just create a type that can <em>only</em> serialize by enhancing our documentation schema.</p>
 <p>Again, for the same reasons as before, we can get away with the only fundamental change being at the leaves/primitives. Our structure itself is defined by the ADT, and all of the variations outside of the structure itself comes from how each leaf is serialized.</p>
-<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L42-L45</span></span>
+<div class="sourceCode" id="cb35"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb35-1"><a href="#cb35-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L35-L38</span></span>
 <span id="cb35-2"><a href="#cb35-2"></a></span>
 <span id="cb35-3"><a href="#cb35-3"></a><span class="kw">data</span> <span class="dt">Primitive</span> a <span class="ot">=</span></span>
 <span id="cb35-4"><a href="#cb35-4"></a>      <span class="dt">PString</span> (a <span class="ot">-&gt;</span> <span class="dt">String</span>)</span>
@@ -405,7 +406,7 @@ Choice of:
 <span id="cb35-6"><a href="#cb35-6"></a>    <span class="op">|</span> <span class="dt">PBool</span>   (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</span></code></pre></div>
 <p>A <code>Primitive a</code> will be a way to <em>serialize</em> a json primitive — it can be <code>PString</code>, <code>PNumber</code>, or <code>PBool</code>. To create a “String Serializer”, you need to use <code>PString</code> with a function on “how to turn it into a <code>String</code>”. To create a “Bool parser”, you need <code>PBool</code> with a function on what how to turn the value into a <code>String</code>.</p>
 <p>Again, it can be useful to add some helper primitives:</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L64-L71</span></span>
+<div class="sourceCode" id="cb36"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb36-1"><a href="#cb36-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L57-L64</span></span>
 <span id="cb36-2"><a href="#cb36-2"></a></span>
 <span id="cb36-3"><a href="#cb36-3"></a><span class="ot">pString ::</span> <span class="dt">Primitive</span> <span class="dt">String</span></span>
 <span id="cb36-4"><a href="#cb36-4"></a>pString <span class="ot">=</span> <span class="dt">PString</span> <span class="fu">id</span></span>
@@ -417,7 +418,7 @@ Choice of:
 <span id="cb36-10"><a href="#cb36-10"></a>pBool <span class="ot">=</span> <span class="dt">PBool</span> <span class="fu">id</span></span></code></pre></div>
 <p><code>pString :: Primitive String</code> is the most basic way to serialize a primitive json string: just return the <code>String</code> itself. <code>pInt</code> needs to serialize the <code>Int</code> into a <code>Scientific</code> (the numeric type of the aeson library).</p>
 <p>We can start off by writing the serializer for <code>Primitive</code> just go get a feel for how our serializer will work:</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a href="#cb37-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L144-L148</span></span>
+<div class="sourceCode" id="cb37"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb37-1"><a href="#cb37-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L137-L141</span></span>
 <span id="cb37-2"><a href="#cb37-2"></a></span>
 <span id="cb37-3"><a href="#cb37-3"></a><span class="ot">primToValue ::</span> <span class="dt">Primitive</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Aeson.Value</span></span>
 <span id="cb37-4"><a href="#cb37-4"></a>primToValue <span class="ot">=</span> \<span class="kw">case</span></span>
@@ -438,7 +439,7 @@ Choice of:
 <span id="cb39-3"><a href="#cb39-3"></a>    <span class="op">|</span> <span class="dt">SumType</span>     [<span class="dt">Choice</span> a]</span>
 <span id="cb39-4"><a href="#cb39-4"></a>    <span class="op">|</span> <span class="dt">SchemaLeaf</span>  (<span class="dt">Primitive</span> a)</span>
 <span id="cb39-5"><a href="#cb39-5"></a>  <span class="kw">deriving</span> <span class="dt">Functor</span></span>
-<span id="cb39-6"><a href="#cb39-6"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L32-L37</span></span>
+<span id="cb39-6"><a href="#cb39-6"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L25-L30</span></span>
 <span id="cb39-7"><a href="#cb39-7"></a></span>
 <span id="cb39-8"><a href="#cb39-8"></a><span class="kw">data</span> <span class="dt">Field</span> a <span class="ot">=</span> <span class="dt">Field</span></span>
 <span id="cb39-9"><a href="#cb39-9"></a></span>
@@ -458,7 +459,7 @@ Choice of:
 <p>Sounds like exactly what we need! It also gives us a nice hint of what we might want to use for <code>RecordType</code>.</p>
 <h3 id="building-dec">Building Dec</h3>
 <p>With this, we can write our final <code>Schema</code> type.</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb40-1"><a href="#cb40-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L27-L45</span></span>
+<div class="sourceCode" id="cb40"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb40-1"><a href="#cb40-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L20-L38</span></span>
 <span id="cb40-2"><a href="#cb40-2"></a></span>
 <span id="cb40-3"><a href="#cb40-3"></a><span class="kw">data</span> <span class="dt">Schema</span> a <span class="ot">=</span></span>
 <span id="cb40-4"><a href="#cb40-4"></a>      <span class="dt">RecordType</span>  (<span class="dt">Div</span> <span class="dt">Field</span> a)</span>
@@ -481,7 +482,7 @@ Choice of:
 <span id="cb40-21"><a href="#cb40-21"></a>    <span class="op">|</span> <span class="dt">PBool</span>   (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)</span></code></pre></div>
 <p>Note that I switched from <code>[Field a]</code> to <code>Div Field a</code> — the two are the same (<code>Div Field a</code> is essentially a newtype wrapper over <code>[Field a]</code>), but the latter has useful functor combinator typeclass instance methods like <code>interpret</code> (like <code>ListF</code> before)<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a>. And, again, I feel like it illustrates the symmetry between sum types and record types; <code>Div</code> and <code>Dec</code> are opposite types, as <code>Dec</code> represents a contravariant choice between different choices, and <code>Div</code> represents a contravariant merger between different consumers. It makes more clear the duality between product types and sum types.</p>
 <p>We can assemble our <code>Customer</code> schema, in a way that looks a lot like our parser schema:</p>
-<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb41-1"><a href="#cb41-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L78-L93</span></span>
+<div class="sourceCode" id="cb41"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb41-1"><a href="#cb41-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L71-L86</span></span>
 <span id="cb41-2"><a href="#cb41-2"></a></span>
 <span id="cb41-3"><a href="#cb41-3"></a><span class="ot">customerSchema ::</span> <span class="dt">Schema</span> <span class="dt">Customer</span></span>
 <span id="cb41-4"><a href="#cb41-4"></a>customerSchema <span class="ot">=</span> <span class="dt">SumType</span> <span class="op">$</span></span>
@@ -548,12 +549,12 @@ Choice of:
 <span id="cb49-3"><a href="#cb49-3"></a><span class="co">-- a newtype wrapper away from</span></span>
 <span id="cb49-4"><a href="#cb49-4"></a>interpret<span class="ot"> choiceToValue ::</span> <span class="dt">Dec</span> <span class="dt">Choice</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Aeson.Value</span></span></code></pre></div>
 <p>Let’s write it!</p>
-<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb50-1"><a href="#cb50-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L134-L138</span></span>
+<div class="sourceCode" id="cb50"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb50-1"><a href="#cb50-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L127-L131</span></span>
 <span id="cb50-2"><a href="#cb50-2"></a></span>
 <span id="cb50-3"><a href="#cb50-3"></a><span class="ot">choiceToValue ::</span> <span class="dt">Choice</span> a <span class="ot">-&gt;</span> <span class="dt">Op</span> <span class="dt">Aeson.Value</span> a</span>
-<span id="cb50-4"><a href="#cb50-4"></a>choiceToValue <span class="dt">Choice</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Op</span> <span class="op">$</span> \x <span class="ot">-&gt;</span> Aeson.object</span>
-<span id="cb50-5"><a href="#cb50-5"></a>    [ <span class="st">&quot;tag&quot;</span>      <span class="op">Aeson..=</span> T.pack choiceName</span>
-<span id="cb50-6"><a href="#cb50-6"></a>    , <span class="st">&quot;contents&quot;</span> <span class="op">Aeson..=</span> schemaToValue choiceValue x</span>
+<span id="cb50-4"><a href="#cb50-4"></a>choiceToValue (<span class="dt">Choice</span> name val) <span class="ot">=</span> <span class="dt">Op</span> <span class="op">$</span> \x <span class="ot">-&gt;</span> Aeson.object</span>
+<span id="cb50-5"><a href="#cb50-5"></a>    [ <span class="st">&quot;tag&quot;</span>      <span class="op">Aeson..=</span> T.pack name</span>
+<span id="cb50-6"><a href="#cb50-6"></a>    , <span class="st">&quot;contents&quot;</span> <span class="op">Aeson..=</span> schemaToValue val x</span>
 <span id="cb50-7"><a href="#cb50-7"></a>    ]</span></code></pre></div>
 <p>For the <code>RecordType</code>’s <code>Div Field a</code>, we want to build an object using <code>Aeson.object :: [Aeson.Pair] -&gt; Aeson.Value</code>, so we want to write some underlying interface</p>
 <div class="sourceCode" id="cb51"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb51-1"><a href="#cb51-1"></a><span class="ot">fieldToValue ::</span> <span class="dt">Field</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [<span class="dt">Aeson.Pair</span>]</span></code></pre></div>
@@ -565,14 +566,14 @@ Choice of:
 <span id="cb52-5"><a href="#cb52-5"></a><span class="co">-- a newtype wrapper away from</span></span>
 <span id="cb52-6"><a href="#cb52-6"></a>interpret<span class="ot"> fieldToValue ::</span> <span class="dt">Div</span> <span class="dt">Field</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [<span class="dt">Aeson.Pair</span>]</span></code></pre></div>
 <p>We can go ahead and write it out actually:</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb53-1"><a href="#cb53-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L140-L142</span></span>
+<div class="sourceCode" id="cb53"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb53-1"><a href="#cb53-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L133-L135</span></span>
 <span id="cb53-2"><a href="#cb53-2"></a></span>
 <span id="cb53-3"><a href="#cb53-3"></a><span class="ot">fieldToValue ::</span> <span class="dt">Field</span> a <span class="ot">-&gt;</span> <span class="dt">Op</span> [<span class="dt">Aeson.Pair</span>] a</span>
-<span id="cb53-4"><a href="#cb53-4"></a>fieldToValue <span class="dt">Field</span>{<span class="op">..</span>} <span class="ot">=</span> <span class="dt">Op</span> <span class="op">$</span> \x <span class="ot">-&gt;</span></span>
-<span id="cb53-5"><a href="#cb53-5"></a>    [T.pack fieldName <span class="op">Aeson..=</span> schemaToValue fieldValue x]</span></code></pre></div>
+<span id="cb53-4"><a href="#cb53-4"></a>fieldToValue (<span class="dt">Field</span> name val) <span class="ot">=</span> <span class="dt">Op</span> <span class="op">$</span> \x <span class="ot">-&gt;</span></span>
+<span id="cb53-5"><a href="#cb53-5"></a>    [T.pack name <span class="op">Aeson..=</span> schemaToValue val x]</span></code></pre></div>
 <p>Note that this behavior relies on the fact that the <code>interpret</code> instance for <code>Div</code> (using the <code>Divise</code> instance for <code>Op r</code>) will combine the <code>[Aeson.Pair]</code> list monoidally, concatenating the results of calling <code>fieldToValue</code> on every <code>Field</code> in the <code>Div Field a</code>.</p>
 <p>And now we should have enough to write our entire serializer:</p>
-<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb54-1"><a href="#cb54-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L125-L132</span></span>
+<div class="sourceCode" id="cb54"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb54-1"><a href="#cb54-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L118-L125</span></span>
 <span id="cb54-2"><a href="#cb54-2"></a></span>
 <span id="cb54-3"><a href="#cb54-3"></a>schemaToValue</span>
 <span id="cb54-4"><a href="#cb54-4"></a><span class="ot">    ::</span> <span class="dt">Schema</span> a</span>
@@ -597,7 +598,7 @@ Choice of:
 <span id="cb58-2"><a href="#cb58-2"></a>ifanout<span class="ot"> fieldToValue ::</span> <span class="dt">Div</span> <span class="dt">Field</span>  a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [<span class="dt">Aeson.Pair</span>]</span></code></pre></div>
 <h3 id="backporting-documentation-1">Backporting documentation</h3>
 <p>Because our new structure is pretty much the same as before (data types wrapped by functor combinators), and <code>Div</code>/<code>Dec</code> support <code>icollect</code> just like <code>Ap</code>/<code>ListF</code> did before, the implementation of <code>schemaDoc</code> is pretty much word-for-word identical as it was for our parser schema:</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb59-1"><a href="#cb59-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L95-L122</span></span>
+<div class="sourceCode" id="cb59"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb59-1"><a href="#cb59-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L88-L115</span></span>
 <span id="cb59-2"><a href="#cb59-2"></a></span>
 <span id="cb59-3"><a href="#cb59-3"></a>schemaDoc</span>
 <span id="cb59-4"><a href="#cb59-4"></a><span class="ot">    ::</span> <span class="dt">String</span>       <span class="co">-- ^ name</span></span>
@@ -619,9 +620,9 @@ Choice of:
 <span id="cb59-20"><a href="#cb59-20"></a>              <span class="op">PP.&lt;+&gt;</span> primDoc p</span>
 <span id="cb59-21"><a href="#cb59-21"></a>  <span class="kw">where</span></span>
 <span id="cb59-22"><a href="#cb59-22"></a><span class="ot">    fieldDoc ::</span> <span class="dt">Field</span> x <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
-<span id="cb59-23"><a href="#cb59-23"></a>    fieldDoc <span class="dt">Field</span>{<span class="op">..</span>} <span class="ot">=</span> schemaDoc fieldName fieldValue</span>
+<span id="cb59-23"><a href="#cb59-23"></a>    fieldDoc (<span class="dt">Field</span> name val) <span class="ot">=</span> schemaDoc name val</span>
 <span id="cb59-24"><a href="#cb59-24"></a><span class="ot">    choiceDoc ::</span> <span class="dt">Choice</span> x <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
-<span id="cb59-25"><a href="#cb59-25"></a>    choiceDoc <span class="dt">Choice</span>{<span class="op">..</span>} <span class="ot">=</span> schemaDoc choiceName choiceValue</span>
+<span id="cb59-25"><a href="#cb59-25"></a>    choiceDoc (<span class="dt">Choice</span> name val) <span class="ot">=</span> schemaDoc name val</span>
 <span id="cb59-26"><a href="#cb59-26"></a><span class="ot">    primDoc ::</span> <span class="dt">Primitive</span> x <span class="ot">-&gt;</span> <span class="dt">PP.Doc</span> a</span>
 <span id="cb59-27"><a href="#cb59-27"></a>    primDoc <span class="ot">=</span> \<span class="kw">case</span></span>
 <span id="cb59-28"><a href="#cb59-28"></a>      <span class="dt">PString</span> _ <span class="ot">-&gt;</span> <span class="st">&quot;string&quot;</span></span>

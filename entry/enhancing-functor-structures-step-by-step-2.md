@@ -48,7 +48,7 @@ Like before, the main thing we need to change at the fundamental level is
 `Primitive`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L45-L48
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L38-L41
 
 data Primitive a =
       PString (a -> String)     (String     -> Maybe a)
@@ -72,7 +72,7 @@ constructors to get the right type of container.
 
 ``` {.haskell}
 -- Covariant Schema
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L27-L31
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L24-L28
 
 data Schema a =
       RecordType  (Ap Field a)
@@ -81,7 +81,7 @@ data Schema a =
   deriving Functor
 
 -- Contravariant Schema
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L27-L30
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L20-L23
 
 data Schema a =
       RecordType  (Div Field a)
@@ -111,7 +111,7 @@ It combines both `ListF` and `Dec`.
 Now let's wire it up:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L30-L48
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L23-L41
 
 data Schema a =
       RecordType  (DivAp   Field  a)
@@ -138,7 +138,7 @@ Writing a schema using this type is going to be very similar to writing the
 contravariant version.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L61-L76
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L54-L69
 
 customerSchema :: Schema Customer
 customerSchema = SumType $
@@ -221,7 +221,7 @@ case, we must use `runCoDivAp` to run our `DivAp` in a covariant setting, and
 convert them to `Ap` and `Dec` first.[^1]
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L78-L154
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L71-L147
 
 schemaDoc
     :: String       -- ^ name
@@ -243,9 +243,9 @@ schemaDoc title = \case
               PP.<+> primDoc p
   where
     fieldDoc :: Field x -> PP.Doc a
-    fieldDoc Field{..} = schemaDoc fieldName fieldValue
+    fieldDoc (Field name val) = schemaDoc name val
     choiceDoc :: Choice x -> PP.Doc a
-    choiceDoc Choice{..} = schemaDoc choiceName choiceValue
+    choiceDoc (Choice name val) = schemaDoc name val
     primDoc :: Primitive x -> PP.Doc a
     primDoc = \case
       PString _ _ -> "string"
@@ -261,13 +261,13 @@ schemaParser = \case
     SchemaLeaf p  -> primParser p
   where
     choiceParser :: Choice b -> A.Parse String b
-    choiceParser Choice{..} = do
+    choiceParser (Choice name val) = do
       tag <- A.key "tag" A.asString
-      unless (tag == choiceName) $
+      unless (tag == name) $
         A.throwCustomError "Tag does not match"
-      A.key "contents" $ schemaParser choiceValue
+      A.key "contents" $ schemaParser val
     fieldParser :: Field b -> A.Parse String b
-    fieldParser Field{..} = A.key (T.pack fieldName) (schemaParser fieldValue)
+    fieldParser (Field name val) = A.key (T.pack name) (schemaParser val)
     primParser :: Primitive b -> A.Parse String b
     primParser = \case
       PString _ f -> A.withString $
@@ -288,13 +288,13 @@ schemaToValue = \case
     SchemaLeaf p  -> primToValue p
   where
     choiceToValue :: Choice x -> Op Aeson.Value x
-    choiceToValue Choice{..} = Op $ \x -> Aeson.object
-      [ "tag"      Aeson..= T.pack choiceName
-      , "contents" Aeson..= schemaToValue choiceValue x
+    choiceToValue (Choice name val) = Op $ \x -> Aeson.object
+      [ "tag"      Aeson..= T.pack name
+      , "contents" Aeson..= schemaToValue val x
       ]
     fieldToValue :: Field x -> Op [Aeson.Pair] x
-    fieldToValue Field{..} = Op $ \x ->
-        [T.pack fieldName Aeson..= schemaToValue fieldValue x]
+    fieldToValue (Field name val) = Op $ \x ->
+        [T.pack name Aeson..= schemaToValue val x]
     primToValue :: Primitive x -> x -> Aeson.Value
     primToValue = \case
       PString f _ -> Aeson.String . T.pack . f
@@ -312,7 +312,7 @@ A cute function we could write to tie things together would be one that does a
 round-trip, serializing and then parsing, to make sure things worked properly.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L156-L160
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L149-L153
 
 testRoundTrip
     :: Schema a
@@ -651,8 +651,9 @@ schemaToValue = \case
       PBool   f _ -> \x -> Aeson.Bool   (f x)
 ```
 
-Just two separate styles for you to consider if we want to go into combining
-*both* covariant production *and* contravariant consumption!
+Using `DivAp`/`DecAlt` and `PreT Ap`/`PostT Dec` are just two separate styles
+for you to consider if we want to go into combining *both* covariant production
+*and* contravariant consumption!
 
 Concluding Thoughts
 -------------------
