@@ -5,8 +5,8 @@ Enhancing Functor Structures Step-By-Step (Part 1)
 > [Read online!](https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-1.html)
 
 A style of Haskell programming that I've been pretty excited about with over the
-past year or so is something that I can maybe call a "functor structure"
-designed pattern. This is the interest that culminated in my [Functor
+past year or so is something that I can maybe call a "functor structure" design
+pattern. This is the interest that culminated in my [Functor
 Combinatorpedia](https://blog.jle.im/entry/functor-combinatorpedia.html) post
 last year and the
 *[functor-combinators](https://hackage.haskell.org/package/functor-combinators)*
