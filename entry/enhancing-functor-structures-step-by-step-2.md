@@ -1,7 +1,7 @@
 Enhancing Functor Structures Step-By-Step (Part 2)
 ==================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on August 18, 2020.
 > [Read online!](https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-2.html)
 
 Welcome to Part 2 of the ["Enhancing Functor Structures"
@@ -730,7 +730,7 @@ already exist (like how we found `ListF` by reading about `Ap`), instead of
 reinventing the wheel every time. If anything, it can help you reframe the
 problem in a way that might make it more easy to grasp.
 
-Until next time, happy Haskelling! :)
+Until next time, happy Haskelling!
 
 Special Thanks
 --------------

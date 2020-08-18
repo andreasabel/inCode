@@ -1,7 +1,7 @@
 Enhancing Functor Structures Step-By-Step (Part 1)
 ==================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on August 18, 2020.
 > [Read online!](https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-1.html)
 
 A style of Haskell programming that I've been pretty excited about with over the
