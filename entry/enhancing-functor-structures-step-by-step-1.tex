@@ -101,8 +101,9 @@ designed pattern. This is the interest that culminated in my
 \href{https://blog.jle.im/entry/functor-combinatorpedia.html}{Functor
 Combinatorpedia} post last year and the
 \emph{\href{https://hackage.haskell.org/package/functor-combinators}{functor-combinators}}
-library. But I've never really explored the less commonly used lowercase-f
-functor abstractions in Hask --- contravariant functors and invariant functors.
+library. But personally I had never really explored the less commonly used
+lowercase-f functor abstractions in Hask --- contravariant functors and
+invariant functors.
 
 In this post we're going to be exploring these different types of functor
 structures step-by-step, by starting with a simple useful structure and
@@ -211,7 +212,7 @@ And a value like
 \end{Highlighting}
 \end{Shaded}
 
-might be represented by a json value like
+might be represented by a json value using our schema like
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -257,12 +258,14 @@ types, so they'll be easier to assemble.
 
 So \texttt{schemaDoc} will take the name of our type and a schema, and generate
 a \texttt{PP.Doc\ x}, the type of a text document in the \emph{prettyprinter}
-library.\footnote{I'm using \texttt{x} as the name of the type variable (instead
-  of something more traditional like \texttt{a}) to indicate that it isn't meant
-  to be referenced or used anywhere in any consistent way. Just remember it
-  doesn't mean anything special syntactically!} And \texttt{fieldDoc},
-\texttt{choiceDoc}, and \texttt{primDoc} just generate the documentation for
-each individual field or constructor.
+library.{[}\^{}xvar{]} And \texttt{fieldDoc}, \texttt{choiceDoc}, and
+\texttt{primDoc} just generate the documentation for each individual field or
+constructor.
+
+(I'm using \texttt{x} as the name of the type variable (instead of something
+more traditional like \texttt{a}) to indicate that it isn't meant to be
+referenced or used anywhere in any consistent way. Just remember it doesn't mean
+anything special syntactically!)
 
 The \texttt{\textbackslash{}case} syntax is known as \emph{LambdaCase syntax},
 and \texttt{\textbackslash{}case\ blah\ -\textgreater{}\ blah} is just sugar for
@@ -399,9 +402,9 @@ we need to modify is just \texttt{Primitive}:
 \CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L42{-}L46}
 
 \KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
-      \DataTypeTok{PString}\NormalTok{ (}\DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+      \DataTypeTok{PString}\NormalTok{ (}\DataTypeTok{String}     \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
-    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (}\DataTypeTok{Bool} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (}\DataTypeTok{Bool}       \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
 \end{Highlighting}
 \end{Shaded}
@@ -580,7 +583,7 @@ With this, we can write our final \texttt{Schema} type.
 \CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L24{-}L46}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
-      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap} \DataTypeTok{Field}\NormalTok{ a)}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap}    \DataTypeTok{Field}\NormalTok{  a)}
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{ListF} \DataTypeTok{Choice}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
@@ -598,9 +601,9 @@ With this, we can write our final \texttt{Schema} type.
   \KeywordTok{deriving} \DataTypeTok{Functor}
 
 \KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
-      \DataTypeTok{PString}\NormalTok{ (}\DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+      \DataTypeTok{PString}\NormalTok{ (}\DataTypeTok{String}     \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{PNumber}\NormalTok{ (}\DataTypeTok{Scientific} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
-    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (}\DataTypeTok{Bool} \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
+    \OperatorTok{|} \DataTypeTok{PBool}\NormalTok{   (}\DataTypeTok{Bool}       \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
 \end{Highlighting}
 \end{Shaded}
@@ -656,16 +659,21 @@ interpreting functions, like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\OtherTok{interpret ::} \DataTypeTok{Applicative}\NormalTok{ g }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{ f a    }\OtherTok{{-}>}\NormalTok{ g a}
+\OtherTok{interpret ::} \DataTypeTok{Applicative}\NormalTok{ g }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{    f a }\OtherTok{{-}>}\NormalTok{ g a}
 \OtherTok{interpret ::} \DataTypeTok{Plus}\NormalTok{ g        }\OtherTok{=>}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ g x) }\OtherTok{{-}>} \DataTypeTok{ListF}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ g a}
 \end{Highlighting}
 \end{Shaded}
 
 You can interpret an \texttt{Ap\ f\ a} into any \texttt{Applicative\ g}, and you
-can interpret a \texttt{ListF\ f\ a} into any \texttt{Plus\ g} (\texttt{Plus} is
-basically \texttt{Alternative} without an \texttt{Applicative} requirement).
-Basically, you write a function to interpret any \texttt{f} you find, and
-\texttt{interpret} will accumulate them all together for you.
+can interpret a \texttt{ListF\ f\ a} into any
+\href{https://hackage.haskell.org/package/semigroupoids-5.3.4/docs/Data-Functor-Plus.html}{\texttt{Plus\ g}}
+(\texttt{Plus} is basically \texttt{Alternative} without an \texttt{Applicative}
+requirement, supporting
+\texttt{(\textless{}!\textgreater{})\ ::\ f\ a\ -\textgreater{}\ f\ a\ -\textgreater{}\ f\ a}).
+
+Basically, the strategy for using \texttt{interpret} is that you write a
+function to interpret any individual \texttt{f} you might find in the structure,
+and \texttt{interpret} will accumulate them all together for you.
 
 In our case, if we decided to use \texttt{interpret}, we could write:
 
@@ -710,11 +718,13 @@ that key.
 \end{Highlighting}
 \end{Shaded}
 
-Our sum type encoding is a bit more involved, because json doesn't have any
-native sum type construct. So we're going to parse whatever is in the key
-\texttt{"tag"}, and if that tag matches our current choice's constructor, we
-parse the schema parser for our sub-schema under that key. Otherwise, this
-choice isn't what is currently in our json value.
+Our sum type encoding has to be a bit more involved, because json doesn't have
+any native sum type construct. The one we're going to use for this post is the
+\texttt{\{"tag":\ \textless{}tag\textgreater{},\ "contents":\ \textless{}contents\textgreater{}\}"}
+form. We're going to parse whatever is in the key \texttt{"tag"}, and if that
+tag matches our current choice's constructor, we parse the schema parser for our
+sub-schema under that key. Otherwise, this choice isn't what is currently in our
+json value.
 
 Finally, to wrap bring it all together, we use the \texttt{interpret} functions
 we talked about:
@@ -738,6 +748,10 @@ Ah well, not exactly so fast. Even though they could support it,
 We can write them as orphans here just because this is a fun learning experience
 (but we usually do like to avoid defining instances for types or typeclasses
 that aren't ours).
+
+\texttt{Alt} and \texttt{Plus} represent fallback choices:
+\texttt{x\ \textless{}!\textgreater{}\ y} will try \texttt{x} first, then if
+\texttt{x} fails, try \texttt{y}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -776,9 +790,9 @@ of an \texttt{Ap}, GHC needs a way to know ``how to sequence \texttt{Parse}s'',
 and so \texttt{interpret} uses the \texttt{Applicative} instance for that. But
 we know there are usually different ways to sequence or combine actions ---
 famously in IO, we have the option to ``sequence'' IO actions in series or in
-parallel, with the default \texttt{Applicative} instance being series/blocking
+parallel, with the default \texttt{Applicative} instance being series
 sequencing. So, offloading our logic to a typeclass can be a convenient route,
-but it's not necessarily the most pragmatic way.
+but it's not necessarily the behavior we want.
 
 In our case, the \texttt{Plus} instance actually combines failed fallback
 behavior in an undesirable way: our errors become not too useful, because
@@ -798,10 +812,11 @@ Since the definition of \texttt{zero} (which was our fault because we wrote it
 here as an orphan instance --- oops!) always falls back to the same error, this
 is not very useful!
 
-So \texttt{interpret} for \texttt{ListF}, while convenient, isn't necessarily
-the best way to tear down a \texttt{ListF}. Luckily, most functor combinators
-are just ADTs that we can pattern match and break down and access the structures
-manually. In the case of \texttt{ListF}, the structure is pretty simple:
+As we see, \texttt{interpret} for \texttt{ListF}, while convenient, isn't
+necessarily the best way to tear down a \texttt{ListF}. Luckily, most functor
+combinators are just ADTs that we can pattern match and break down and access
+the structures manually. In the case of \texttt{ListF}, the structure is pretty
+simple:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -861,12 +876,12 @@ Hopefully it is clear from the structure of our data type that we haven't
 a matter of changing how to we get the items from our \texttt{ListF} and
 \texttt{Ap}.
 
-Yes, we could manually pattern match and take advantage of the structure, or use
-an interpretation function directly, etc., but if we just want to get a list of
-monomorphic items from a functor combinator, there's a convenient function in
-\emph{functor-combinators} called \texttt{icollect}:\footnote{\texttt{icollect}
-  function is nothing magical --- it's essentially \texttt{interpret} wrapped
-  with \texttt{Const}.
+Following what we just learned, one way to do this would be to use
+\texttt{interpret} or manually pattern match and take advantage of the
+structure. However, if we just want to get a list of monomorphic items from a
+functor combinator, there's a convenient function in \emph{functor-combinators}
+called \texttt{icollect}:\footnote{\texttt{icollect} function is nothing magical
+  --- it's essentially \texttt{interpret} wrapped with \texttt{Const}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -954,6 +969,9 @@ json value. The overall interface of using that type would be:
 \OtherTok{schemaToValue ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
 \end{Highlighting}
 \end{Shaded}
+
+(\texttt{Aeson.Value} being the json representation from the \emph{aeson}
+library)
 
 To keep things simple, let's forget all the parsing stuff for now; we'll add it
 back in later. Let's just create a type that can \emph{only} serialize by
@@ -1099,11 +1117,10 @@ library\ldots or more accurately, ``Decidable without a Divisible constraint'',
 which is
 \href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Conclude.html}{Conclude}.
 A \texttt{Conclude\ f} allows you to combine two \texttt{f} values, and one will
-be picked to use based on inspection of the input value (I like to think of this
-one as the ``sharding'' abstraction). Then, like in the case with the parsers,
-we want to find a way to give \texttt{Choice} some \texttt{Conclude} interface,
-we could look for the ``type that gives us a free \texttt{Conclude} structure'';
-we can look that up and see that it is
+be picked to use based on inspection of the input value. Upon recognizing this,
+we look for find a way to give \texttt{Choice} some \texttt{Conclude} interface
+and search up ``the type that gives us a free \texttt{Conclude} structure''.
+Following that search, we arrive at
 \href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Contravariant-Divisible-Free.html}{\texttt{Dec}},
 and so we use \texttt{Dec\ Choice\ a} for our sum type consumer.
 
@@ -1150,7 +1167,7 @@ With this, we can write our final \texttt{Schema} type.
 \CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L20{-}L38}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
-      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ a)}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{  a)}
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
 
@@ -1218,7 +1235,7 @@ functors values (like \texttt{Div\ Field\ a} and \texttt{Dec\ Choice\ a}):
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{decide}
-\OtherTok{    ::} \DataTypeTok{Decide}\NormalTok{ f}
+\OtherTok{    ::} \DataTypeTok{Conclude}\NormalTok{ f}
     \OtherTok{=>}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ b c)    }\CommentTok{{-}{-} \^{} break into branches}
     \OtherTok{{-}>}\NormalTok{ f b                  }\CommentTok{{-}{-} \^{} handle first branch}
     \OtherTok{{-}>}\NormalTok{ f c                  }\CommentTok{{-}{-} \^{} handle second branch}
@@ -1252,7 +1269,7 @@ And \texttt{divided} works like:
 \hypertarget{interpreting-dec}{%
 \subsection{Interpreting Dec}\label{interpreting-dec}}
 
-Now to write our schema serializers, we can use \texttt{interpret} again:
+To write our schema serializers, we can use \texttt{interpret} again:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1270,12 +1287,10 @@ But, what should we choose as our choice of \texttt{g}?
 \end{Shaded}
 
 Well, how do we want to ``use'' a \texttt{Choice\ a}? Remember that
-\texttt{Schema\ a} encodes a way to serialize an \texttt{a} to an json value, a
-\texttt{Primitive\ a} is a way to serialize an \texttt{a} to a json
-value\ldots a \texttt{Choice\ a} would be a way to serialize an \texttt{a} into
-a json value. We want to turn a \texttt{Choice\ a} into an
-\texttt{a\ -\textgreater{}\ Aeson.Value}, using the \texttt{Value} type from the
-underlying \emph{aeson} library we are using:
+\texttt{Schema\ a} encodes a way to serialize an \texttt{a} to an json value. A
+\texttt{Choice\ a} would encode a way to serialize an \texttt{a} into a json
+value. We want to turn a \texttt{Choice\ a} into an
+\texttt{a\ -\textgreater{}\ Aeson.Value}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1286,7 +1301,7 @@ underlying \emph{aeson} library we are using:
 \end{Highlighting}
 \end{Shaded}
 
-So we need to pick some \texttt{g} where \texttt{g\ a} is
+So, we need to pick some \texttt{g} where \texttt{g\ a} is
 \texttt{a\ -\textgreater{}\ Aeson.Value}. This is exactly \texttt{Op} from
 \emph{\href{https://hackage.haskell.org/package/base/docs/Data-Functor-Contravariant.html}{Data.Functor.Contravariant}},
 in \emph{base}:
@@ -1333,9 +1348,11 @@ Let's write it!
 \end{Highlighting}
 \end{Shaded}
 
-For the \texttt{RecordType}'s \texttt{Div\ Field\ a}, we want to build an object
-using \texttt{Aeson.object\ ::\ {[}Aeson.Pair{]}\ -\textgreater{}\ Aeson.Value},
-so we want to write some underlying interface
+Now onto \texttt{RecordType}'s \texttt{Div\ Field}. Here, we want to build an
+object using
+\texttt{Aeson.object\ ::\ {[}Aeson.Pair{]}\ -\textgreater{}\ Aeson.Value} (one
+way that the \emph{aeson} library allows us to build objects). Therefore, our
+type for \texttt{fieldToValue} should be:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1343,8 +1360,8 @@ so we want to write some underlying interface
 \end{Highlighting}
 \end{Shaded}
 
-This looks like we can just use \texttt{Op\ {[}Aeson.Pair{]}} as our context,
-so:
+This looks familiar; it's the same thing as before, but with
+\texttt{Op\ {[}Aeson.Pair{]}} instead of \texttt{Op\ Aeson.Value}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1357,7 +1374,7 @@ so:
 \end{Highlighting}
 \end{Shaded}
 
-We can go ahead and write it out actually:
+We can go ahead and write it out, actually:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1369,13 +1386,13 @@ We can go ahead and write it out actually:
 \end{Highlighting}
 \end{Shaded}
 
-Note that this behavior relies on the fact that the \texttt{interpret} instance
-for \texttt{Div} (using the \texttt{Divise} instance for \texttt{Op\ r}) will
-combine the \texttt{{[}Aeson.Pair{]}} list monoidally, concatenating the results
-of calling \texttt{fieldToValue} on every \texttt{Field} in the
-\texttt{Div\ Field\ a}.
+(Note that this behavior relies on the fact that the \texttt{interpret} instance
+for \texttt{Div} --- using the \texttt{Divise} instance for \texttt{Op\ r} ---
+will combine the \texttt{{[}Aeson.Pair{]}} list monoidally, concatenating the
+results of calling \texttt{fieldToValue} on every \texttt{Field} in the
+\texttt{Div\ Field\ a}.)
 
-And now we should have enough to write our entire serializer:
+We should now have enough to write our entire serializer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1419,7 +1436,7 @@ With these we could write
 \begin{Shaded}
 \begin{Highlighting}[]
 \OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
-\OtherTok{fieldToValue  ::} \DataTypeTok{Field}\NormalTok{ a  }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{]}
+\OtherTok{fieldToValue  ::} \DataTypeTok{Field}\NormalTok{ a  }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Pair}
 \end{Highlighting}
 \end{Shaded}
 

@@ -169,6 +169,18 @@ We can say this new \texttt{Primitive} is an
 Functor}: these are functors that give you ``both'' capabilities: interpreting
 covariantly \emph{and} contravariantly.
 
+Because we must be able to eventually \emph{use} either covariant or
+contravariant interpretation on an invariant functor, the corresponding mapping
+function takes functions in both ways in order to support both on
+consumption-time.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{class} \DataTypeTok{Invariant}\NormalTok{ f }\KeywordTok{where}
+\OtherTok{    invmap ::}\NormalTok{ (a }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>}\NormalTok{ (b }\OtherTok{{-}>}\NormalTok{ a) }\OtherTok{{-}>}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ f b}
+\end{Highlighting}
+\end{Shaded}
+
 \hypertarget{divap-and-decalt}{%
 \subsection{DivAp and DecAlt}\label{divap-and-decalt}}
 
@@ -181,16 +193,20 @@ By now, we know the drill. We also need to change our \texttt{RecordType} and
 \CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L24{-}L28}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
-      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap} \DataTypeTok{Field}\NormalTok{ a)}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap}    \DataTypeTok{Field}\NormalTok{  a)}
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{ListF} \DataTypeTok{Choice}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
+\end{Highlighting}
+\end{Shaded}
 
+\begin{Shaded}
+\begin{Highlighting}[]
 \CommentTok{{-}{-} Contravariant Schema}
 \CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L20{-}L23}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
-      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{ a)}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{  a)}
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{Dec} \DataTypeTok{Choice}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
 \end{Highlighting}
@@ -200,31 +216,31 @@ For the covariant \texttt{RecordType}, we used \texttt{Ap\ Field\ a}. For the
 contravariant \texttt{RecordType}, we used \texttt{Div\ Field\ a}. Is there a
 type that combines \emph{both} \texttt{Ap} and \texttt{Div}?
 
-Ah, we're in luck! We have
+If we browse around, we see that we have
 \emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DivAp.html}{DivAp}}
-from the \emph{functor-combinatotrs} library\ldots which is named to invoke the
-idea of having both \texttt{Ap} and \texttt{Div} capabilities, combined
-together.
+from the \emph{functor-combinatotrs} library\ldots which appears to be named to
+in a way to invoke the idea of having both \texttt{Ap} and \texttt{Div}
+capabilities, combined together.
 
 For the covariant \texttt{SumType}, we used \texttt{ListF\ Choice\ a}. For the
 contravariant \texttt{SumType}, we used \texttt{Dec\ Choice\ a}. Is there a type
 that combines \emph{both} \texttt{ListF} and \texttt{Dec}?
 
-Ah hah, if we look nearby \texttt{DivAp}, we see the answer:
+If we look nearby \texttt{DivAp}, we see the answer:
 \emph{\href{https://hackage.haskell.org/package/functor-combinators/docs/Data-Functor-Invariant-DecAlt.html}{DecAlt}}!
 It combines both \texttt{ListF} and \texttt{Dec}.
 
 \hypertarget{building-an-invariant-schema}{%
 \subsection{Building an Invariant Schema}\label{building-an-invariant-schema}}
 
-Now let's wire it up:
+Let's wire it up:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L23{-}L41}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
-      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{DivAp}   \DataTypeTok{Field}\NormalTok{  a)}
+      \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{DivAp}  \DataTypeTok{Field}\NormalTok{  a)}
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     (}\DataTypeTok{DecAlt} \DataTypeTok{Choice}\NormalTok{ a)}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
 
@@ -245,16 +261,18 @@ Now let's wire it up:
 \end{Highlighting}
 \end{Shaded}
 
-Writing a schema using this type is going to be very similar to writing the
-contravariant version.
+Writing a schema using this type is going to be very similar to writing one for
+our other schema types:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L54{-}L69}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L54{-}L71}
 
 \OtherTok{customerSchema ::} \DataTypeTok{Schema} \DataTypeTok{Customer}
 \NormalTok{customerSchema }\OtherTok{=} \DataTypeTok{SumType} \OperatorTok{$}
-\NormalTok{    swerve (\textbackslash{}}\KeywordTok{case} \DataTypeTok{CPerson}\NormalTok{ x y }\OtherTok{{-}>} \DataTypeTok{Left}\NormalTok{ (x,y); }\DataTypeTok{CBusiness}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Right}\NormalTok{ x) (}\FunctionTok{uncurry} \DataTypeTok{CPerson}\NormalTok{) }\DataTypeTok{CBusiness}
+\NormalTok{    swerve (\textbackslash{}}\KeywordTok{case} \DataTypeTok{CPerson}\NormalTok{ x y }\OtherTok{{-}>} \DataTypeTok{Left}\NormalTok{ (x,y); }\DataTypeTok{CBusiness}\NormalTok{ x }\OtherTok{{-}>} \DataTypeTok{Right}\NormalTok{ x)}
+\NormalTok{           (}\FunctionTok{uncurry} \DataTypeTok{CPerson}\NormalTok{)}
+           \DataTypeTok{CBusiness}
 \NormalTok{        (inject }\DataTypeTok{Choice}
 \NormalTok{          \{ choiceName  }\OtherTok{=} \StringTok{"Person"}
 \NormalTok{          , choiceValue }\OtherTok{=} \DataTypeTok{RecordType} \OperatorTok{$}\NormalTok{ gathered}
@@ -329,9 +347,9 @@ We also note that the invariant version of \texttt{divided} is
 \hypertarget{using-invariant-schema}{%
 \subsection{Using Invariant Schema}\label{using-invariant-schema}}
 
-Now to write our interpreters. Luckily, we already did most of the work in the
-previous post. Writing \texttt{schemaDoc}, \texttt{schemaParser}, and
-\texttt{schemaToValue}, we can re-use pretty much all of our code!
+Let's look into writing our interpreters. Luckily, we already did most of the
+work in the previous post. Writing \texttt{schemaDoc}, \texttt{schemaParser},
+and \texttt{schemaToValue}, we can re-use pretty much all of our code!
 
 The main (unfortunate) difference is that instead of using \texttt{interpret} in
 every case, we must use \texttt{runCoDivAp} to run our \texttt{DivAp} in a
@@ -348,7 +366,7 @@ convert them to \texttt{Ap} and \texttt{Dec} first.\footnote{These are
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L71{-}L147}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L73{-}L149}
 
 \NormalTok{schemaDoc}
 \OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
@@ -383,7 +401,7 @@ convert them to \texttt{Ap} and \texttt{Dec} first.\footnote{These are
 \OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
     \OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
 \NormalTok{schemaParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
-    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ runCoDivAp fieldParser fs}
+    \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ runCoDivAp  fieldParser  fs}
     \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ runCoDecAlt choiceParser cs}
     \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primParser p}
   \KeywordTok{where}
@@ -410,7 +428,7 @@ convert them to \texttt{Ap} and \texttt{Dec} first.\footnote{These are
     \OtherTok{{-}>} \DataTypeTok{Aeson.Value}
 \NormalTok{schemaToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
     \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ Aeson.object}
-                   \OperatorTok{.}\NormalTok{ getOp (runContraDivAp fieldToValue fs)}
+                   \OperatorTok{.}\NormalTok{ getOp (runContraDivAp  fieldToValue  fs)}
     \DataTypeTok{SumType}\NormalTok{    cs }\OtherTok{{-}>}\NormalTok{ getOp (runContraDecAlt choiceToValue cs)}
     \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ primToValue p}
   \KeywordTok{where}
@@ -441,7 +459,7 @@ round-trip, serializing and then parsing, to make sure things worked properly.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L149{-}L153}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/invariant.hs\#L151{-}L155}
 
 \NormalTok{testRoundTrip}
 \OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
@@ -470,9 +488,9 @@ there's a major downside in using \texttt{DivAp} and \texttt{DecAlt} that make
 their ergonomics not so great when building them up.
 
 A major part about what makes \texttt{Ap} and \texttt{ListF} (and, to an extent,
-\texttt{Div} and \texttt{Dec}) so nice to use is that are instances of popular
-Haskell typeclasses like \texttt{Applicative} and \texttt{Alternative} (or
-\texttt{Plus}) and using \texttt{Applicative} and \texttt{Alternative}
+\texttt{Div} and \texttt{Dec}) so nice to use is that they are instances of
+popular Haskell typeclasses like \texttt{Applicative} and \texttt{Alternative}
+(or \texttt{Plus}) and using \texttt{Applicative} and \texttt{Alternative}
 interfaces are pretty common in Haskell. Because of this, they are pretty
 comfortable for most Haskellers to use.
 
@@ -510,7 +528,7 @@ This is a trick I first saw used in the
 
 Recall that \texttt{Ap\ Field\ a} is a collection that contains a bunch of
 \texttt{Field\ x}s of different \texttt{x}s, and can be used to covariantly
-\emph{produce} an \texttt{a}.
+\emph{produce} an \texttt{a} by combining all of the \texttt{x}s back together.
 
 Now, a value of type:
 
@@ -524,7 +542,8 @@ will ``produce'' \texttt{a}s covariantly\ldots but will ``consume'' \texttt{r}s
 contravariantly. You can think of the \texttt{Pre\ r} as adding an ``tunnel'' to
 guide the \texttt{r} to each \texttt{Field} in the \texttt{Ap}.
 
-This means we can now use normal Applicative combinators to combine our fake
+Because \texttt{Ap} is \texttt{Ap} (famous for its \texttt{Applicative}
+instance), we can use normal Applicative combinators to combine our fake
 invariant type:
 
 \begin{Shaded}
@@ -600,10 +619,9 @@ same:
 \end{Shaded}
 
 We see that \texttt{interpret} for \texttt{PreT\ Ap\ f\ a} works just like
-\texttt{interpret} for \texttt{Ap\ f\ a}\ldots so we don't lose any power, it's
-the same as always if we wanted to just use \texttt{Ap\ f\ a} covariantly to
-interpret into a parser. Exactly what we did when we wrote our parser
-generation.
+\texttt{interpret} for \texttt{Ap\ f\ a}; we don't lose any power, it's the same
+as always if we wanted to just use \texttt{Ap\ f\ a} covariantly to interpret
+into a parser. Exactly what we did when we wrote our parser generation.
 
 But, we also gain \texttt{preDivisibleT}, which lets us \texttt{interpret} into
 a contravariant \texttt{Divisible} context! Just like as if we had
@@ -621,7 +639,8 @@ to embed covariant capabilities in \texttt{Dec}.
 
 Recall that \texttt{Div\ Choice\ a} is a collection that contains a bunch of
 \texttt{Choice\ x}s of different \texttt{x}s, and can be used to contravariantly
-\emph{consume} an \texttt{a}.
+\emph{consume} an \texttt{a} (by sending the \texttt{a} to one of the different
+\texttt{Choice\ x}s).
 
 A value of type:
 
@@ -636,7 +655,7 @@ will also produce \texttt{r}s covariantly. You can think of the \texttt{Post\ r}
 as adding an ``tunnel'' allowing the output of each \texttt{Choice} to exit out
 of the \texttt{Dec}.
 
-This means we can now use normal Decide contravariant typeclass-based
+This means we can now use normal \texttt{Conclude} contravariant typeclass-based
 combinators to combine our fake invariant type:
 
 \begin{Shaded}
@@ -649,13 +668,13 @@ combinators to combine our fake invariant type:
 \end{Highlighting}
 \end{Shaded}
 
-We see that \texttt{decide} combinators will recombine our ``input''
-contravariant types appropriately, but will keep the ``output'' covariant type
-constant\footnote{This works out because each of the \texttt{Choice}s inside
-  could be embedded into the same output type. Remember that we used
+We see that \texttt{decide} will recombine our ``input'' contravariant types
+appropriately, but will keep the ``output'' covariant type constant\footnote{This
+  works out because each of the \texttt{Choice}s inside could be embedded into
+  the same output type. Remember that we used
   \texttt{List\ f\ a\ \textasciitilde{}\ {[}f\ a{]}} for our contravariant
   choice collection before, just a list of things that produce the same
-  \texttt{a}.}
+  \texttt{a}.}.
 
 Again, we can construct a value of type \texttt{Dec\ (Post\ r\ Choice)\ a} using
 \texttt{injectPost}, which asks us to provide that ``embed the \texttt{a} in the
@@ -758,7 +777,13 @@ With these new tools, we can imagine a different invariant \texttt{Schema} type:
 \end{Highlighting}
 \end{Shaded}
 
-And all of our running functions look pretty much the same as well:
+Note that to build up \texttt{choiceValue} for \texttt{Person}, we can use our
+normal favorite \texttt{Appliciative} combinators, like
+\texttt{\textless{}\$\textgreater{}} and \texttt{\textless{}*\textgreater{}}!
+And at the top level, we use \texttt{decide} like we did before with our general
+contravariant combinators.
+
+All of our running functions look pretty much the same as well:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -854,12 +879,12 @@ The thought process described in this series was pretty much my actual thought
 process when writing something similar. I needed to provide documentation, a
 json parser, and a json serializer for a collection of data formats that I had.
 At first I had written three separate systems, and wrote all three separately
-for each format. But I struggled with keeping all of them in sync, and
-everything clicked when I realized I could combine the documentation generator
-and the parser generation. I looked at my serializer system with regret on how
-it had to be a separate thing. But then I stared really really hard at it, and
-all of a sudden the idea of uniting all three of them became something I
-realized was worthwhile.
+for each format. I struggled with keeping all of them in sync, but everything
+clicked when I realized I could combine the documentation generator and the
+parser generation. I looked at my serializer system with regret on how it had to
+be a separate thing. But then I stared really really hard at it, and all of a
+sudden the idea of uniting all three of them became something I realized was
+worthwhile.
 
 It really was a truly ``step-by-step'' process\ldots and I think it's pretty
 rare that these fully formed united abstractions just pop out of your brain
@@ -884,16 +909,17 @@ write:
 \end{Highlighting}
 \end{Shaded}
 
-Here \texttt{Schema\ a} represents a data protocol; now you have the assurance
-that the protocol of sending a data type over a channel is always going to be
-the same as the protocol for receiving data, no matter what changes you make to
-your type. And you only have to write the code once, not twice.
+Here \texttt{Schema\ a} could represent a data protocol; under this system, you
+have the assurance that the protocol of sending a data type over a channel is
+always going to be the same as the protocol for receiving data, no matter what
+changes you make to your type. And you only have to write the code once, not
+twice!
 
 Try to investigate situations in your life where ``structures'' could be more
 useful as ``functor structures''\ldots and then maybe see if there's even more
 value you could add by enhancing them with more functor-ness!
 
-And hopefully
+Hopefully
 \emph{\href{https://hackage.haskell.org/package/functor-combinators}{functor-combinators}}
 and the \emph{{[}functor combinatorpedia{]}{[}{]}} may be a useful guide along
 the way! You don't have to build things ``functor combinator style'' like in
@@ -901,7 +927,8 @@ this post (you could make everything from scratch without using
 \texttt{Ap}/\texttt{Dec}, etc.), but I have found that thinking in this style
 helps guide your search to solutions that already exist (like how we found
 \texttt{ListF} by reading about \texttt{Ap}), instead of reinventing the wheel
-every time.
+every time. If anything, it can help you reframe the problem in a way that might
+make it more easy to grasp.
 
 Until next time, happy Haskelling! :)
 
