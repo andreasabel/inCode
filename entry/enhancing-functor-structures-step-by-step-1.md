@@ -1224,6 +1224,9 @@ parser/serializer problem in one stroke!
 For this, we'll wait until the next post, where we explore not one, but two ways
 to combine our two capabilities into something known as an *invariant* functor!
 
+[Proceed to the next post
+here!](https://blog.jle.im/entry/enhancing-functor-structures-step-by-step-2.html)
+
 Special Thanks
 --------------
 
