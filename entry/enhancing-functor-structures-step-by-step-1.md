@@ -154,9 +154,9 @@ primDoc :: Primitive -> PP.Doc x
 ```
 
 So `schemaDoc` will take the name of our type and a schema, and generate a
-`PP.Doc x`, the type of a text document in the *prettyprinter*
-library.\[\^xvar\] And `fieldDoc`, `choiceDoc`, and `primDoc` just generate the
-documentation for each individual field or constructor.
+`PP.Doc x`, the type of a text document in the *prettyprinter* library. And
+`fieldDoc`, `choiceDoc`, and `primDoc` just generate the documentation for each
+individual field or constructor.
 
 (I'm using `x` as the name of the type variable (instead of something more
 traditional like `a`) to indicate that it isn't meant to be referenced or used
