@@ -561,8 +561,8 @@ in the key `"tag"`, and if that tag matches our current choice's constructor, we
 parse the schema parser for our sub-schema under that key. Otherwise, this
 choice isn't what is currently in our json value.
 
-Finally, to wrap bring it all together, we use the `interpret` functions we
-talked about:
+Finally, to bring it all together, we use the `interpret` functions we talked
+about:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L114-L118
