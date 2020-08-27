@@ -59,7 +59,6 @@
 \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
 \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
 \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
-\usepackage{fancyvrb}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -83,7 +82,6 @@
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
-\VerbatimFootnotes % allows verbatim text in footnotes
 
 \title{Enhancing Functor Structures Step-By-Step (Part 1)}
 \author{Justin Le}
@@ -123,7 +121,7 @@ invariant functors until recently.
 This series is designed for an intermediate Haskeller with familiarity in things
 like product/sum types, using \texttt{Applicative}/\texttt{Alternative}, and
 monadic parser combinators, and is written in sync with
-\emph{functor-combinators-0.3.5.1}.
+\emph{functor-combinators-0.3.6.0}.
 
 \hypertarget{the-schema}{%
 \section{The Schema}\label{the-schema}}
@@ -384,7 +382,7 @@ So our final interface will look like:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L153{-}L154}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L154{-}L155}
 
 \OtherTok{parseSchema ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{ByteString} \OtherTok{{-}>} \DataTypeTok{Either}\NormalTok{ (}\DataTypeTok{A.ParseError} \DataTypeTok{ErrType}\NormalTok{) a}
 \NormalTok{parseSchema sc }\OtherTok{=}\NormalTok{ A.parse (schemaParser sc)}
@@ -400,7 +398,7 @@ we need to modify is just \texttt{Primitive}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L42{-}L46}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L43{-}L47}
 
 \KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{PString}\NormalTok{ (}\DataTypeTok{String}     \OtherTok{{-}>} \DataTypeTok{Maybe}\NormalTok{ a)}
@@ -423,7 +421,7 @@ We can write some helper primitives:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L48{-}L55}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L49{-}L56}
 
 \OtherTok{pString ::} \DataTypeTok{Primitive} \DataTypeTok{String}
 \NormalTok{pString }\OtherTok{=} \DataTypeTok{PString} \DataTypeTok{Just}
@@ -459,7 +457,7 @@ We can now start writing our parsers for each branch of \texttt{Schema}. The
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L130{-}L137}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L131{-}L138}
 
 \OtherTok{primParser ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
 \NormalTok{primParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -490,7 +488,7 @@ At first glance, we might think we could just write
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
 
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L30{-}L36}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L31{-}L37}
 
 \KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
 
@@ -581,7 +579,7 @@ With this, we can write our final \texttt{Schema} type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L24{-}L46}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L25{-}L47}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Ap}    \DataTypeTok{Field}\NormalTok{  a)}
@@ -624,7 +622,7 @@ We can now make our \texttt{Customer} schema:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L62{-}L76}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L63{-}L77}
 
 \OtherTok{customerSchema ::} \DataTypeTok{Schema} \DataTypeTok{Customer}
 \NormalTok{customerSchema }\OtherTok{=} \DataTypeTok{SumType} \OperatorTok{$}
@@ -693,7 +691,7 @@ Let's write those individual parsers for each smaller type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L127{-}L128}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L128{-}L129}
 
 \OtherTok{fieldParser ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
 \NormalTok{fieldParser (}\DataTypeTok{Field}\NormalTok{ name val) }\OtherTok{=}\NormalTok{ A.key (T.pack name) (schemaParser val)}
@@ -708,7 +706,7 @@ that key.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L120{-}L125}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L121{-}L126}
 
 \OtherTok{choiceParser ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{String}\NormalTok{ a}
 \NormalTok{choiceParser (}\DataTypeTok{Choice}\NormalTok{ name val) }\OtherTok{=} \KeywordTok{do}
@@ -732,7 +730,7 @@ talked about:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L114{-}L118}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L115{-}L119}
 
 \OtherTok{schemaParser ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{ErrType}\NormalTok{ a}
 \NormalTok{schemaParser }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -756,7 +754,7 @@ that aren't ours).
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L107{-}L110}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L108{-}L111}
 
 \KeywordTok{instance} \DataTypeTok{Monad}\NormalTok{ f }\OtherTok{=>} \DataTypeTok{Alt}\NormalTok{ (}\DataTypeTok{A.ParseT}\NormalTok{ e f) }\KeywordTok{where}
 \NormalTok{    (}\OperatorTok{<!>}\NormalTok{) }\OtherTok{=}\NormalTok{ (}\OperatorTok{A.<|>}\NormalTok{)}
@@ -831,7 +829,7 @@ processor by working with the list itself.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L139{-}L151}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L140{-}L152}
 
 \OtherTok{schemaParser2 ::} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{A.Parse} \DataTypeTok{ErrType}\NormalTok{ a}
 \NormalTok{schemaParser2 }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -880,22 +878,13 @@ a matter of changing how to we get the items from our \texttt{ListF} and
 Following what we just learned, one way to do this would be to use
 \texttt{interpret} or manually pattern match and take advantage of the
 structure. However, if we just want to get a list of monomorphic items from a
-functor combinator, there's a convenient function in \emph{functor-combinators}
-called \texttt{icollect}:\footnote{\texttt{icollect} function is nothing magical
-  --- it's essentially \texttt{interpret} wrapped with \texttt{Const}.
+functor combinator, there's an abstraction in \emph{functor-combinators} that
+gives you a ``higher-order'' version of \texttt{toList} called \texttt{htoList}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} essentially}
-\NormalTok{icollect f }\OtherTok{=}\NormalTok{ getConst }\OperatorTok{.}\NormalTok{ interpret (\textbackslash{}x }\OtherTok{{-}>} \DataTypeTok{Const}\NormalTok{ [f x])}
-\end{Highlighting}
-\end{Shaded}
-}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\OtherTok{icollect ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{ListF}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ [b]}
-\OtherTok{icollect ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{    f a }\OtherTok{{-}>}\NormalTok{ [b]}
+\OtherTok{htoList ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{ListF}\NormalTok{ f a }\OtherTok{{-}>}\NormalTok{ [b]}
+\OtherTok{htoList ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.}\NormalTok{ f x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Ap}\NormalTok{    f a }\OtherTok{{-}>}\NormalTok{ [b]}
 \end{Highlighting}
 \end{Shaded}
 
@@ -906,18 +895,18 @@ for us. Note that this type is very similar to the \texttt{map} we used earlier:
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{{-}{-} what we used before}
-\FunctionTok{map}\OtherTok{      ::}\NormalTok{ (          }\DataTypeTok{Field}   \OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Field}\NormalTok{]    }\OtherTok{{-}>}\NormalTok{ [b]}
+\FunctionTok{map}\OtherTok{     ::}\NormalTok{ (          }\DataTypeTok{Field}   \OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>}\NormalTok{ [}\DataTypeTok{Field}\NormalTok{]    }\OtherTok{{-}>}\NormalTok{ [b]}
 \CommentTok{{-}{-} what we can use now}
-\OtherTok{icollect ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.} \DataTypeTok{Field}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Ap} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [b]}
+\OtherTok{htoList ::}\NormalTok{ (}\KeywordTok{forall}\NormalTok{ x}\OperatorTok{.} \DataTypeTok{Field}\NormalTok{ x }\OtherTok{{-}>}\NormalTok{ b) }\OtherTok{{-}>} \DataTypeTok{Ap} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ [b]}
 \end{Highlighting}
 \end{Shaded}
 
-So it looks like \texttt{icollect} should work as a drop-in replacement for
+So it looks like \texttt{htoList} should work as a drop-in replacement for
 \texttt{map} \ldots{}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L78{-}L105}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/parse.hs\#L79{-}L106}
 
 \NormalTok{schemaDoc}
 \OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
@@ -927,13 +916,13 @@ So it looks like \texttt{icollect} should work as a drop-in replacement for
     \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
 \NormalTok{        PP.pretty (}\StringTok{"\{"} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{"\}"}\NormalTok{)}
 \NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
-\NormalTok{          icollect (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) fs}
+\NormalTok{          htoList (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) fs}
 \NormalTok{      ]}
     \DataTypeTok{SumType}\NormalTok{ cs    }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
 \NormalTok{        PP.pretty (}\StringTok{"("} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{")"}\NormalTok{)}
 \NormalTok{      , }\StringTok{"Choice of:"}
 \NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
-\NormalTok{          icollect choiceDoc cs}
+\NormalTok{          htoList choiceDoc cs}
 \NormalTok{      ]}
     \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ PP.pretty (title }\OperatorTok{<>} \StringTok{":"}\NormalTok{)}
               \OperatorTok{PP.<+>}\NormalTok{ primDoc p}
@@ -952,8 +941,8 @@ So it looks like \texttt{icollect} should work as a drop-in replacement for
 
 Neat, we just had to replace
 \texttt{map\ (\textbackslash{}fld\ -\textgreater{}\ ..)\ fs} with
-\texttt{icollect\ (\textbackslash{}fld\ -\textgreater{}\ ...)\ fs}, and
-\texttt{map\ choiceDoc\ cs} with \texttt{icollect\ choiceDoc\ cs}. We were able
+\texttt{htoList\ (\textbackslash{}fld\ -\textgreater{}\ ...)\ fs}, and
+\texttt{map\ choiceDoc\ cs} with \texttt{htoList\ choiceDoc\ cs}. We were able
 to re-use the exact same logic --- we lose no power and upgrading was a
 straightforward mechanical transformation.
 
@@ -985,7 +974,7 @@ each leaf is serialized.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L35{-}L38}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L36{-}L39}
 
 \KeywordTok{data} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{PString}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{String}\NormalTok{)}
@@ -1005,7 +994,7 @@ Again, it can be useful to add some helper primitives:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L57{-}L64}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L58{-}L65}
 
 \OtherTok{pString ::} \DataTypeTok{Primitive} \DataTypeTok{String}
 \NormalTok{pString }\OtherTok{=} \DataTypeTok{PString} \FunctionTok{id}
@@ -1028,7 +1017,7 @@ feel for how our serializer will work:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L137{-}L141}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L138{-}L142}
 
 \OtherTok{primToValue ::} \DataTypeTok{Primitive}\NormalTok{ a }\OtherTok{{-}>}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Aeson.Value}
 \NormalTok{primToValue }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -1085,7 +1074,7 @@ something like
     \OperatorTok{|} \DataTypeTok{SumType}\NormalTok{     [}\DataTypeTok{Choice}\NormalTok{ a]}
     \OperatorTok{|} \DataTypeTok{SchemaLeaf}\NormalTok{  (}\DataTypeTok{Primitive}\NormalTok{ a)}
   \KeywordTok{deriving} \DataTypeTok{Functor}
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L25{-}L30}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L26{-}L31}
 
 \KeywordTok{data} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{=} \DataTypeTok{Field}
 
@@ -1165,7 +1154,7 @@ With this, we can write our final \texttt{Schema} type.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L20{-}L38}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L21{-}L39}
 
 \KeywordTok{data} \DataTypeTok{Schema}\NormalTok{ a }\OtherTok{=}
       \DataTypeTok{RecordType}\NormalTok{  (}\DataTypeTok{Div} \DataTypeTok{Field}\NormalTok{  a)}
@@ -1207,7 +1196,7 @@ parser schema:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L71{-}L86}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L72{-}L87}
 
 \OtherTok{customerSchema ::} \DataTypeTok{Schema} \DataTypeTok{Customer}
 \NormalTok{customerSchema }\OtherTok{=} \DataTypeTok{SumType} \OperatorTok{$}
@@ -1339,7 +1328,7 @@ Let's write it!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L127{-}L131}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L128{-}L132}
 
 \OtherTok{choiceToValue ::} \DataTypeTok{Choice}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op} \DataTypeTok{Aeson.Value}\NormalTok{ a}
 \NormalTok{choiceToValue (}\DataTypeTok{Choice}\NormalTok{ name val) }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}\NormalTok{ Aeson.object}
@@ -1379,7 +1368,7 @@ We can go ahead and write it out, actually:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L133{-}L135}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L134{-}L136}
 
 \OtherTok{fieldToValue ::} \DataTypeTok{Field}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Op}\NormalTok{ [}\DataTypeTok{Aeson.Pair}\NormalTok{] a}
 \NormalTok{fieldToValue (}\DataTypeTok{Field}\NormalTok{ name val) }\OtherTok{=} \DataTypeTok{Op} \OperatorTok{$}\NormalTok{ \textbackslash{}x }\OtherTok{{-}>}
@@ -1397,7 +1386,7 @@ We should now have enough to write our entire serializer:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L118{-}L125}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L119{-}L126}
 
 \NormalTok{schemaToValue}
 \OtherTok{    ::} \DataTypeTok{Schema}\NormalTok{ a}
@@ -1454,14 +1443,14 @@ And then:
 \subsection{Backporting documentation}\label{backporting-documentation-1}}
 
 Because our new structure is pretty much the same as before (data types wrapped
-by functor combinators), and \texttt{Div}/\texttt{Dec} support \texttt{icollect}
+by functor combinators), and \texttt{Div}/\texttt{Dec} support \texttt{htoList}
 just like \texttt{Ap}/\texttt{ListF} did before, the implementation of
 \texttt{schemaDoc} is pretty much word-for-word identical as it was for our
 parser schema:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L88{-}L115}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/functor{-}structures/serialize.hs\#L89{-}L116}
 
 \NormalTok{schemaDoc}
 \OtherTok{    ::} \DataTypeTok{String}       \CommentTok{{-}{-} \^{} name}
@@ -1471,13 +1460,13 @@ parser schema:
     \DataTypeTok{RecordType}\NormalTok{ fs }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
 \NormalTok{        PP.pretty (}\StringTok{"\{"} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{"\}"}\NormalTok{)}
 \NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
-\NormalTok{          icollect (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) fs}
+\NormalTok{          htoList (\textbackslash{}fld }\OtherTok{{-}>} \StringTok{"*"} \OperatorTok{PP.<+>}\NormalTok{ PP.indent }\DecValTok{2}\NormalTok{ (fieldDoc fld)) fs}
 \NormalTok{      ]}
     \DataTypeTok{SumType}\NormalTok{ cs    }\OtherTok{{-}>}\NormalTok{ PP.vsep [}
 \NormalTok{        PP.pretty (}\StringTok{"("} \OperatorTok{<>}\NormalTok{ title }\OperatorTok{<>} \StringTok{")"}\NormalTok{)}
 \NormalTok{      , }\StringTok{"Choice of:"}
 \NormalTok{      , PP.indent }\DecValTok{2} \OperatorTok{.}\NormalTok{ PP.vsep }\OperatorTok{$}
-\NormalTok{          icollect choiceDoc cs}
+\NormalTok{          htoList choiceDoc cs}
 \NormalTok{      ]}
     \DataTypeTok{SchemaLeaf}\NormalTok{ p  }\OtherTok{{-}>}\NormalTok{ PP.pretty (title }\OperatorTok{<>} \StringTok{":"}\NormalTok{)}
               \OperatorTok{PP.<+>}\NormalTok{ primDoc p}

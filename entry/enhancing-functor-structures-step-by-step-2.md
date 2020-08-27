@@ -48,7 +48,7 @@ Like before, the main thing we need to change at the fundamental level is
 `Primitive`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L38-L41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L39-L42
 
 data Primitive a =
       PString (a -> String)     (String     -> Maybe a)
@@ -81,7 +81,7 @@ constructors to get the right type of container.
 
 ``` {.haskell}
 -- Covariant Schema
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L24-L28
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/parse.hs#L25-L29
 
 data Schema a =
       RecordType  (Ap    Field  a)
@@ -92,7 +92,7 @@ data Schema a =
 
 ``` {.haskell}
 -- Contravariant Schema
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L20-L23
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/serialize.hs#L21-L24
 
 data Schema a =
       RecordType  (Div Field  a)
@@ -123,7 +123,7 @@ It combines both `ListF` and `Dec`.
 Let's wire it up:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L23-L41
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L24-L42
 
 data Schema a =
       RecordType  (DivAp  Field  a)
@@ -150,7 +150,7 @@ Writing a schema using this type is going to be very similar to writing one for
 our other schema types:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L54-L71
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L55-L72
 
 customerSchema :: Schema Customer
 customerSchema = SumType $
@@ -230,12 +230,10 @@ work in the previous post. Writing `schemaDoc`, `schemaParser`, and
 The main (unfortunate) difference is that instead of using `interpret` in every
 case, we must use `runCoDivAp` to run our `DivAp` in a covariant setting, and
 `runContraDivAp` to run our `DivAp` in a contravariant setting (similarly for
-`runCoDecAlt` and `runContraDecAlt`). Another small difference is that
-`icollect` doesn't quite work properly on `DivAp`/`DecAlt`, so we have to
-convert them to `Ap` and `Dec` first.[^1]
+`runCoDecAlt` and `runContraDecAlt`).[^1]
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L73-L149
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L74-L150
 
 schemaDoc
     :: String       -- ^ name
@@ -245,13 +243,13 @@ schemaDoc title = \case
     RecordType fs -> PP.vsep [
         PP.pretty ("{" <> title <> "}")
       , PP.indent 2 . PP.vsep $
-          icollect (\fld -> "*" PP.<+> PP.indent 2 (fieldDoc fld)) (divApAp fs)
+          htoList (\fld -> "*" PP.<+> PP.indent 2 (fieldDoc fld)) fs
       ]
     SumType cs    -> PP.vsep [
         PP.pretty ("(" <> title <> ")")
       , "Choice of:"
       , PP.indent 2 . PP.vsep $
-          icollect choiceDoc (decAltDec cs)
+          htoList choiceDoc cs
       ]
     SchemaLeaf p  -> PP.pretty (title <> ":")
               PP.<+> primDoc p
@@ -326,7 +324,7 @@ A cute function we could write to tie things together would be one that does a
 round-trip, serializing and then parsing, to make sure things worked properly.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L151-L155
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/invariant.hs#L152-L156
 
 testRoundTrip
     :: Schema a
@@ -438,8 +436,8 @@ preDivisibleT
     -> PreT Ap f a
     -> g a
 
--- | We can also use icollect like before
-icollect
+-- | We can also use htoList like before
+htoList
     :: (forall x. f x -> b)
     -> PreT Ap f a
     -> [b]
@@ -457,7 +455,7 @@ exactly what we did when we wrote our serializers.
 So using `Pre` and `PreT`, we get to *assemble* it using our favorite
 `Applicative` combinators...then when we wrap it in `PreT`, we get to
 *interpret* it in whatever way we want by choosing different interpreters. It's
-the best of both worlds! We even get the useful `icollect` function back!
+the best of both worlds!
 
 We can do the opposite thing with `Dec` as well: we can use
 [`Post`](https://hackage.haskell.org/package/functor-combinators/docs/Data-HFunctor-Route.html#t:Post)
@@ -526,8 +524,8 @@ postPlusT
     -> PostT Choice f a
     -> g a
 
--- | We can also use icollect like before
-icollect
+-- | We can also use htoList like before
+htoList
     :: (forall x. f x -> b)
     -> PostT Choice f a
     -> [b]
@@ -536,37 +534,32 @@ icollect
 We get the same benefits as for `PreT`: if we want to interpret into a
 `Conclude` (like we did for our serializers), we can use `interpret`. If we want
 to interpret into a `Plus` (like we did for our parser generation), we can use
-`postPlusT`. We also get direct access to the convenient `icollect` function
-from before.
+`postPlusT`.
 
 With these new tools, we can imagine a different invariant `Schema` type:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/routing.hs#L47-L100
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/routing.hs#L36-L85
 
 data Schema a =
       RecordType  (PreT  Ap  Field  a)
     | SumType     (PostT Dec Choice a)
     | SchemaLeaf  (Primitive a)
-  deriving Generic
 
 data Field a = Field
     { fieldName  :: String
     , fieldValue :: Schema a
     }
-  deriving Generic
 
 data Choice a = Choice
     { choiceName  :: String
     , choiceValue :: Schema a
     }
-  deriving Generic
 
 data Primitive a =
       PString (a -> String)     (String     -> Maybe a)
     | PNumber (a -> Scientific) (Scientific -> Maybe a)
     | PBool   (a -> Bool)       (Bool       -> Maybe a)
-  deriving Generic
 
 customerSchema :: Schema Customer
 customerSchema = SumType . PostT $
@@ -593,7 +586,7 @@ Note that to build up `choiceValue` for `Person`, we can use our normal favorite
 All of our running functions look pretty much the same as well:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/routing.hs#L102-L182
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functor-structures/routing.hs#L87-L167
 
 schemaDoc
     :: String       -- ^ name
@@ -603,13 +596,13 @@ schemaDoc title = \case
     RecordType fs -> PP.vsep [
         PP.pretty ("{" <> title <> "}")
       , PP.indent 2 . PP.vsep $
-          icollect (\fld -> "*" PP.<+> PP.indent 2 (fieldDoc fld)) fs
+          htoList (\fld -> "*" PP.<+> PP.indent 2 (fieldDoc fld)) fs
       ]
     SumType cs    -> PP.vsep [
         PP.pretty ("(" <> title <> ")")
       , "Choice of:"
       , PP.indent 2 . PP.vsep $
-          icollect choiceDoc cs
+          htoList choiceDoc cs
       ]
     SchemaLeaf p  -> PP.pretty (title <> ":")
               PP.<+> primDoc p
@@ -756,8 +749,7 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 [^1]: These are unfortunate consequences of the fact that there is no general
     typeclass that contains both `Applicative` and `Divisible` together, or no
     typeclass that contains both `Plus` and `Conclude` together. If these
-    existed, we could just use `interpret` for all four of those functions, and
-    `icollect` would work fine as well.
+    existed, we could just use `interpret` for all four of those functions.
 
 [^2]: There *could* be a typeclass for "combination of `Applicative` and
     `Divisible`" and "combination of `Plus` and `Conclude`":
