@@ -94,6 +94,7 @@
 
 \title{Shuffling things up: Applying Group Theory in Advent of Code}
 \author{Justin Le}
+\date{November 18, 2020}
 
 \begin{document}
 \maketitle
@@ -130,6 +131,10 @@ wonderful season, and maybe also shed some insight into what it means when we
 say that Haskell can help you leverage math to find good solutions to your real
 problems.
 
+Of course, this post has spoilers for Advent of Code 2019 Day 22, if you are
+planning on trying to figure it out from yourself. If you haven't tried it, I
+recommend you give it a shot and come back after! :D
+
 \hypertarget{slam-shuffle}{%
 \section{Slam Shuffle}\label{slam-shuffle}}
 
@@ -142,20 +147,22 @@ of 10007 cards, such as:
 deal with increment 7
 deal into new stack
 deal into new stack
+... etc
 \end{verbatim}
 
 After performing all of the many operations, the question then asks about the
 card at a given position (the 2019th card in the deck).
 
 Part 2, which you might not be able to see if you haven't submitted an answer
-yet, involves the same process with a deck of 119315717514047 cards, and
-repeating the entire shuffling sequence 101741582076661 times. It then asks you
-to find the card that ends up at index 2020.
+yet for Part 1, involves the same process with a deck of 119315717514047 cards,
+and repeating the entire shuffling sequence 101741582076661 times. It then asks
+you to find the card that ends up at index 2020.
 
 In this problem, it seems we have a list of ``shuffles'' that we want to run on
 a deck of cards. However, let's think about this in a more data-driven approach:
-instead of thinking about successive shufflings of cards, let's imagine taking a
-list of shuffles operation and combining them into one big shuffle operation.
+instead of thinking about successive shufflings of cards, let's imagine the
+specification of a ``shuffle'' itself as our main data, and how we can combine
+shuffle operations together into new shuffle operations.
 
 We are looking for ``take shuffle A and shuffle B, and return a new shuffle that
 represents doing B, then A''. This is ``shuffle composition'', or ``permutation
@@ -187,8 +194,8 @@ that represents the composition of the two original ones.
 
 Knowing permutations are a group, it means that once we settle on our
 representation of them, \texttt{Perm}, we can write an instance of \texttt{Perm}
-for \texttt{Semigroup}, \texttt{Monoid}, and \texttt{Group}, common abstractions
-in Haskell that many types are already instances of. Abstractions like
+for \texttt{Semigroup}, \texttt{Monoid}, and \texttt{Group}, abstractions in
+Haskell that many types are already instances of. Abstractions like
 \texttt{Semigroup} and \texttt{Monoid} are pretty much an everyday thing in
 Haskell, so this fits in quite nicely. \texttt{Group} comes from the
 \emph{\href{https://hackage.haskell.org/package/groups}{groups}} package, which
@@ -259,7 +266,9 @@ which lets us compose \texttt{x} with itself
 but can do it in \emph{log(n)} time using
 \href{https://en.wikipedia.org/wiki/Exponentiation_by_squaring}{repeated
 squaring}. It's extremely efficient in a lot of circumstances (more on that
-later) --- more so than the naive compose-it-n-times implementation.
+later) --- more so than the naive compose-it-n-times implementation. This will
+definitely become useful in part 2, where we have to do 101741582076661
+compositions.
 
 \hypertarget{our-gameplan}{%
 \section{Our Gameplan}\label{our-gameplan}}
@@ -279,21 +288,21 @@ functions first and then fill in the interface later!
 \KeywordTok{data} \DataTypeTok{Perm}\NormalTok{ n }\OtherTok{=} \OperatorTok{....}
 
 \CommentTok{{-}{-} | Given a permutation list, find the place where a given index ends up.}
-\OtherTok{(@$) ::} \DataTypeTok{Perm}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n}
+\OtherTok{runPerm ::} \DataTypeTok{Perm}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n}
 
 \CommentTok{{-}{-} | Parse a string line into the permutation it represents}
 \OtherTok{parsePerm ::} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Perm}\NormalTok{ n}
 
 \CommentTok{{-}{-} | Given a permutation list, find the place where 2019 ends up}
 \OtherTok{part1 ::}\NormalTok{ [}\DataTypeTok{Perm} \DecValTok{10007}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{Finite} \DecValTok{10007}
-\NormalTok{part1 perms }\OtherTok{=}\NormalTok{ bigPerm }\OperatorTok{@$} \DecValTok{2019}
+\NormalTok{part1 perms }\OtherTok{=}\NormalTok{ runPerm bigPerm }\DecValTok{2019}
   \KeywordTok{where}
 \NormalTok{    bigPerm }\OtherTok{=} \FunctionTok{mconcat}\NormalTok{ perms}
 \end{Highlighting}
 \end{Shaded}
 
 And\ldots that's it! For the actual ``logic'' of our part 1! All we need to do
-is implement \texttt{@!} and \texttt{parsePerm}.
+is implement \texttt{runPerm} and \texttt{parsePerm}.
 
 Here, I'm using \texttt{Finite\ n} from the great
 \emph{\href{https://hackage.haskell.org/package/finite-typelits}{finite-typelits}}
@@ -304,7 +313,7 @@ it's still a great tool here --- which is a testament to how flexible these
 abstractions can actually be :)
 
 For example, it means that for a \texttt{Perm\ 10007} (a permutation of 10007
-cards), the type of \texttt{(@\$)} is
+cards), the type of \texttt{runPerm} is
 \texttt{Perm\ 10007\ -\textgreater{}\ Finite\ 10007\ -\textgreater{}\ Finite\ 10007},
 and the type of \texttt{parsePerm} is
 \texttt{String\ -\textgreater{}\ Perm\ 10007}.
@@ -315,7 +324,7 @@ We can plan out our part 2 as well:
 \begin{Highlighting}[]
 \CommentTok{{-}{-} | Given a permutation list, find the index that will end up at 2020}
 \OtherTok{part2 ::}\NormalTok{ [}\DataTypeTok{Perm} \DecValTok{119315717514047}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{Finite} \DecValTok{119315717514047}
-\NormalTok{part2 perms }\OtherTok{=}\NormalTok{ invert biiigPerm }\OperatorTok{@$} \DecValTok{2020}
+\NormalTok{part2 perms }\OtherTok{=}\NormalTok{ runPerm (invert biiigPerm) }\DecValTok{2020}
   \KeywordTok{where}
 \NormalTok{    bigPerm   }\OtherTok{=} \FunctionTok{mconcat}\NormalTok{ perms}
 \NormalTok{    biiigPerm }\OtherTok{=}\NormalTok{ stimes }\DecValTok{101741582076661}\NormalTok{ bigPerm}
@@ -355,8 +364,8 @@ in  x4 <> x4
   is made all the more powerful because \emph{semigroup} is a ubiquitous
   abstraction in Haskell, so we ``think about'' it all the time.
 \item
-  Remember how \texttt{p\ @\$\ 2019} gives us the index that \texttt{2019} is
-  sent to? Well, we want something else in this case. We basically want the
+  Remember how \texttt{runPerm\ p\ 2019} gives us the index that \texttt{2019}
+  is sent to? Well, we want something else in this case. We basically want the
   index that \emph{will be sent to} \texttt{2020}. So, we want to \emph{reverse
   the function}. Luckily, since our function is just a permutation, it is easy
   to reverse this: just \texttt{invert} the permutation!
@@ -381,8 +390,8 @@ just use function composition as our permutation composition.
 \begin{Highlighting}[]
 \KeywordTok{data} \DataTypeTok{Perm}\NormalTok{ n }\OtherTok{=} \DataTypeTok{Perm}\NormalTok{ (}\DataTypeTok{Finite}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n)}
 
-\OtherTok{(@$) ::} \DataTypeTok{Perm}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n}
-\DataTypeTok{Perm}\NormalTok{ f }\OperatorTok{@$}\NormalTok{ x  }\OtherTok{=}\NormalTok{ f x}
+\OtherTok{runPerm ::} \DataTypeTok{Perm}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n}
+\NormalTok{runPerm (}\DataTypeTok{Perm}\NormalTok{ f) x  }\OtherTok{=}\NormalTok{ f x}
 
 \OtherTok{parsePerm ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Perm}\NormalTok{ n}
 \NormalTok{parsePerm str }\OtherTok{=} \KeywordTok{case} \FunctionTok{words}\NormalTok{ str }\KeywordTok{of}
@@ -432,8 +441,8 @@ how do we write \texttt{invert}??? Also, \texttt{stimes} doesn't help us
 \emph{too} much here, because repeated squaring of function composition
 is\ldots still a lot of function compositions in the end. That's because, while
 composition with \texttt{\textless{}\textgreater{}} is cheap, application with
-\texttt{@\$} is expensive (and \texttt{stimes} works best when composition is
-expensive and application is cheap). So, back to the drawing board.
+\texttt{runPerm} is expensive (and \texttt{stimes} works best when composition
+is expensive and application is cheap). So, back to the drawing board.
 
 \hypertarget{a-second-implementation-attempt-lookin-affine-today}{%
 \section{A Second Implementation Attempt: Lookin' Affine
@@ -481,8 +490,8 @@ permutation type:
 \NormalTok{    ,}\OtherTok{ aShift ::} \DataTypeTok{Finite}\NormalTok{ n}
 \NormalTok{    \}}
 
-\OtherTok{(@$) ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Affine}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n}
-\DataTypeTok{Aff}\NormalTok{ a b }\OperatorTok{@$}\NormalTok{ x }\OtherTok{=}\NormalTok{ a }\OperatorTok{*}\NormalTok{ x }\OperatorTok{+}\NormalTok{ b}
+\OtherTok{runPerm ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Affine}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n }\OtherTok{{-}>} \DataTypeTok{Finite}\NormalTok{ n}
+\NormalTok{runPerm (}\DataTypeTok{Aff}\NormalTok{ a b) x }\OtherTok{=}\NormalTok{ a }\OperatorTok{*}\NormalTok{ x }\OperatorTok{+}\NormalTok{ b}
 
 \OtherTok{parseAffine ::} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{String} \OtherTok{{-}>} \DataTypeTok{Affine}\NormalTok{ n}
 \NormalTok{parseAffine str }\OtherTok{=} \KeywordTok{case} \FunctionTok{words}\NormalTok{ str }\KeywordTok{of}
@@ -491,6 +500,10 @@ permutation type:
     \StringTok{"deal"}\OperatorTok{:}\StringTok{"with"}\OperatorTok{:}\NormalTok{\_}\OperatorTok{:}\NormalTok{n}\OperatorTok{:}\NormalTok{\_ }\OtherTok{{-}>} \DataTypeTok{Aff}\NormalTok{ (modulo (}\FunctionTok{read}\NormalTok{ n))                 }\DecValTok{0}
 \end{Highlighting}
 \end{Shaded}
+
+This is ``defunctionalization'': if we notice a pattern in our functions, we can
+instead abstract out the data that defines each instance of that pattern, and
+work with that data instead.
 
 So far so good! Now to think about how to define composition.
 
@@ -638,13 +651,13 @@ our puzzle input and reversing that list.
 
 \CommentTok{{-}{-} | Part 1: Given a permutation list, find the place where 2019 ends up}
 \OtherTok{part1 ::}\NormalTok{ [}\DataTypeTok{Affine} \DecValTok{10007}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{Finite} \DecValTok{10007}
-\NormalTok{part1 perms }\OtherTok{=}\NormalTok{ bigPerm }\OperatorTok{@$} \DecValTok{2019}
+\NormalTok{part1 perms }\OtherTok{=}\NormalTok{ runPerm bigPerm }\DecValTok{2019}
   \KeywordTok{where}
 \NormalTok{    bigPerm }\OtherTok{=} \FunctionTok{mconcat}\NormalTok{ perms}
 
 \CommentTok{{-}{-} | Part 2: Given a permutation list, find the index that will end up at 2020}
 \OtherTok{part2 ::}\NormalTok{ [}\DataTypeTok{Affine} \DecValTok{119315717514047}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{Finite} \DecValTok{119315717514047}
-\NormalTok{part2 perms }\OtherTok{=}\NormalTok{ invert biiigPerm }\OperatorTok{@$} \DecValTok{2020}
+\NormalTok{part2 perms }\OtherTok{=}\NormalTok{ runPerm (invert biiigPerm) }\DecValTok{2020}
   \KeywordTok{where}
 \NormalTok{    bigPerm   }\OtherTok{=} \FunctionTok{mconcat}\NormalTok{ perms}
 \NormalTok{    biiigPerm }\OtherTok{=}\NormalTok{ stimes }\DecValTok{101741582076661}\NormalTok{ bigPerm}

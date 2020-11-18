@@ -1,7 +1,7 @@
 Shuffling things up: Applying Group Theory in Advent of Code
 ============================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on November 18, 2020.
 > [Read online!](https://blog.jle.im/entry/shuffling-things-up.html)
 
 So it's November, and [Advent of Code](https://adventofcode.com/) season is in
@@ -33,6 +33,10 @@ wonderful season, and maybe also shed some insight into what it means when we
 say that Haskell can help you leverage math to find good solutions to your real
 problems.
 
+Of course, this post has spoilers for Advent of Code 2019 Day 22, if you are
+planning on trying to figure it out from yourself. If you haven't tried it, I
+recommend you give it a shot and come back after! :D
+
 Slam Shuffle
 ------------
 
@@ -43,19 +47,21 @@ given a series of operations to "shuffle" a deck of 10007 cards, such as:
     deal with increment 7
     deal into new stack
     deal into new stack
+    ... etc
 
 After performing all of the many operations, the question then asks about the
 card at a given position (the 2019th card in the deck).
 
 Part 2, which you might not be able to see if you haven't submitted an answer
-yet, involves the same process with a deck of 119315717514047 cards, and
-repeating the entire shuffling sequence 101741582076661 times. It then asks you
-to find the card that ends up at index 2020.
+yet for Part 1, involves the same process with a deck of 119315717514047 cards,
+and repeating the entire shuffling sequence 101741582076661 times. It then asks
+you to find the card that ends up at index 2020.
 
 In this problem, it seems we have a list of "shuffles" that we want to run on a
 deck of cards. However, let's think about this in a more data-driven approach:
-instead of thinking about successive shufflings of cards, let's imagine taking a
-list of shuffles operation and combining them into one big shuffle operation.
+instead of thinking about successive shufflings of cards, let's imagine the
+specification of a "shuffle" itself as our main data, and how we can combine
+shuffle operations together into new shuffle operations.
 
 We are looking for "take shuffle A and shuffle B, and return a new shuffle that
 represents doing B, then A". This is "shuffle composition", or "permutation
@@ -87,11 +93,11 @@ Now You're Thinking With Groups
 
 Knowing permutations are a group, it means that once we settle on our
 representation of them, `Perm`, we can write an instance of `Perm` for
-`Semigroup`, `Monoid`, and `Group`, common abstractions in Haskell that many
-types are already instances of. Abstractions like `Semigroup` and `Monoid` are
-pretty much an everyday thing in Haskell, so this fits in quite nicely. `Group`
-comes from the *[groups](https://hackage.haskell.org/package/groups)* package,
-which also provides some nice applications of group theory.
+`Semigroup`, `Monoid`, and `Group`, abstractions in Haskell that many types are
+already instances of. Abstractions like `Semigroup` and `Monoid` are pretty much
+an everyday thing in Haskell, so this fits in quite nicely. `Group` comes from
+the *[groups](https://hackage.haskell.org/package/groups)* package, which also
+provides some nice applications of group theory.
 
 ``` {.haskell}
 data Perm n = ... -- let's figure out the implementation later, where n is the number of cards
@@ -143,7 +149,8 @@ which lets us compose `x` with itself (`stimes 5 x == x <> x <> x <> x <> x`),
 but can do it in *log(n)* time using [repeated
 squaring](https://en.wikipedia.org/wiki/Exponentiation_by_squaring). It's
 extremely efficient in a lot of circumstances (more on that later) --- more so
-than the naive compose-it-n-times implementation.
+than the naive compose-it-n-times implementation. This will definitely become
+useful in part 2, where we have to do 101741582076661 compositions.
 
 Our Gameplan
 ------------
@@ -161,20 +168,20 @@ write our functions first and then fill in the interface later!
 data Perm n = ....
 
 -- | Given a permutation list, find the place where a given index ends up.
-(@$) :: Perm n -> Finite n -> Finite n
+runPerm :: Perm n -> Finite n -> Finite n
 
 -- | Parse a string line into the permutation it represents
 parsePerm :: String -> Perm n
 
 -- | Given a permutation list, find the place where 2019 ends up
 part1 :: [Perm 10007] -> Finite 10007
-part1 perms = bigPerm @$ 2019
+part1 perms = runPerm bigPerm 2019
   where
     bigPerm = mconcat perms
 ```
 
 And...that's it! For the actual "logic" of our part 1! All we need to do is
-implement `@!` and `parsePerm`.
+implement `runPerm` and `parsePerm`.
 
 Here, I'm using `Finite n` from the great
 *[finite-typelits](https://hackage.haskell.org/package/finite-typelits)*
@@ -185,15 +192,15 @@ great tool here --- which is a testament to how flexible these abstractions can
 actually be :)
 
 For example, it means that for a `Perm 10007` (a permutation of 10007 cards),
-the type of `(@$)` is `Perm 10007 -> Finite 10007 -> Finite 10007`, and the type
-of `parsePerm` is `String -> Perm 10007`.
+the type of `runPerm` is `Perm 10007 -> Finite 10007 -> Finite 10007`, and the
+type of `parsePerm` is `String -> Perm 10007`.
 
 We can plan out our part 2 as well:
 
 ``` {.haskell}
 -- | Given a permutation list, find the index that will end up at 2020
 part2 :: [Perm 119315717514047] -> Finite 119315717514047
-part2 perms = invert biiigPerm @$ 2020
+part2 perms = runPerm (invert biiigPerm) 2020
   where
     bigPerm   = mconcat perms
     biiigPerm = stimes 101741582076661 bigPerm
@@ -225,11 +232,11 @@ Part 2, I think, is where the group theory really shines.
     is made all the more powerful because *semigroup* is a ubiquitous
     abstraction in Haskell, so we "think about" it all the time.
 
-2.  Remember how `p @$ 2019` gives us the index that `2019` is sent to? Well, we
-    want something else in this case. We basically want the index that *will be
-    sent to* `2020`. So, we want to *reverse the function*. Luckily, since our
-    function is just a permutation, it is easy to reverse this: just `invert`
-    the permutation!
+2.  Remember how `runPerm p 2019` gives us the index that `2019` is sent to?
+    Well, we want something else in this case. We basically want the index that
+    *will be sent to* `2020`. So, we want to *reverse the function*. Luckily,
+    since our function is just a permutation, it is easy to reverse this: just
+    `invert` the permutation!
 
     The idea that we can simply invert a permutation instead of having to write
     a whole new permutation representation just to do "backwards indexing" is
@@ -248,8 +255,8 @@ permutation composition.
 ``` {.haskell}
 data Perm n = Perm (Finite n -> Finite n)
 
-(@$) :: Perm n -> Finite n -> Finite n
-Perm f @$ x  = f x
+runPerm :: Perm n -> Finite n -> Finite n
+runPerm (Perm f) x  = f x
 
 parsePerm :: KnownNat n => String -> Perm n
 parsePerm str = case words str of
@@ -292,8 +299,9 @@ This implementation *seems* to work, except for one apparent major problem: how
 do we write `invert`??? Also, `stimes` doesn't help us *too* much here, because
 repeated squaring of function composition is...still a lot of function
 compositions in the end. That's because, while composition with `<>` is cheap,
-application with `@$` is expensive (and `stimes` works best when composition is
-expensive and application is cheap). So, back to the drawing board.
+application with `runPerm` is expensive (and `stimes` works best when
+composition is expensive and application is cheap). So, back to the drawing
+board.
 
 A Second Implementation Attempt: Lookin' Affine Today
 -----------------------------------------------------
@@ -333,8 +341,8 @@ data Affine n = Aff
     , aShift :: Finite n
     }
 
-(@$) :: KnownNat n => Affine n -> Finite n -> Finite n
-Aff a b @$ x = a * x + b
+runPerm :: KnownNat n => Affine n -> Finite n -> Finite n
+runPerm (Aff a b) x = a * x + b
 
 parseAffine :: KnownNat n => String -> Affine n
 parseAffine str = case words str of
@@ -342,6 +350,10 @@ parseAffine str = case words str of
     "deal":"into":_     -> Aff        (negate 1)          maxBound
     "deal":"with":_:n:_ -> Aff (modulo (read n))                 0
 ```
+
+This is "defunctionalization": if we notice a pattern in our functions, we can
+instead abstract out the data that defines each instance of that pattern, and
+work with that data instead.
 
 So far so good! Now to think about how to define composition.
 
@@ -461,13 +473,13 @@ reversing that list.
 
 -- | Part 1: Given a permutation list, find the place where 2019 ends up
 part1 :: [Affine 10007] -> Finite 10007
-part1 perms = bigPerm @$ 2019
+part1 perms = runPerm bigPerm 2019
   where
     bigPerm = mconcat perms
 
 -- | Part 2: Given a permutation list, find the index that will end up at 2020
 part2 :: [Affine 119315717514047] -> Finite 119315717514047
-part2 perms = invert biiigPerm @$ 2020
+part2 perms = runPerm (invert biiigPerm) 2020
   where
     bigPerm   = mconcat perms
     biiigPerm = stimes 101741582076661 bigPerm
