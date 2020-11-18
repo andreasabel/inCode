@@ -28,7 +28,10 @@ it's a perfect example of how Haskell's approach to mathematical abstraction
 nudges you into the direction of an efficient solution --- in a way that other
 languages would obscure or make less obvious.
 
-So, let's dive in!
+So, let's dive in! In the end, hopefully this post can get you excited for this
+wonderful season, and maybe also shed some insight into what it means when we
+say that Haskell can help you leverage math to find good solutions to your real
+problems.
 
 Slam Shuffle
 ------------
@@ -49,14 +52,24 @@ yet, involves the same process with a deck of 119315717514047 cards, and
 repeating the entire shuffling sequence 101741582076661 times. It then asks you
 to find the card that ends up at index 2020.
 
-Reading the problem, the initial thought is that we have what is essentially a
-composition of [permutations](https://en.wikipedia.org/wiki/Permutation) -- the
-mathematical word for "shuffle", basically.
+In this problem, it seems we have a list of "shuffles" that we want to run on a
+deck of cards. However, let's think about this in a more data-driven approach:
+instead of thinking about successive shufflings of cards, let's imagine taking a
+list of shuffles operation and combining them into one big shuffle operation.
 
-One of the most famous properties of permutations is that they are a "group",
-which means they can be composed (associatively), have an identity, and can be
-inverted. This means that if you have two permutations, you can "squish" them to
-create a new permutation, and work with that *new* permutation the same way.
+We are looking for "take shuffle A and shuffle B, and return a new shuffle that
+represents doing B, then A". This is "shuffle composition", or "permutation
+composition" ([permutation](https://en.wikipedia.org/wiki/Permutation) being the
+mathematical word for "shuffling" here, basically)
+
+Since we've identified that we want to begin implementing a way of
+composing/combining permutations together, we can do a bit of reading to learn
+that one of the most famous properties of permutation composition is that they
+form a "group", which means they can be composed (associatively), have an
+identity, and can be inverted. This means that if you have two permutations, you
+can "squish" them to create a new permutation, and work with that *new*
+permutation.
+
 I've talked about [using group
 theory](https://blog.jle.im/entry/alchemical-groups.html) principles before in
 this blog to help guide us towards solutions and optimizations --- the main
@@ -127,9 +140,10 @@ stimes :: Semigroup m => Int -> m -> m
 ```
 
 which lets us compose `x` with itself (`stimes 5 x == x <> x <> x <> x <> x`),
-but can do it in *log(n)* time using \[repeated squaring\]\[\]. It's extremely
-efficient in a lot of circumstances (more on that later) --- more so than the
-naive compose-it-n-times implementation.
+but can do it in *log(n)* time using [repeated
+squaring](https://en.wikipedia.org/wiki/Exponentiation_by_squaring). It's
+extremely efficient in a lot of circumstances (more on that later) --- more so
+than the naive compose-it-n-times implementation.
 
 Our Gameplan
 ------------
@@ -187,7 +201,8 @@ part2 perms = invert biiigPerm @$ 2020
 
 Part 2, I think, is where the group theory really shines.
 
-1.  We take advantage of `stimes`, which uses \[repeated squaring\]\[\]. That
+1.  We take advantage of `stimes`, which uses [repeated
+    squaring](https://en.wikipedia.org/wiki/Exponentiation_by_squaring). That
     means that to compute `stimes 8 x`, instead of using
 
         x <> x <> x <> x <> x <> x <> x <> x
@@ -225,7 +240,7 @@ A first guess at implementation
 -------------------------------
 
 Now, time to do what we have been putting off and actually write our permutation
-representation -- the definition of `Perm n`. A good first guess might be to
+representation -- the definition of `Perm n`. A good *first guess* might be to
 write our permutation as an actual function --- a function from index to index,
 `Finite n -> Finite n`. Then, we can just use function composition as our
 permutation composition.
@@ -250,9 +265,8 @@ instance Group (Perm n) where
     invert (Perm f) = ?????
 ```
 
-Note that `Finite n`'s `Num` instance is inherently modular arithmetic, so
-things like `negate` and multiplication will "do the right thing". We use
-`modulo`:
+Note that `Finite n`'s `Num` instance is modular arithmetic, so things like
+`negate` and multiplication will "do the right thing". We use `modulo`:
 
 ``` {.haskell}
 modulo :: KnownNat n => Integer -> Finite n
@@ -263,19 +277,22 @@ way if it is negative or too high.
 
 ``` {.haskell}
 ghci> modulo 3 :: Finite 10
-3
+finite 3
 ghci> modulo 15 :: Finite 10
-5
+finite 5
 ghci> modulo (-1) :: Finite 10
-9
+finite 9
 ```
 
-This implementation *seems* to work, but...how do we write `invert`??? Also,
-`stimes` doesn't help us *too* much here, because repeated squaring of function
-composition is...still a lot of function compositions in the end. That's
-because, while composition is cheap, application is expensive (and `stimes`
-works best when composition is expensive and application is cheap). So, back to
-the drawing board.
+The `KnownNat` instance is a constraint that `modulo` needs in order to know
+what quotient to modulo into.
+
+This implementation *seems* to work, except for one apparent major problem: how
+do we write `invert`??? Also, `stimes` doesn't help us *too* much here, because
+repeated squaring of function composition is...still a lot of function
+compositions in the end. That's because, while composition is cheap, application
+is expensive (and `stimes` works best when composition is expensive and
+application is cheap). So, back to the drawing board.
 
 A Second Implementation Attempt: Lookin' Affine Today
 -----------------------------------------------------
@@ -308,6 +325,8 @@ general. More importantly, we know (after some googling) that they are also
 are, themselves, a group! Maybe we can represent this as our permutation type:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs#L16-L28
+
 data Affine n = Aff
     { aScale :: Finite n
     , aShift :: Finite n
@@ -333,35 +352,42 @@ it's:
 
 ![
 \\begin{aligned}
-(f \\circ g)(x) & = a\' (a x + b) \\\\
-  (f \\circ g)(x) & = a\' x x + a\' b + b
+(f \\circ g)(x) & = a\' (a x + b) + b\'\\\\
+  (f \\circ g)(x) & = a\' x + a\' b + b\'
 \\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%5Ccirc%20g%29%28x%29%20%26%20%3D%20a%27%20%28a%20x%20%2B%20b%29%20%5C%5C%0A%20%20%28f%20%5Ccirc%20g%29%28x%29%20%26%20%3D%20a%27%20x%20x%20%2B%20a%27%20b%20%2B%20b%0A%5Cend%7Baligned%7D%0A "
+](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%5Ccirc%20g%29%28x%29%20%26%20%3D%20a%27%20%28a%20x%20%2B%20b%29%20%2B%20b%27%5C%5C%0A%20%20%28f%20%5Ccirc%20g%29%28x%29%20%26%20%3D%20a%27%20x%20%2B%20a%27%20b%20%2B%20b%27%0A%5Cend%7Baligned%7D%0A "
 \begin{aligned}
-(f \circ g)(x) & = a' (a x + b) \\
-  (f \circ g)(x) & = a' x x + a' b + b
+(f \circ g)(x) & = a' (a x + b) + b'\\
+  (f \circ g)(x) & = a' x + a' b + b'
 \end{aligned}
 ")
 
 So composing `a' x + b'` after `a x + b` is is `a' a x + a' b + b'`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs#L30-L31
+
 instance KnownNat n => Semigroup (Affine n) where
     Aff a' b' <> Aff a b = Aff (a' * a) (a' * b + b')
 ```
 
-Neat! We can now compose `Affine`s! And the `Num` instance for `Finite n` takes
-care of automatically doing modular arithmetic for us.
+Neat! We can now compose *and* run `Affine`s very efficiently! And the `Num`
+instance (which requires `KnownNat n`) for `Finite n` takes care of
+automatically doing modular arithmetic for us.
 
 To define a `Monoid` instance, we need an identity permutation. This would just
-leave x alone, `1 x + 0`:
+leave x alone, so it makes sense that it's
+![f(x) = 1 x + 0](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%201%20x%20%2B%200 "f(x) = 1 x + 0"),
+or `1 x + 0`:
 
 ``` {.haskell}
-instance Monoid (Affine n) where
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs#L33-L34
+
+instance KnownNat n => Monoid (Affine n) where
     mempty = Aff 1 0
 ```
 
-Now let's define the inverse.
+Now let's define the inverse, which is a bit trickier.
 
 ``` {.haskell}
 instance KnownNat n => Group (Affine n) where
@@ -398,7 +424,7 @@ entire space at `a^size` to arrive back at `a`) So:
     => a^(n-2)*a = 1    -- definition of exponentiation
 
 From this we can see that if `a' * a = 1`, then `a'` must be `a^(n-2)` for prime
-`n`.
+`n`.[^1]
 
 The second case is a little simpler: we can just shuffle around
 `a' * b + b' = 0` to get `b' = -(a' * b)`.
@@ -406,11 +432,14 @@ The second case is a little simpler: we can just shuffle around
 This gives us everything we need to write `invert`:
 
 ``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs#L36-L41
+
+-- | Group instance only works if n is prime
 instance KnownNat n => Group (Affine n) where
     invert (Aff a b) = Aff a' b'
       where
         a' = a ^ (natVal (Proxy @n) - 2)
-        b' = negate $ a' * b
+        b' = negate (a' * b)
 ```
 
 And...we're done! This actually is pretty efficient with repeated squaring
@@ -427,13 +456,15 @@ context that we have implemented the appropriate permutation types. We get the
 reversing that list.
 
 ``` {.haskell}
--- | Given a permutation list, find the place where 2019 ends up
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs#L43-L54
+
+-- | Part 1: Given a permutation list, find the place where 2019 ends up
 part1 :: [Affine 10007] -> Finite 10007
 part1 perms = bigPerm @$ 2019
   where
     bigPerm = mconcat perms
 
--- | Given a permutation list, find the index that will end up at 2020
+-- | Part 2: Given a permutation list, find the index that will end up at 2020
 part2 :: [Affine 119315717514047] -> Finite 119315717514047
 part2 perms = invert biiigPerm @$ 2020
   where
@@ -441,13 +472,59 @@ part2 perms = invert biiigPerm @$ 2020
     biiigPerm = stimes 101741582076661 bigPerm
 ```
 
+You can load the finished code for this entire challenge
+[here](https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs).
+I've also included the sample input string for my advent of code account, and
+also parsed it conveniently into a list of properly ordered `Affine n`s for you
+to test it yourself:
+
+    $ ./advent-shuffle.hs
+    ghci> part1 myShuffles
+    finite 6978
+    ghci> part2 myShuffles
+    finite 24460989449140
+
 As expected, Haskell performs these \~47 multiplication steps pretty quickly,
 and part 2 is only about 3 times slower than part 1 (\~40μs vs. \~14μs on my
 machine).
 
-Hopefully this is an illustrative story about taking advantage of how Haskell
-frames abstractions (as typeclasses) to *guide* us to an answer that might not
-have been obvious in the first place!
+The Big Picture
+---------------
+
+Every time I make a post about how Haskell lets you "use" math, there's a lot of
+room for confusion and misunderstanding. A common misconception is that you need
+to know math to use Haskell, or that writing a Haskell program is like solving a
+math equation.
+
+Instead, when we say we "use" math in Haskell, it means that Haskell naturally
+nudges us to phrase our problems in a way that can help illuminate connections
+to the groundwork that has already been laid for us through centuries of
+mathematical discoveries --- and in many cases, allow us to translate those
+insights into making helpful improvements and optimizations in our actual code.
+
+Haskell is "functional programming", but I think that betrays the major insight
+here: we got our main conceptual leap when we thought about shuffling not as "a
+function", but rather *as data*: our shuffle is itself *data* (here, integers),
+and not an "algorithm". Had we latched onto an algorithmic approach from the
+beginning, we might have gotten stuck in the mire of finding a way to "optimize
+an algorithm". But because we initially started thinking about permutations and
+shuffles as *data structures*, we actually end up thinking about how to most
+effectively manipulate the data structures themselves. Instead of manipulating
+the cards, we manipulate the shuffle! We combine and invert the *shuffles*, not
+the cards. And math --- especially abstract algebra --- is all about different
+properties of how objects can combine and universal properties about certain
+operations.
+
+As we head into this wonderful season, stay safe and happy haskellings,
+everyone! :D
+
+Special Thanks
+--------------
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the "Amazing" level on
+[patreon](https://www.patreon.com/justinle/overview), Josh Vera! :)
 
 --------------------------------------------------------------------------------
 
@@ -461,3 +538,7 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: You can also use the [Extended Euclidean
+    Algorithm](https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm) to
+    find the multiplicative inverse here as well if you are a (cool) nerd.

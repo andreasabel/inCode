@@ -125,7 +125,10 @@ Haskell's approach to mathematical abstraction nudges you into the direction of
 an efficient solution --- in a way that other languages would obscure or make
 less obvious.
 
-So, let's dive in!
+So, let's dive in! In the end, hopefully this post can get you excited for this
+wonderful season, and maybe also shed some insight into what it means when we
+say that Haskell can help you leverage math to find good solutions to your real
+problems.
 
 \hypertarget{slam-shuffle}{%
 \section{Slam Shuffle}\label{slam-shuffle}}
@@ -149,21 +152,30 @@ yet, involves the same process with a deck of 119315717514047 cards, and
 repeating the entire shuffling sequence 101741582076661 times. It then asks you
 to find the card that ends up at index 2020.
 
-Reading the problem, the initial thought is that we have what is essentially a
-composition of \href{https://en.wikipedia.org/wiki/Permutation}{permutations} --
-the mathematical word for ``shuffle'', basically.
+In this problem, it seems we have a list of ``shuffles'' that we want to run on
+a deck of cards. However, let's think about this in a more data-driven approach:
+instead of thinking about successive shufflings of cards, let's imagine taking a
+list of shuffles operation and combining them into one big shuffle operation.
 
-One of the most famous properties of permutations is that they are a ``group'',
-which means they can be composed (associatively), have an identity, and can be
-inverted. This means that if you have two permutations, you can ``squish'' them
-to create a new permutation, and work with that \emph{new} permutation the same
-way. I've talked about
-\href{https://blog.jle.im/entry/alchemical-groups.html}{using group theory}
-principles before in this blog to help guide us towards solutions and
-optimizations --- the main principal is that if we express our program in terms
-of group operations, then we can take advantage of the large body of knowledge
-built up over centuries to understand, analyze, and potentially optimize our
-program.
+We are looking for ``take shuffle A and shuffle B, and return a new shuffle that
+represents doing B, then A''. This is ``shuffle composition'', or ``permutation
+composition'' (\href{https://en.wikipedia.org/wiki/Permutation}{permutation}
+being the mathematical word for ``shuffling'' here, basically)
+
+Since we've identified that we want to begin implementing a way of
+composing/combining permutations together, we can do a bit of reading to learn
+that one of the most famous properties of permutation composition is that they
+form a ``group'', which means they can be composed (associatively), have an
+identity, and can be inverted. This means that if you have two permutations, you
+can ``squish'' them to create a new permutation, and work with that \emph{new}
+permutation.
+
+I've talked about \href{https://blog.jle.im/entry/alchemical-groups.html}{using
+group theory} principles before in this blog to help guide us towards solutions
+and optimizations --- the main principal is that if we express our program in
+terms of group operations, then we can take advantage of the large body of
+knowledge built up over centuries to understand, analyze, and potentially
+optimize our program.
 
 The \emph{first} big advantage in this situation is that we can treat our
 transformations \emph{as data}, and not as functions. And that if we have two
@@ -244,9 +256,10 @@ In addition, the standard libraries also give us a useful function
 
 which lets us compose \texttt{x} with itself
 (\texttt{stimes\ 5\ x\ ==\ x\ \textless{}\textgreater{}\ x\ \textless{}\textgreater{}\ x\ \textless{}\textgreater{}\ x\ \textless{}\textgreater{}\ x}),
-but can do it in \emph{log(n)} time using {[}repeated squaring{]}{[}{]}. It's
-extremely efficient in a lot of circumstances (more on that later) --- more so
-than the naive compose-it-n-times implementation.
+but can do it in \emph{log(n)} time using
+\href{https://en.wikipedia.org/wiki/Exponentiation_by_squaring}{repeated
+squaring}. It's extremely efficient in a lot of circumstances (more on that
+later) --- more so than the naive compose-it-n-times implementation.
 
 \hypertarget{our-gameplan}{%
 \section{Our Gameplan}\label{our-gameplan}}
@@ -314,9 +327,9 @@ Part 2, I think, is where the group theory really shines.
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \item
-  We take advantage of \texttt{stimes}, which uses {[}repeated
-  squaring{]}{[}{]}. That means that to compute \texttt{stimes\ 8\ x}, instead
-  of using
+  We take advantage of \texttt{stimes}, which uses
+  \href{https://en.wikipedia.org/wiki/Exponentiation_by_squaring}{repeated
+  squaring}. That means that to compute \texttt{stimes\ 8\ x}, instead of using
 
 \begin{verbatim}
 x <> x <> x <> x <> x <> x <> x <> x
@@ -359,10 +372,10 @@ in  x4 <> x4
 implementation}\label{a-first-guess-at-implementation}}
 
 Now, time to do what we have been putting off and actually write our permutation
-representation -- the definition of \texttt{Perm\ n}. A good first guess might
-be to write our permutation as an actual function --- a function from index to
-index, \texttt{Finite\ n\ -\textgreater{}\ Finite\ n}. Then, we can just use
-function composition as our permutation composition.
+representation -- the definition of \texttt{Perm\ n}. A good \emph{first guess}
+might be to write our permutation as an actual function --- a function from
+index to index, \texttt{Finite\ n\ -\textgreater{}\ Finite\ n}. Then, we can
+just use function composition as our permutation composition.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -386,9 +399,9 @@ function composition as our permutation composition.
 \end{Highlighting}
 \end{Shaded}
 
-Note that \texttt{Finite\ n}'s \texttt{Num} instance is inherently modular
-arithmetic, so things like \texttt{negate} and multiplication will ``do the
-right thing''. We use \texttt{modulo}:
+Note that \texttt{Finite\ n}'s \texttt{Num} instance is modular arithmetic, so
+things like \texttt{negate} and multiplication will ``do the right thing''. We
+use \texttt{modulo}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -402,20 +415,24 @@ wrap it in a cyclic way if it is negative or too high.
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{ghci}\OperatorTok{>}\NormalTok{ modulo }\DecValTok{3}\OtherTok{ ::} \DataTypeTok{Finite} \DecValTok{10}
-\DecValTok{3}
+\NormalTok{finite }\DecValTok{3}
 \NormalTok{ghci}\OperatorTok{>}\NormalTok{ modulo }\DecValTok{15}\OtherTok{ ::} \DataTypeTok{Finite} \DecValTok{10}
-\DecValTok{5}
+\NormalTok{finite }\DecValTok{5}
 \NormalTok{ghci}\OperatorTok{>}\NormalTok{ modulo (}\OperatorTok{{-}}\DecValTok{1}\NormalTok{)}\OtherTok{ ::} \DataTypeTok{Finite} \DecValTok{10}
-\DecValTok{9}
+\NormalTok{finite }\DecValTok{9}
 \end{Highlighting}
 \end{Shaded}
 
-This implementation \emph{seems} to work, but\ldots how do we write
-\texttt{invert}??? Also, \texttt{stimes} doesn't help us \emph{too} much here,
-because repeated squaring of function composition is\ldots still a lot of
-function compositions in the end. That's because, while composition is cheap,
-application is expensive (and \texttt{stimes} works best when composition is
-expensive and application is cheap). So, back to the drawing board.
+The \texttt{KnownNat} instance is a constraint that \texttt{modulo} needs in
+order to know what quotient to modulo into.
+
+This implementation \emph{seems} to work, except for one apparent major problem:
+how do we write \texttt{invert}??? Also, \texttt{stimes} doesn't help us
+\emph{too} much here, because repeated squaring of function composition
+is\ldots still a lot of function compositions in the end. That's because, while
+composition is cheap, application is expensive (and \texttt{stimes} works best
+when composition is expensive and application is cheap). So, back to the drawing
+board.
 
 \hypertarget{a-second-implementation-attempt-lookin-affine-today}{%
 \section{A Second Implementation Attempt: Lookin' Affine
@@ -456,6 +473,8 @@ permutation type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/advent{-}shuffle.hs\#L16{-}L28}
+
 \KeywordTok{data} \DataTypeTok{Affine}\NormalTok{ n }\OtherTok{=} \DataTypeTok{Aff}
 \NormalTok{    \{}\OtherTok{ aScale ::} \DataTypeTok{Finite}\NormalTok{ n}
 \NormalTok{    ,}\OtherTok{ aShift ::} \DataTypeTok{Finite}\NormalTok{ n}
@@ -481,14 +500,14 @@ after
 it's:
 
 {[} \textbackslash begin\{aligned\} (f \textbackslash circ g)(x) \& = a' (a x +
-b) \textbackslash\textbackslash{} (f \textbackslash circ g)(x) \& = a' x x + a'
-b + b
-\textbackslash end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0A\%28f\%20\%5Ccirc\%20g\%29\%28x\%29\%20\%26\%20\%3D\%20a\%27\%20\%28a\%20x\%20\%2B\%20b\%29\%20\%5C\%5C\%0A\%20\%20\%28f\%20\%5Ccirc\%20g\%29\%28x\%29\%20\%26\%20\%3D\%20a\%27\%20x\%20x\%20\%2B\%20a\%27\%20b\%20\%2B\%20b\%0A\%5Cend\%7Baligned\%7D\%0A
+b) + b'\textbackslash\textbackslash{} (f \textbackslash circ g)(x) \& = a' x +
+a' b + b'
+\textbackslash end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0A\%28f\%20\%5Ccirc\%20g\%29\%28x\%29\%20\%26\%20\%3D\%20a\%27\%20\%28a\%20x\%20\%2B\%20b\%29\%20\%2B\%20b\%27\%5C\%5C\%0A\%20\%20\%28f\%20\%5Ccirc\%20g\%29\%28x\%29\%20\%26\%20\%3D\%20a\%27\%20x\%20\%2B\%20a\%27\%20b\%20\%2B\%20b\%27\%0A\%5Cend\%7Baligned\%7D\%0A
 "
 
 \begin{aligned}
-(f \circ g)(x) & = a' (a x + b) \\
-  (f \circ g)(x) & = a' x x + a' b + b
+(f \circ g)(x) & = a' (a x + b) + b'\\
+  (f \circ g)(x) & = a' x + a' b + b'
 \end{aligned}
 
 ")
@@ -499,25 +518,32 @@ So composing \texttt{a\textquotesingle{}\ x\ +\ b\textquotesingle{}} after
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/advent{-}shuffle.hs\#L30{-}L31}
+
 \KeywordTok{instance} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Semigroup}\NormalTok{ (}\DataTypeTok{Affine}\NormalTok{ n) }\KeywordTok{where}
     \DataTypeTok{Aff}\NormalTok{ a\textquotesingle{} b\textquotesingle{} }\OperatorTok{<>} \DataTypeTok{Aff}\NormalTok{ a b }\OtherTok{=} \DataTypeTok{Aff}\NormalTok{ (a\textquotesingle{} }\OperatorTok{*}\NormalTok{ a) (a\textquotesingle{} }\OperatorTok{*}\NormalTok{ b }\OperatorTok{+}\NormalTok{ b\textquotesingle{})}
 \end{Highlighting}
 \end{Shaded}
 
-Neat! We can now compose \texttt{Affine}s! And the \texttt{Num} instance for
+Neat! We can now compose \emph{and} run \texttt{Affine}s very efficiently! And
+the \texttt{Num} instance (which requires \texttt{KnownNat\ n}) for
 \texttt{Finite\ n} takes care of automatically doing modular arithmetic for us.
 
 To define a \texttt{Monoid} instance, we need an identity permutation. This
-would just leave x alone, \texttt{1\ x\ +\ 0}:
+would just leave x alone, so it makes sense that it's
+\includegraphics{https://latex.codecogs.com/png.latex?f\%28x\%29\%20\%3D\%201\%20x\%20\%2B\%200},
+or \texttt{1\ x\ +\ 0}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{instance} \DataTypeTok{Monoid}\NormalTok{ (}\DataTypeTok{Affine}\NormalTok{ n) }\KeywordTok{where}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/advent{-}shuffle.hs\#L33{-}L34}
+
+\KeywordTok{instance} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Monoid}\NormalTok{ (}\DataTypeTok{Affine}\NormalTok{ n) }\KeywordTok{where}
     \FunctionTok{mempty} \OtherTok{=} \DataTypeTok{Aff} \DecValTok{1} \DecValTok{0}
 \end{Highlighting}
 \end{Shaded}
 
-Now let's define the inverse.
+Now let's define the inverse, which is a bit trickier.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -566,7 +592,11 @@ entire space at \texttt{a\^{}size} to arrive back at \texttt{a}) So:
 \end{verbatim}
 
 From this we can see that if \texttt{a\textquotesingle{}\ *\ a\ =\ 1}, then
-\texttt{a\textquotesingle{}} must be \texttt{a\^{}(n-2)} for prime \texttt{n}.
+\texttt{a\textquotesingle{}} must be \texttt{a\^{}(n-2)} for prime
+\texttt{n}.\footnote{You can also use the
+  \href{https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm}{Extended
+  Euclidean Algorithm} to find the multiplicative inverse here as well if you
+  are a (cool) nerd.}
 
 The second case is a little simpler: we can just shuffle around
 \texttt{a\textquotesingle{}\ *\ b\ +\ b\textquotesingle{}\ =\ 0} to get
@@ -576,11 +606,14 @@ This gives us everything we need to write \texttt{invert}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/advent{-}shuffle.hs\#L36{-}L41}
+
+\CommentTok{{-}{-} | Group instance only works if n is prime}
 \KeywordTok{instance} \DataTypeTok{KnownNat}\NormalTok{ n }\OtherTok{=>} \DataTypeTok{Group}\NormalTok{ (}\DataTypeTok{Affine}\NormalTok{ n) }\KeywordTok{where}
 \NormalTok{    invert (}\DataTypeTok{Aff}\NormalTok{ a b) }\OtherTok{=} \DataTypeTok{Aff}\NormalTok{ a\textquotesingle{} b\textquotesingle{}}
       \KeywordTok{where}
 \NormalTok{        a\textquotesingle{} }\OtherTok{=}\NormalTok{ a }\OperatorTok{\^{}}\NormalTok{ (natVal (}\DataTypeTok{Proxy} \OperatorTok{@}\NormalTok{n) }\OperatorTok{{-}} \DecValTok{2}\NormalTok{)}
-\NormalTok{        b\textquotesingle{} }\OtherTok{=} \FunctionTok{negate} \OperatorTok{$}\NormalTok{ a\textquotesingle{} }\OperatorTok{*}\NormalTok{ b}
+\NormalTok{        b\textquotesingle{} }\OtherTok{=} \FunctionTok{negate}\NormalTok{ (a\textquotesingle{} }\OperatorTok{*}\NormalTok{ b)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -599,13 +632,15 @@ our puzzle input and reversing that list.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} | Given a permutation list, find the place where 2019 ends up}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/advent{-}shuffle.hs\#L43{-}L54}
+
+\CommentTok{{-}{-} | Part 1: Given a permutation list, find the place where 2019 ends up}
 \OtherTok{part1 ::}\NormalTok{ [}\DataTypeTok{Affine} \DecValTok{10007}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{Finite} \DecValTok{10007}
 \NormalTok{part1 perms }\OtherTok{=}\NormalTok{ bigPerm }\OperatorTok{@$} \DecValTok{2019}
   \KeywordTok{where}
 \NormalTok{    bigPerm }\OtherTok{=} \FunctionTok{mconcat}\NormalTok{ perms}
 
-\CommentTok{{-}{-} | Given a permutation list, find the index that will end up at 2020}
+\CommentTok{{-}{-} | Part 2: Given a permutation list, find the index that will end up at 2020}
 \OtherTok{part2 ::}\NormalTok{ [}\DataTypeTok{Affine} \DecValTok{119315717514047}\NormalTok{] }\OtherTok{{-}>} \DataTypeTok{Finite} \DecValTok{119315717514047}
 \NormalTok{part2 perms }\OtherTok{=}\NormalTok{ invert biiigPerm }\OperatorTok{@$} \DecValTok{2020}
   \KeywordTok{where}
@@ -614,13 +649,61 @@ our puzzle input and reversing that list.
 \end{Highlighting}
 \end{Shaded}
 
+You can load the finished code for this entire challenge
+\href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs}{here}.
+I've also included the sample input string for my advent of code account, and
+also parsed it conveniently into a list of properly ordered \texttt{Affine\ n}s
+for you to test it yourself:
+
+\begin{verbatim}
+$ ./advent-shuffle.hs
+ghci> part1 myShuffles
+finite 6978
+ghci> part2 myShuffles
+finite 24460989449140
+\end{verbatim}
+
 As expected, Haskell performs these \textasciitilde47 multiplication steps
 pretty quickly, and part 2 is only about 3 times slower than part 1
 (\textasciitilde40μs vs.~\textasciitilde14μs on my machine).
 
-Hopefully this is an illustrative story about taking advantage of how Haskell
-frames abstractions (as typeclasses) to \emph{guide} us to an answer that might
-not have been obvious in the first place!
+\hypertarget{the-big-picture}{%
+\section{The Big Picture}\label{the-big-picture}}
+
+Every time I make a post about how Haskell lets you ``use'' math, there's a lot
+of room for confusion and misunderstanding. A common misconception is that you
+need to know math to use Haskell, or that writing a Haskell program is like
+solving a math equation.
+
+Instead, when we say we ``use'' math in Haskell, it means that Haskell naturally
+nudges us to phrase our problems in a way that can help illuminate connections
+to the groundwork that has already been laid for us through centuries of
+mathematical discoveries --- and in many cases, allow us to translate those
+insights into making helpful improvements and optimizations in our actual code.
+
+Haskell is ``functional programming'', but I think that betrays the major
+insight here: we got our main conceptual leap when we thought about shuffling
+not as ``a function'', but rather \emph{as data}: our shuffle is itself
+\emph{data} (here, integers), and not an ``algorithm''. Had we latched onto an
+algorithmic approach from the beginning, we might have gotten stuck in the mire
+of finding a way to ``optimize an algorithm''. But because we initially started
+thinking about permutations and shuffles as \emph{data structures}, we actually
+end up thinking about how to most effectively manipulate the data structures
+themselves. Instead of manipulating the cards, we manipulate the shuffle! We
+combine and invert the \emph{shuffles}, not the cards. And math --- especially
+abstract algebra --- is all about different properties of how objects can
+combine and universal properties about certain operations.
+
+As we head into this wonderful season, stay safe and happy haskellings,
+everyone! :D
+
+\hypertarget{special-thanks}{%
+\section{Special Thanks}\label{special-thanks}}
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the ``Amazing'' level on
+\href{https://www.patreon.com/justinle/overview}{patreon}, Josh Vera! :)
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
