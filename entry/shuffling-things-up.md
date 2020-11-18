@@ -273,7 +273,8 @@ modulo :: KnownNat n => Integer -> Finite n
 ```
 
 which "reads" an `Integer` into a `Finite n`, making sure to wrap it in a cyclic
-way if it is negative or too high.
+way if it is negative or too high. `maxBound` also gives us the highest index
+(the highest `Finite n`).
 
 ``` {.haskell}
 ghci> modulo 3 :: Finite 10
