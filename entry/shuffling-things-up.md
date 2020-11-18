@@ -290,9 +290,9 @@ what quotient to modulo into.
 This implementation *seems* to work, except for one apparent major problem: how
 do we write `invert`??? Also, `stimes` doesn't help us *too* much here, because
 repeated squaring of function composition is...still a lot of function
-compositions in the end. That's because, while composition is cheap, application
-is expensive (and `stimes` works best when composition is expensive and
-application is cheap). So, back to the drawing board.
+compositions in the end. That's because, while composition with `<>` is cheap,
+application with `@$` is expensive (and `stimes` works best when composition is
+expensive and application is cheap). So, back to the drawing board.
 
 A Second Implementation Attempt: Lookin' Affine Today
 -----------------------------------------------------
