@@ -372,14 +372,14 @@ instance KnownNat n => Semigroup (Affine n) where
     Aff a' b' <> Aff a b = Aff (a' * a) (a' * b + b')
 ```
 
-Neat! We can now compose *and* run `Affine`s very efficiently! And the `Num`
-instance (which requires `KnownNat n`) for `Finite n` takes care of
-automatically doing modular arithmetic for us.
+Neat! We can now compose *and* run `Affine`s efficiently, which makes `stimes`
+useful! And the `Num` instance (which requires `KnownNat n`) for `Finite n`
+takes care of automatically doing modular arithmetic for us.
 
 To define a `Monoid` instance, we need an identity permutation. This would just
 leave x alone, so it makes sense that it's
 ![f(x) = 1 x + 0](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%201%20x%20%2B%200 "f(x) = 1 x + 0"),
-or `1 x + 0`:
+`1 x + 0`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs#L33-L34
@@ -402,14 +402,14 @@ instance KnownNat n => Group (Affine n) where
 we want to find `a'` and `b'` such that:
 
 ``` {.haskell}
-       Aff a' b' <> Aff a b = Aff 1 0
+      Aff a' b' <> Aff a b = Aff 1 0
 ```
 
 From our definition of `<>` earlier, that means we have to find `a'` and `b'`
 where:
 
 ``` {.haskell}
- Aff (a' * a) (a' * b + b') = Aff 1 0
+Aff (a' * a) (a' * b + b') = Aff 1 0
 ```
 
 So we need `a' * a = 1`, and `a' * b + b' = 0`.
