@@ -440,7 +440,7 @@ entire space at `a^size` to arrive back at `a`) So:
     => a^(n-2)*a = 1    -- definition of exponentiation
 
 From this we can see that if `a' * a = 1`, then `a'` must be `a^(n-2)` for prime
-`n`.[^1]
+`n`.[^1][^2]
 
 The second case is a little simpler: we can just shuffle around
 `a' * b + b' = 0` to get `b' = -(a' * b)`.
@@ -510,7 +510,7 @@ The Big Picture
 Every time I make a post about how Haskell lets you "use" math, there's a lot of
 room for confusion and misunderstanding. A common misconception is that you need
 to know math to use Haskell, or that writing a Haskell program is like solving a
-math equation.[^2]
+math equation.[^3]
 
 Instead, when we say we "use" math in Haskell, it means that Haskell naturally
 nudges us to phrase our problems in a way that can help illuminate connections
@@ -557,6 +557,15 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
 [^1]: You can also use the [Extended Euclidean
     Algorithm](https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm) to
-    find the multiplicative inverse here as well if you are a (cool) nerd.
+    find the multiplicative inverse here as well if you are a (cool) nerd. But I
+    wanted to show a way to do this without requiring knowledge of any ring
+    theory.
 
-[^2]: Admittedly, we did do that a few times here. But that's not *all* we do :)
+[^2]: As [pointed out by rogercaptain on
+    reddit](https://www.reddit.com/r/haskell/comments/jwl93i/shuffling_things_up_solving_advent_of_code_with/gct4ihy/?context=3),
+    this also "works" in the case where `n` is not prime too: only *some* (and
+    not all) `Affine n`s represent permutations when `n` is not prime, and for
+    those specific `Affine n`s (namely, where `a` is coprime to `n`), this
+    technique does work.
+
+[^3]: Admittedly, we did do that a few times here. But that's not *all* we do :)
