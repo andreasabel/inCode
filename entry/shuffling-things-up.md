@@ -299,9 +299,9 @@ The `KnownNat` instance is a constraint that `modulo` needs in order to know
 what quotient to modulo into.
 
 This implementation *seems* to work, except for one apparent major problem: how
-do we write `invert`??? Also, `stimes` doesn't help us *too* much here, because
+do we write `invert`? Also, `stimes` doesn't help us *too* much here, because
 repeated squaring of function composition is...still a lot of function
-compositions in the end. That's because, while composition with `<>` is cheap,
+compositions in the end.[^1] So, while composition with `<>` is cheap,
 application with `runPerm` is expensive (and `stimes` works best when
 composition is expensive and application is cheap). So, back to the drawing
 board.
@@ -440,7 +440,7 @@ entire space at `a^size` to arrive back at `a`) So:
     => a^(n-2)*a = 1    -- definition of exponentiation
 
 From this we can see that if `a' * a = 1`, then `a'` must be `a^(n-2)` for prime
-`n`.[^1][^2]
+`n`.[^2][^3]
 
 The second case is a little simpler: we can just shuffle around
 `a' * b + b' = 0` to get `b' = -(a' * b)`.
@@ -510,7 +510,7 @@ The Big Picture
 Every time I make a post about how Haskell lets you "use" math, there's a lot of
 room for confusion and misunderstanding. A common misconception is that you need
 to know math to use Haskell, or that writing a Haskell program is like solving a
-math equation.[^3]
+math equation.[^4]
 
 Instead, when we say we "use" math in Haskell, it means that Haskell naturally
 nudges us to phrase our problems in a way that can help illuminate connections
@@ -555,17 +555,21 @@ If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
-[^1]: You can also use the [Extended Euclidean
+[^1]: We only allocate a few function pointers, so it's very efficient in space
+    as well, but to actually "run" that final function, we need to still
+    traverse all of those nested pointers the full number of times.
+
+[^2]: You can also use the [Extended Euclidean
     Algorithm](https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm) to
     find the multiplicative inverse here as well if you are a (cool) nerd. But I
     wanted to show a way to do this without requiring knowledge of any ring
     theory.
 
-[^2]: As [pointed out by rogercaptain on
+[^3]: As [pointed out by rogercaptain on
     reddit](https://www.reddit.com/r/haskell/comments/jwl93i/shuffling_things_up_solving_advent_of_code_with/gct4ihy/?context=3),
     this also "works" in the case where `n` is not prime too: only *some* (and
     not all) `Affine n`s represent permutations when `n` is not prime, and for
     those specific `Affine n`s (namely, where `a` is coprime to `n`), this
     technique does work.
 
-[^3]: Admittedly, we did do that a few times here. But that's not *all* we do :)
+[^4]: Admittedly, we did do that a few times here. But that's not *all* we do :)
