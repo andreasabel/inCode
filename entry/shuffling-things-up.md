@@ -555,9 +555,11 @@ If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
-[^1]: We only allocate a few function pointers, so it's very efficient in space
-    as well, but to actually "run" that final function, we need to still
-    traverse all of those nested pointers the full number of times.
+[^1]: We only allocate a few function pointers (once for each `<>`, where both
+    sides themselves point to the same function pointer\[\^pointer\]), so it's
+    very efficient in space as well, but to actually "run" that final function,
+    we need to still traverse all of those nested pointers the full number of
+    times.
 
 [^2]: You can also use the [Extended Euclidean
     Algorithm](https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm) to
