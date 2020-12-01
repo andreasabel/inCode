@@ -150,7 +150,7 @@ Well, can write simple sources like "yield the contents from a file
 line-by-line":
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L60-L67
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L63-L70
 
 sourceHandle :: Handle -> Pipe i String IO ()
 sourceHandle handle = do
@@ -169,7 +169,7 @@ We can even write a simple sink, like "await and print the results to stdout as
 they come":
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L69-L76
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L72-L79
 
 sinkStdout :: Pipe String o IO ()
 sinkStdout = do
@@ -185,7 +185,7 @@ And maybe we can write a pipe that takes input strings and converts them to all
 capital letters and re-yields them:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L78-L85
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L81-L88
 
 toUpperPipe :: Monad m => Pipe String String m ()
 toUpperPipe = do
@@ -200,7 +200,7 @@ toUpperPipe = do
 And we can maybe write a pipe that stops as soon as it reads the line `STOP`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L87-L96
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L90-L99
 
 untilSTOP :: Monad m => Pipe String String m ()
 untilSTOP = do
@@ -226,7 +226,7 @@ to read from a file and output its contents to stdout, until it sees a STOP
 line:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L98-L103
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L101-L106
 
 sampleProgram :: Handle -> Pipe i o IO ()
 sampleProgram handle =
@@ -340,7 +340,87 @@ await = liftF $ AwaitF id
 (these things you can usually just fill in using type tetris, filling in values
 with typed holes into they typecheck).
 
-And now, we
+Now we can fully write all of our individual pipes we planned: they work as-is!
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L63-L99
+
+sourceHandle :: Handle -> Pipe i String IO ()
+sourceHandle handle = do
+    res <- lift $ tryJust (guard . isEOFError) (hGetLine handle)
+    case res of
+      Left  _   -> return ()
+      Right out -> do
+        yield out 
+        sourceHandle handle
+
+sinkStdout :: Pipe String o IO ()
+sinkStdout = do
+    inp <- await
+    case inp of
+      Nothing -> pure ()
+      Just x  -> do
+        lift $ putStrLn x
+        sinkStdout
+
+toUpperPipe :: Monad m => Pipe String String m ()
+toUpperPipe = do
+    inp <- await
+    case inp of
+      Nothing -> pure ()
+      Just x  -> do
+        yield (map toUpper x)
+        toUpperPipe
+
+untilSTOP :: Monad m => Pipe String String m ()
+untilSTOP = do
+    inp <- await
+    case inp of
+      Nothing -> pure ()
+      Just x
+        | x == "STOP" -> pure ()
+        | otherwise   -> do
+            yield x
+            untilSTOP
+```
+
+That's because using `FreeT`, we imbue the structure required to do monadic
+chaining (do notation) and MonadTrans (`lift`) for free!
+
+To "run" our pipes, we can use `FreeT`'s "interpreter" function. This follows
+the same pattern as for many free structures: specify how to handle each
+individual base functor constructor, and it then gives you a handler to handle
+the entire thing.
+
+``` {.haskell}
+iterT
+    :: (PipeF i o (m a) -> m a)  -- ^ given a way to handle each base functor constructor ...
+    -> Pipe i o m a -> m a       -- ^ here's a way to handle the whole thing
+```
+
+So let's write our base functor handler. Remember that we established earlier we
+can only "run" a `Pipe () Void m a`: that is, pipes where `await` can always be
+fed with no information (`()`) and no `yield` is ever called (because you cannot
+yield with `Void`, a type with no inhabitants). We can directly translate this
+to how we handle each constructor:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L55-L58
+
+handlePipeF :: PipeF () Void (m a) -> m a
+handlePipeF = \case
+    YieldF o _ -> absurd o
+    AwaitF f   -> f (Just ())
+```
+
+And now we get our full `runPipe`:
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L60-L61
+
+runPipe :: Monad m => Pipe () Void m a -> m a
+runPipe = iterT handlePipeF
+```
 
 --------------------------------------------------------------------------------
 
