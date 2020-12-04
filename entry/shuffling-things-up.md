@@ -361,7 +361,7 @@ work with that data instead.
 So far so good! Now to think about how to define composition.
 
 If we want to do
-![f(x) = a\' x + b](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%20a%27%20x%20%2B%20b "f(x) = a' x + b")
+![f(x) = a\' x + b\'](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%20a%27%20x%20%2B%20b%27 "f(x) = a' x + b'")
 after
 ![g(x) = a x + b](https://latex.codecogs.com/png.latex?g%28x%29%20%3D%20a%20x%20%2B%20b "g(x) = a x + b"),
 it's:
