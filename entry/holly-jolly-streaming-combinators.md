@@ -94,7 +94,7 @@ parameters, we can already get a nice classification for interesting subtypes:
 3.  If `i` is `()` and `o` is `Void` (or they are both universally quantified),
     then the pipe doesn't expect any sort of information upstream, and also
     won't ever yield anything downstream... a `Pipe () Void m a` is just an
-    `m a`!
+    `m a`! In the biz, we often call this an "effect".
 
 4.  If `a` is `Void` (or universally quantified) --- a `Pipe i o m Void` --- it
     means that the pipe will never terminate, since `Void` has no inhabitants
@@ -228,8 +228,8 @@ line:
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L104-L109
 
-sampleProgram :: Handle -> Pipe i o IO ()
-sampleProgram handle =
+samplePipe :: Handle -> Pipe i o IO ()
+samplePipe handle =
        sourceHandle handle
     .| untilSTOP
     .| toUpperPipe
@@ -478,12 +478,12 @@ Remember our plan: for `f .| g`, *start unrolling `g`* until it needs anything,
 and then ask `f` when it does.
 
 ``` {.haskell}
-comp
+(.|)
     :: Monad m
     => Pipe a b m x         -- ^ pipe from a -> b
     -> Pipe b c m y         -- ^ pipe from b -> c
     -> Pipe a c m y         -- ^ pipe from a -> c
-comp pf pg = do
+pf .| pg = do
     gRes <- lift $ runFreeT pg          -- 1
     case gRes of
       Pure x            -> pure x       -- 2
@@ -522,6 +522,41 @@ Here are some numbered notes and comments:
     that awaits it and feeds it to `f` when it gets it, give it to `f`, and then
     compose `f i :: Pipe a b m x` with `pg`'s result (wrapping up `gRes` back
     into a `FreeT`/`Pipe` so the types match up).
+
+Admittedly (!) this is the "ugly" part of this derivation: sometimes we just
+can't get everything for free. But getting the Monad, Applicative, Functor,
+MonadTrans, etc. instances is probably nice enough to justify this inconvenience
+:) And who knows, there might be a free structure that I don't know about that
+gives us all of these *plus* piping for free.
+
+### Putting it all together
+
+Let's see if it runs!
+
+``` {.haskell}
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L104-L109
+
+samplePipe :: Handle -> Pipe i o IO ()
+samplePipe handle =
+       sourceHandle handle
+    .| untilSTOP
+    .| toUpperPipe
+    .| sinkStdout
+```
+
+    $ cat testpipefile.txt
+    hello
+    world
+    STOP
+    okay
+    goodbye
+
+``` {.haskell}
+ghci> withFile "testpipefile.txt" ReadMode $ \handle ->
+        runPipe (samplePipe handle)
+-- HELLO
+-- WORLD
+```
 
 --------------------------------------------------------------------------------
 

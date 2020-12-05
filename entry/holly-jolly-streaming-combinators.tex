@@ -207,7 +207,8 @@ parameters, we can already get a nice classification for interesting subtypes:
   If \texttt{i} is \texttt{()} and \texttt{o} is \texttt{Void} (or they are both
   universally quantified), then the pipe doesn't expect any sort of information
   upstream, and also won't ever yield anything downstream\ldots{} a
-  \texttt{Pipe\ ()\ Void\ m\ a} is just an \texttt{m\ a}!
+  \texttt{Pipe\ ()\ Void\ m\ a} is just an \texttt{m\ a}! In the biz, we often
+  call this an ``effect''.
 \item
   If \texttt{a} is \texttt{Void} (or universally quantified) --- a
   \texttt{Pipe\ i\ o\ m\ Void} --- it means that the pipe will never terminate,
@@ -359,8 +360,8 @@ line:
 \begin{Highlighting}[]
 \CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L104{-}L109}
 
-\OtherTok{sampleProgram ::} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o }\DataTypeTok{IO}\NormalTok{ ()}
-\NormalTok{sampleProgram handle }\OtherTok{=}
+\OtherTok{samplePipe ::} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o }\DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{samplePipe handle }\OtherTok{=}
 \NormalTok{       sourceHandle handle}
     \OperatorTok{.|}\NormalTok{ untilSTOP}
     \OperatorTok{.|}\NormalTok{ toUpperPipe}
@@ -654,12 +655,12 @@ typechecker and typed holes)! Remember our plan: for \texttt{f\ .\textbar{}\ g},
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{comp}
+\NormalTok{(}\OperatorTok{.|}\NormalTok{)}
 \OtherTok{    ::} \DataTypeTok{Monad}\NormalTok{ m}
     \OtherTok{=>} \DataTypeTok{Pipe}\NormalTok{ a b m x         }\CommentTok{{-}{-} \^{} pipe from a {-}> b}
     \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ b c m y         }\CommentTok{{-}{-} \^{} pipe from b {-}> c}
     \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ a c m y         }\CommentTok{{-}{-} \^{} pipe from a {-}> c}
-\NormalTok{comp pf pg }\OtherTok{=} \KeywordTok{do}
+\NormalTok{pf }\OperatorTok{.|}\NormalTok{ pg }\OtherTok{=} \KeywordTok{do}
 \NormalTok{    gRes }\OtherTok{<{-}}\NormalTok{ lift }\OperatorTok{$}\NormalTok{ runFreeT pg          }\CommentTok{{-}{-} 1}
     \KeywordTok{case}\NormalTok{ gRes }\KeywordTok{of}
       \DataTypeTok{Pure}\NormalTok{ x            }\OtherTok{{-}>} \FunctionTok{pure}\NormalTok{ x       }\CommentTok{{-}{-} 2}
@@ -715,6 +716,48 @@ Here are some numbered notes and comments:
   \texttt{pg}'s result (wrapping up \texttt{gRes} back into a
   \texttt{FreeT}/\texttt{Pipe} so the types match up).
 \end{enumerate}
+
+Admittedly (!) this is the ``ugly'' part of this derivation: sometimes we just
+can't get everything for free. But getting the Monad, Applicative, Functor,
+MonadTrans, etc. instances is probably nice enough to justify this inconvenience
+:) And who knows, there might be a free structure that I don't know about that
+gives us all of these \emph{plus} piping for free.
+
+\hypertarget{putting-it-all-together}{%
+\subsection{Putting it all together}\label{putting-it-all-together}}
+
+Let's see if it runs!
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L104{-}L109}
+
+\OtherTok{samplePipe ::} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o }\DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{samplePipe handle }\OtherTok{=}
+\NormalTok{       sourceHandle handle}
+    \OperatorTok{.|}\NormalTok{ untilSTOP}
+    \OperatorTok{.|}\NormalTok{ toUpperPipe}
+    \OperatorTok{.|}\NormalTok{ sinkStdout}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+$ cat testpipefile.txt
+hello
+world
+STOP
+okay
+goodbye
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ghci}\OperatorTok{>}\NormalTok{ withFile }\StringTok{"testpipefile.txt"} \DataTypeTok{ReadMode} \OperatorTok{$}\NormalTok{ \textbackslash{}handle }\OtherTok{{-}>}
+\NormalTok{        runPipe (samplePipe handle)}
+\CommentTok{{-}{-} HELLO}
+\CommentTok{{-}{-} WORLD}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
