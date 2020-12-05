@@ -63,7 +63,7 @@
         , tree = "https://github.com/mstksg/inCode/tree"
         }
     , blogPrefs =
-        { feedEntries = 10
+        { feedEntries = 5
         , homeEntries = 8
         , ledeMax = 6
         , sidebarEntries = 5
