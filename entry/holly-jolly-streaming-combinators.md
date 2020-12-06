@@ -10,43 +10,51 @@ Hi! Welcome, if you're joining us from the great [Advent of Haskell
 sit back by the fireplace. I'm honored to be able to be a part of the event this
 year; it's a great initiative and harkens back to the age-old Haskell tradition
 of bite-sized Functional Programming "advent calendars". I remember when I was
-first learning Haskell, [24 Days of
-Hackage](https://ocharles.org.uk/pages/2012-12-01-24-days-of-hackage.html) was
+first learning Haskell, [Ollie Charles' 24 Days of Hackage
+series](https://ocharles.org.uk/pages/2012-12-01-24-days-of-hackage.html) was
 one of my favorite series that helped me really get into the exciting world of
 Haskell and the all the doors that functional programming can open.
 
-For my entry, in the spirit of the holidays, I decided to treat it as a chance
-to go reminisce about Haskell times of olde. Right now in Haskell we seem to be
-in an era where the great debate in the future of the language is in [the best
-way to handle composable
-effects](https://www.stephendiehl.com/posts/decade.html#algebraic-effect-systems)
-in Haskell, but if we roll back the calendar to the beginning of the decade,
-this big existential war was in the best way to handle constant-space effectful
-streaming.
+In this post I hope to showcase a typical application of a technique I have
+apparently become somewhat known for and have written a lot about in the past: a
+"functor combinator style" where you identify the interface you want, associate
+it with a common Haskell typeclass, pick your primitives, and automatically get
+the ability to imbue your primitives with the structure you need. I've talked
+about this previously with:
 
-The dust on that debate has more or less settled (the apparent answer: it
-doesn't *really* matter, just use whatever is more integrated with what you are
-already using and has a more robust relevant ecosystem built around it), but
-recently I had an occasion to explore the space myself. I needed a specific sort
-of streaming behavior that I couldn't express cleanly exactly in any of the
-major options and I thought to look into what it would take to roll your own
-using the "modern" tools of 2020. In the end it was a fun journey, because it
-helped me understand things a lot better in a way I probably could not have
-reached on my own when I was just starting out in Haskell when this topic was
-"hot".
+1.  [Applicative regular
+    expressions](https://blog.jle.im/entry/free-alternative-regexp.html)
+2.  [The functor
+    combinatorpedia](https://blog.jle.im/entry/functor-combinatorpedia.html)
+3.  [Bidirectional
+    serializers](https://blog.jle.im/entries/series/+enhancing-functor-structures.html)
+4.  [Composable
+    interpreters](https://blog.jle.im/entry/interpreters-a-la-carte-duet.html)
 
-So in this post we'll be attempting to roll our own monadic streaming effects
-combinators in a way that is made surprisingly (at least, to me) clean if we
-approach it from a composable effects sort of style --- hopefully demonstrating
-how natural a lot of previously complex topics become if we just imagine them in
-the context of composable effects!
+and I wanted to share a recent application I have been able to use apply it with
+where just *thinking* about the primitives gave me almost all the functionality
+I needed for a type: composable streaming combinators. This specific application
+is also very applicable to integrate into any [composable effects
+system](https://www.stephendiehl.com/posts/decade.html#algebraic-effect-systems),
+since it's essentially a monadic interface.
+
+In a way, this post could also be seen as capturing the spirit of the holidays
+by reminiscing about the days of yore --- looking back at one of the more
+exciting times in modern Haskell's development, where competing composable
+streaming libraries were at the forefront of practical innovation. The dust has
+settled on that a bit, but it every time I think about composable streaming
+combinators, I do get a bit nostalgic :)
+
+This post is written for an intermediate Haskell audience, and will assume you
+have a familiarity with monads and monadic interfaces, and also a little bit of
+experience with monad transformers.
 
 An effectful picture
 --------------------
 
-The "goal" is to make a system of composable types that is "pull-based", so we
-can process data as it is read in from IO only as we need it, and never do more
-work than we need to do up-front or leak memory when we stop using it.
+The goal here is to make a system of composable pipes that are "pull-based", so
+we can process data as it is read in from IO only as we need it, and never do
+more work than we need to do up-front or leak memory when we stop using it.
 
 So, the way I usually approach things like these is: "dress for the interface
 you want, not the one you have." It involves:
@@ -56,11 +64,7 @@ you want, not the one you have." It involves:
 3.  Use some sort of free structure or effects system to enhance that primitive
     with the interface you are looking for.
 
-For step 3, I've explored this concept in the past as [functor combinator
-style](https://blog.jle.im/entry/functor-combinatorpedia.html), but there are
-multiple ways to do it!
-
-So, let's make our type!
+So, let's imagine our type!
 
 ``` {.haskell}
 type Pipe i o m a = ...
@@ -68,15 +72,15 @@ type Pipe i o m a = ...
 
 where a `Pipe i o m a` represents a pipe component where:
 
--   `i`: the input of the pipe that it expects upstream
--   `o`: the output of the pipe that it will yield downstream
+-   `i`: the type of the input the pipe expects from upstream
+-   `o`: the type of the output the pipe will be yielding upstream
 -   `m`: the monad that the underlying actions live in
 -   `a`: the overall result of the pipe once it has terminated.
 
 One nice thing about this setup is that by picking different values for the type
 parameters, we can already get a nice classification for interesting subtypes:
 
-1.  If `i` is `()` (or universally quantified) --- a `Pipe () o m a` --- it
+1.  If `i` is `()` (or universally quantified[^1]) --- a `Pipe () o m a` --- it
     means that the pipe doesn't ever expect any sort of information upstream,
     and so can be considered a "source" that keeps on churning out values.
 
@@ -113,7 +117,7 @@ yield :: o -> Pipe i o m ()
 -- | Await a value `i` upstream
 await :: Pipe i o m (Maybe i)
 
--- | Terminate with a result value
+-- | Terminate immediately with a result value
 return :: a -> Pipe i o m a
 
 -- | Sequence pipes one-after-another:
@@ -249,8 +253,8 @@ lift   :: m a -> Pipe i o m a
 return :: a   -> Pipe i o m a
 ```
 
-However, we can note that `lift` and `return` will come from the `Monad` and
-`MonadTrans` instances that we wish we had:
+However, we can note that `lift` and `return` can be gained just from having a
+`Monad` and `MonadTrans` instance. So let's assume we have those instances.
 
 ``` {.haskell}
 class Monad m where
@@ -260,8 +264,9 @@ class MonadTrans p where
     lift :: m a -> p m a
 ```
 
-The effects system/functor combinator plan is to identify your true primitives,
-and let free structures give you the instances you need for them.
+The functor combinator plan is to identify your primitives, and let free
+structures give you the instances (in our case, `Monad` and `MonadTrans`) you
+need for them.
 
 So this means we only need two primitives: `yield` and `await`. Then we just
 throw them into some machinery that gives us a free `Monad` and `MonadTrans`
@@ -570,3 +575,6 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: "Universally quantified" here means that the pipe's type is left fully
+    polymorphic (with no constraints) over `i`, the input.
