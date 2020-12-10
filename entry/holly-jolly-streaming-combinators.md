@@ -579,7 +579,7 @@ ghci> withFile "testpipefile.txt" ReadMode $ \handle ->
 Smooth as silk :D
 
 Takeways
-========
+--------
 
 Most of this was thought up when I needed[^2] a tool that was *sort of* like
 conduit, *sort of* like pipes, *sort of* like the other libraries...and I
