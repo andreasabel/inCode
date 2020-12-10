@@ -684,7 +684,7 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
 3.  We mentioned earlier that a "source" could have type
 
     ``` {.haskell}
-    type Source o = Pipe () o
+    type Source = Pipe ()
     ```
 
     And a `Source o m a` would be something that keeps on pumping out `o`s as
