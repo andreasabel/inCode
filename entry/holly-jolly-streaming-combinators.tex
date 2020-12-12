@@ -155,8 +155,9 @@ All of the code in this page
 \href{https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs}{can
 be found online at github}!
 
-\hypertarget{an-effectful-picture}{%
-\section{An effectful picture}\label{an-effectful-picture}}
+\hypertarget{dreaming-of-an-effectful-christmas}{%
+\section{Dreaming of an Effectful
+Christmas}\label{dreaming-of-an-effectful-christmas}}
 
 The goal here is to make a system of composable pipes that are ``pull-based'',
 so we can process data as it is read in from IO only as we need it, and never do
@@ -261,7 +262,7 @@ Now let's think of the interface we want. We want to be able to:
 \OtherTok{(>>) ::} \DataTypeTok{Pipe}\NormalTok{ i o m a }\OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o m b }\OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o m b}
 
 \CommentTok{{-}{-} | In fact let\textquotesingle{}s just make it a full fledged monad, why not?  We\textquotesingle{}re designing}
-\NormalTok{our dream interface here}\OperatorTok{.}
+\CommentTok{{-}{-} our dream interface here.}
 \OtherTok{(>>=) ::} \DataTypeTok{Pipe}\NormalTok{ i o m a }\OtherTok{{-}>}\NormalTok{ (a }\OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o m b) }\OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o m b}
 
 \CommentTok{{-}{-} | A pipe that simply does action in the underlying monad and terminates with}
@@ -285,26 +286,25 @@ very small.
 So, these are going to be implementing ``conduit-style'' streaming combinators,
 where streaming actions are monadic, and monadic sequencing represents ``do this
 after this one is done.'' Because of this property, they work well as
-\emph{pull-based} pipes, yields will block until a corresponding await can
+\emph{pull-based} pipes: yields will block until a corresponding await can
 accept what is yielded.
 
-\hypertarget{dress-for-the-interface-you-want}{%
-\subsection{Dress for the interface you
-want}\label{dress-for-the-interface-you-want}}
+\hypertarget{put-on-those-christmas-sweaters}{%
+\subsection{Put on those Christmas
+Sweaters}\label{put-on-those-christmas-sweaters}}
 
-``Dress for the interface you want, not the one you have'', they all told me. So
-let's pretend we already implemented this interface\ldots what could we do with
-it?
+``Dress for the interface you want, not the one you have''. So let's pretend we
+already implemented this interface\ldots what could we do with it?
 
 Well, can write simple sources like ``yield the contents from a file
 line-by-line'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L68{-}L75}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L65{-}L72}
 
-\OtherTok{sourceHandle ::} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i }\DataTypeTok{String} \DataTypeTok{IO}\NormalTok{ ()}
-\NormalTok{sourceHandle handle }\OtherTok{=} \KeywordTok{do}
+\OtherTok{sourceHandleIO ::} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i }\DataTypeTok{String} \DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{sourceHandleIO handle }\OtherTok{=} \KeywordTok{do}
 \NormalTok{    res }\OtherTok{<{-}}\NormalTok{ lift }\OperatorTok{$}\NormalTok{ tryJust (guard }\OperatorTok{.}\NormalTok{ isEOFError) (hGetLine handle)}
     \KeywordTok{case}\NormalTok{ res }\KeywordTok{of}
       \DataTypeTok{Left}\NormalTok{  \_   }\OtherTok{{-}>} \FunctionTok{return}\NormalTok{ ()}
@@ -323,10 +323,10 @@ they come'':
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L77{-}L84}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L83{-}L90}
 
-\OtherTok{sinkStdout ::} \DataTypeTok{Pipe} \DataTypeTok{String}\NormalTok{ o }\DataTypeTok{IO}\NormalTok{ ()}
-\NormalTok{sinkStdout }\OtherTok{=} \KeywordTok{do}
+\OtherTok{sinkStdoutIO ::} \DataTypeTok{Pipe} \DataTypeTok{String}\NormalTok{ o }\DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{sinkStdoutIO }\OtherTok{=} \KeywordTok{do}
 \NormalTok{    inp }\OtherTok{<{-}}\NormalTok{ await}
     \KeywordTok{case}\NormalTok{ inp }\KeywordTok{of}
       \DataTypeTok{Nothing} \OtherTok{{-}>} \FunctionTok{pure}\NormalTok{ ()}
@@ -341,7 +341,7 @@ capital letters and re-yields them:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L86{-}L93}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L101{-}L108}
 
 \OtherTok{toUpperPipe ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Pipe} \DataTypeTok{String} \DataTypeTok{String}\NormalTok{ m ()}
 \NormalTok{toUpperPipe }\OtherTok{=} \KeywordTok{do}
@@ -359,7 +359,7 @@ And we can maybe write a pipe that stops as soon as it reads the line
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L95{-}L104}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L110{-}L119}
 
 \OtherTok{untilSTOP ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Pipe} \DataTypeTok{String} \DataTypeTok{String}\NormalTok{ m ()}
 \NormalTok{untilSTOP }\OtherTok{=} \KeywordTok{do}
@@ -388,20 +388,19 @@ line:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L106{-}L111}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L121{-}L126}
 
-\OtherTok{samplePipe ::} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o }\DataTypeTok{IO}\NormalTok{ ()}
-\NormalTok{samplePipe handle }\OtherTok{=}
-\NormalTok{       sourceHandle handle}
+\OtherTok{samplePipeIO ::} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o }\DataTypeTok{IO}\NormalTok{ ()}
+\NormalTok{samplePipeIO handle }\OtherTok{=}
+\NormalTok{       sourceHandleIO handle}
     \OperatorTok{.|}\NormalTok{ untilSTOP}
     \OperatorTok{.|}\NormalTok{ toUpperPipe}
-    \OperatorTok{.|}\NormalTok{ sinkStdout}
+    \OperatorTok{.|}\NormalTok{ sinkStdoutIO}
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{implementing-the-interface-you-want}{%
-\section{Implementing the interface you
-want}\label{implementing-the-interface-you-want}}
+\hypertarget{setting-up-our-stockings}{%
+\section{Setting up our Stockings}\label{setting-up-our-stockings}}
 
 Step 2 of our plan was to identify the primitive actions we want. Looking at our
 interface, it seems like the few things that let us ``create'' a \texttt{Pipe}
@@ -476,7 +475,10 @@ For example:
 \emph{\href{https://hackage.haskell.org/package/free}{free}} expects, but this
 principle can be ported to any algebraic effects system.)
 
-And now\ldots we're done! We can use the \texttt{FreeT} type from
+\hypertarget{a-christmas-surprise}{%
+\subsection{A Christmas Surprise}\label{a-christmas-surprise}}
+
+And now for the last ingredient: we can use the \texttt{FreeT} type from
 \emph{\href{https://hackage.haskell.org/package/free/docs/Control-Monad-Trans-Free.html}{Control.Monad.Trans.Free}},
 and now we have our pipe interface, with a \texttt{Monad} and
 \texttt{MonadTrans} instance!
@@ -507,6 +509,16 @@ That's the essence of the free structure: it \emph{adds} to our base functor
 (\texttt{PipeF}) exactly the structure it needs to be able to implement the
 instances it is free on. And it's all free as in beer! :D
 
+As a bonus gift, we also get a \texttt{MonadIO} instance from \texttt{FreeT}, as
+well:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\OtherTok{liftIO ::} \DataTypeTok{MonadIO}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{IO}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{FreeT}\NormalTok{ (}\DataTypeTok{PipeF}\NormalTok{ i o) m a}
+\OtherTok{liftIO ::} \DataTypeTok{MonadIO}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{IO}\NormalTok{ a }\OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o m a}
+\end{Highlighting}
+\end{Shaded}
+
 Now we just need our functions to lift our primitives to \texttt{Pipe}, using
 \texttt{liftF\ ::\ f\ a\ -\textgreater{}\ FreeT\ f\ m\ a}:
 
@@ -525,28 +537,34 @@ Now we just need our functions to lift our primitives to \texttt{Pipe}, using
 (these things you can usually just fill in using type tetris, filling in values
 with typed holes into they typecheck).
 
-Note that all of the individual pipes we had planned work as-is!
+Note that all of the individual pipes we had planned work as-is! And we can even
+even make \texttt{sourceHandle} and \texttt{sinkStdout} work for any
+\texttt{MonadIO\ m\ =\textgreater{}\ Pipe\ i\ o\ m\ a}, because of the
+unexpected surprise Christmas gift we got (the \texttt{MonadIO} instance and
+\texttt{liftIO\ ::\ MonadIO\ m\ =\textgreater{}\ IO\ a\ -\textgreater{}\ Pipe\ i\ o\ u\ m\ a}).
+Remember, \texttt{MonadIO\ m} is basically any \texttt{m} that supports doing
+IO.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L68{-}L104}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L74{-}L119}
 
-\OtherTok{sourceHandle ::} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i }\DataTypeTok{String} \DataTypeTok{IO}\NormalTok{ ()}
+\OtherTok{sourceHandle ::} \DataTypeTok{MonadIO}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i }\DataTypeTok{String}\NormalTok{ m ()}
 \NormalTok{sourceHandle handle }\OtherTok{=} \KeywordTok{do}
-\NormalTok{    res }\OtherTok{<{-}}\NormalTok{ lift }\OperatorTok{$}\NormalTok{ tryJust (guard }\OperatorTok{.}\NormalTok{ isEOFError) (hGetLine handle)}
+\NormalTok{    res }\OtherTok{<{-}}\NormalTok{ liftIO }\OperatorTok{$}\NormalTok{ tryJust (guard }\OperatorTok{.}\NormalTok{ isEOFError) (hGetLine handle)}
     \KeywordTok{case}\NormalTok{ res }\KeywordTok{of}
       \DataTypeTok{Left}\NormalTok{  \_   }\OtherTok{{-}>} \FunctionTok{return}\NormalTok{ ()}
       \DataTypeTok{Right}\NormalTok{ out }\OtherTok{{-}>} \KeywordTok{do}
 \NormalTok{        yield out}
 \NormalTok{        sourceHandle handle}
 
-\OtherTok{sinkStdout ::} \DataTypeTok{Pipe} \DataTypeTok{String}\NormalTok{ o }\DataTypeTok{IO}\NormalTok{ ()}
+\OtherTok{sinkStdout ::} \DataTypeTok{MonadIO}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Pipe} \DataTypeTok{String}\NormalTok{ o m ()}
 \NormalTok{sinkStdout }\OtherTok{=} \KeywordTok{do}
 \NormalTok{    inp }\OtherTok{<{-}}\NormalTok{ await}
     \KeywordTok{case}\NormalTok{ inp }\KeywordTok{of}
       \DataTypeTok{Nothing} \OtherTok{{-}>} \FunctionTok{pure}\NormalTok{ ()}
       \DataTypeTok{Just}\NormalTok{ x  }\OtherTok{{-}>} \KeywordTok{do}
-\NormalTok{        lift }\OperatorTok{$} \FunctionTok{putStrLn}\NormalTok{ x}
+\NormalTok{        liftIO }\OperatorTok{$} \FunctionTok{putStrLn}\NormalTok{ x}
 \NormalTok{        sinkStdout}
 
 \OtherTok{toUpperPipe ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Pipe} \DataTypeTok{String} \DataTypeTok{String}\NormalTok{ m ()}
@@ -572,7 +590,8 @@ Note that all of the individual pipes we had planned work as-is!
 \end{Shaded}
 
 That's because using \texttt{FreeT}, we imbue the structure required to do
-monadic chaining (do notation) and MonadTrans (\texttt{lift}) for free!
+monadic chaining (do notation) and MonadTrans (\texttt{lift}) and MonadIO
+(\texttt{liftIO}) for free!
 
 To ``run'' our pipes, we can use \texttt{FreeT}'s ``interpreter'' function. This
 follows the same pattern as for many free structures: specify how to handle each
@@ -596,7 +615,7 @@ constructor:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L60{-}L63}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L57{-}L60}
 
 \OtherTok{handlePipeF ::} \DataTypeTok{PipeF}\NormalTok{ () }\DataTypeTok{Void}\NormalTok{ (m a) }\OtherTok{{-}>}\NormalTok{ m a}
 \NormalTok{handlePipeF }\OtherTok{=}\NormalTok{ \textbackslash{}}\KeywordTok{case}
@@ -609,7 +628,7 @@ And so we get our full \texttt{runPipe}:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L65{-}L66}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L62{-}L63}
 
 \OtherTok{runPipe ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Pipe}\NormalTok{ () }\DataTypeTok{Void}\NormalTok{ m a }\OtherTok{{-}>}\NormalTok{ m a}
 \NormalTok{runPipe }\OtherTok{=}\NormalTok{ iterT handlePipeF}
@@ -631,8 +650,8 @@ structures:
   the free structure will give you a way to interpret the entire structure.
 \end{enumerate}
 
-\hypertarget{chaining}{%
-\subsection{Chaining}\label{chaining}}
+\hypertarget{the-final-ornament}{%
+\subsection{The Final Ornament}\label{the-final-ornament}}
 
 If you look at the list of all the things we wanted, we're still missing one
 thing: pipe composition/input-output chaining. That's because it isn't a
@@ -661,8 +680,8 @@ implementation/structure of \texttt{FreeT}:
 \end{Highlighting}
 \end{Shaded}
 
-If this looks a little complicated, don't worry: on the face of it, it can be a
-bit intimidating. And why is there a second internal data type?
+This does look a little complicated, and on the face of it, it can be a bit
+intimidating. And why is there a second internal data type?
 
 Well, you can think of \texttt{FreeF\ f\ a\ b} as being a fancy version of
 \texttt{Either\ a\ (f\ b)}. And the implementation of \texttt{FreeT} is saying
@@ -699,15 +718,15 @@ typechecker and typed holes)! Remember our plan: for \texttt{f\ .\textbar{}\ g},
       \DataTypeTok{Pure}\NormalTok{ x            }\OtherTok{{-}>} \FunctionTok{pure}\NormalTok{ x       }\CommentTok{{-}{-} 2}
       \DataTypeTok{Free}\NormalTok{ (}\DataTypeTok{YieldF}\NormalTok{ o x) }\OtherTok{{-}>} \KeywordTok{do}           \CommentTok{{-}{-} 3}
 \NormalTok{        yield o}
-\NormalTok{        pf }\OtherTok{\textasciigrave{}comp\textasciigrave{}}\NormalTok{ x}
+\NormalTok{        pf }\OperatorTok{.|}\NormalTok{ x}
       \DataTypeTok{Free}\NormalTok{ (}\DataTypeTok{AwaitF}\NormalTok{ g  ) }\OtherTok{{-}>} \KeywordTok{do}           \CommentTok{{-}{-} 4}
 \NormalTok{        fRes }\OtherTok{<{-}}\NormalTok{ lift }\OperatorTok{$}\NormalTok{ runFreeT pf}
         \KeywordTok{case}\NormalTok{ fRes }\KeywordTok{of}
-          \DataTypeTok{Pure}\NormalTok{ \_            }\OtherTok{{-}>} \FunctionTok{pure}\NormalTok{ () }\OtherTok{\textasciigrave{}comp\textasciigrave{}}\NormalTok{ g }\DataTypeTok{Nothing}     \CommentTok{{-}{-} 5}
-          \DataTypeTok{Free}\NormalTok{ (}\DataTypeTok{YieldF}\NormalTok{ o y) }\OtherTok{{-}>}\NormalTok{ y       }\OtherTok{\textasciigrave{}comp\textasciigrave{}}\NormalTok{ g (}\DataTypeTok{Just}\NormalTok{ o)    }\CommentTok{{-}{-} 6}
-          \DataTypeTok{Free}\NormalTok{ (}\DataTypeTok{AwaitF}\NormalTok{ f  ) }\OtherTok{{-}>} \KeywordTok{do}                           \CommentTok{{-}{-} 7}
+          \DataTypeTok{Pure}\NormalTok{ \_            }\OtherTok{{-}>} \FunctionTok{pure}\NormalTok{ () }\OperatorTok{.|}\NormalTok{ g }\DataTypeTok{Nothing}     \CommentTok{{-}{-} 5}
+          \DataTypeTok{Free}\NormalTok{ (}\DataTypeTok{YieldF}\NormalTok{ o y) }\OtherTok{{-}>}\NormalTok{ y       }\OperatorTok{.|}\NormalTok{ g (}\DataTypeTok{Just}\NormalTok{ o)    }\CommentTok{{-}{-} 6}
+          \DataTypeTok{Free}\NormalTok{ (}\DataTypeTok{AwaitF}\NormalTok{ f  ) }\OtherTok{{-}>} \KeywordTok{do}                       \CommentTok{{-}{-} 7}
 \NormalTok{            i }\OtherTok{<{-}}\NormalTok{ await}
-\NormalTok{            f i }\OtherTok{\textasciigrave{}comp\textasciigrave{}} \DataTypeTok{FreeT}\NormalTok{ (}\FunctionTok{pure}\NormalTok{ gRes)}
+\NormalTok{            f i }\OperatorTok{.|} \DataTypeTok{FreeT}\NormalTok{ (}\FunctionTok{pure}\NormalTok{ gRes)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -721,7 +740,8 @@ Here are some numbered notes and comments:
   \texttt{m}!
 \item
   If \texttt{pg} produced \texttt{Pure\ x}, it means we're done pulling
-  anything. So just quit out with \texttt{pure\ x}.
+  anything. The entire pipe has terminated, since we will never need anything
+  again. So just quit out with \texttt{pure\ x}.
 \item
   If \texttt{pg} produced \texttt{Free\ (YieldF\ o\ x)}, it means it's yielding
   an \texttt{o} and continuing on with \texttt{x}. So let's just yield that
@@ -733,21 +753,21 @@ Here are some numbered notes and comments:
   \texttt{Maybe\ b}, and feed that to
   \texttt{g\ ::\ Maybe\ b\ -\textgreater{}\ Pipe\ b\ c\ m\ y}.
 \item
-  If \texttt{pf} produced \texttt{Pure\ y}, that means it was done! So
-  \texttt{g} gets a \texttt{Nothing}, and we move from there. Note we have to
-  compose with a dummy pipe \texttt{pure\ ()} to make the types match up
-  properly.
+  If \texttt{pf} produced \texttt{Pure\ y}, that means it was done! The upstream
+  terminated, so the downstream will have to terminate as well. So \texttt{g}
+  gets a \texttt{Nothing}, and we move from there. Note we have to compose with
+  a dummy pipe \texttt{pure\ ()} to make the types match up properly.
 \item
   If \texttt{pf} produced \texttt{YieldF\ o\ y}, then we have found our match!
   So give \texttt{g\ (Just\ o)}, and now we recursively compose the next pipe
   (\texttt{y}) with the that \texttt{g} gave us.
 \item
   If \texttt{pf} produced \texttt{AwaitF\ f}, then we're in a bind, aren't we?
-  We now have two layers waiting for something further upstream. So, we return a
-  new pipe that awaits it and feeds it to \texttt{f} when it gets it, give it to
-  \texttt{f}, and then compose \texttt{f\ i\ ::\ Pipe\ a\ b\ m\ x} with
-  \texttt{pg}'s result (wrapping up \texttt{gRes} back into a
-  \texttt{FreeT}/\texttt{Pipe} so the types match up).
+  We now have two layers waiting for something further upstream. So, we await
+  from \emph{even further} upstream; when we get it, we feed it to \texttt{f}
+  and then compose \texttt{f\ i\ ::\ Pipe\ a\ b\ m\ x} with \texttt{pg}'s result
+  (wrapping up \texttt{gRes} back into a \texttt{FreeT}/\texttt{Pipe} so the
+  types match up).
 \end{enumerate}
 
 Admittedly (!) this is the ``ugly'' part of this derivation: sometimes we just
@@ -756,14 +776,14 @@ MonadTrans, etc. instances is probably nice enough to justify this inconvenience
 :) And who knows, there might be a free structure that I don't know about that
 gives us all of these \emph{plus} piping for free.
 
-\hypertarget{putting-it-all-together}{%
-\subsection{Putting it all together}\label{putting-it-all-together}}
+\hypertarget{christmas-miracle}{%
+\subsection{Christmas Miracle}\label{christmas-miracle}}
 
-Let's see if it runs!
+It runs!
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L106{-}L111}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L128{-}L133}
 
 \OtherTok{samplePipe ::} \DataTypeTok{Handle} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o }\DataTypeTok{IO}\NormalTok{ ()}
 \NormalTok{samplePipe handle }\OtherTok{=}
@@ -794,11 +814,11 @@ goodbye
 
 Smooth as silk :D
 
-\hypertarget{takeways}{%
-\section{Takeways}\label{takeways}}
+\hypertarget{takeways-for-a-happy-new-year}{%
+\section{Takeways for a Happy New Year}\label{takeways-for-a-happy-new-year}}
 
-Most of this was thought up when I needed\footnote{This came about when I was
-  developing my numerical
+Most of this post was thought up when I needed\footnote{This came about when I
+  was developing my numerical
   \emph{\href{https://hackage.haskell.org/package/emd}{emd}} library.} a tool
 that was \emph{sort of} like conduit, \emph{sort of} like pipes, \emph{sort of}
 like the other libraries\ldots and I thought I had to read up on the theory of
@@ -807,13 +827,16 @@ make anything useful in this space. I remember being very discouraged when I
 read about this stuff as a wee new Haskeller, because the techniques seemed so
 foreign and out of the range of my normal Haskell experience.
 
-However, with a level head, I just thought --- ``ok, I just need a monad (trans)
-with two primitive actions: await, and yield. Why don't I just make an await and
-yield and get automatic \texttt{Monad} and \texttt{MonadTrans} instances with
-the appropriate free structure?''
+However, I found a way to maintain a level head somehow, and just thought ---
+``ok, I just need a monad (trans) with two primitive actions: await, and yield.
+Why don't I just make an await and yield and get automatic \texttt{Monad} and
+\texttt{MonadTrans} instances with the appropriate free structure?''
 
 As we can see\ldots this works just fine! We only needed to implement one extra
-thing (\texttt{.\textbar{}}) to get the interface of our dreams.
+thing (\texttt{.\textbar{}}) to get the interface of our dreams. Of course, for
+a real industrial-strength streaming combinator library, we might need to be a
+bit more careful. But for my learning experience and use case, it worked
+perfectly.
 
 The next time you need to make some monad that might seem exotic, try this out
 and see if it works for you :)
@@ -836,7 +859,7 @@ source file})
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L126{-}L129}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L148{-}L151}
 
 \OtherTok{postMap ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>}\NormalTok{ (o }\OtherTok{{-}>}\NormalTok{ o\textquotesingle{}) }\OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o m a }\OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o\textquotesingle{} m a}
 
@@ -870,7 +893,7 @@ source file})
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L118{-}L130}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L140{-}L152}
 
 \OtherTok{postMapF ::}\NormalTok{ (o }\OtherTok{{-}>}\NormalTok{ o\textquotesingle{}) }\OtherTok{{-}>} \DataTypeTok{PipeF}\NormalTok{ i o a }\OtherTok{{-}>} \DataTypeTok{PipeF}\NormalTok{ i o\textquotesingle{} a}
 
@@ -913,20 +936,9 @@ source file})
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L133{-}L133}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L155{-}L165}
 
-\OtherTok{sourceFile ::} \DataTypeTok{FilePath} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i }\DataTypeTok{String}\NormalTok{ (}\DataTypeTok{ResourceT} \DataTypeTok{IO}\NormalTok{) ()}
-\end{Highlighting}
-\end{Shaded}
-
-  (You might need to use
-  \texttt{hoistFreeT\ lift\ ::\ Pipe\ i\ o\ IO\ a\ -\textgreater{}\ Pipe\ i\ o\ (ResourceT\ IO)\ a},
-  given to us by the \emph{free} library, if you want to re-use
-  \texttt{sourceHandle} in your implementation)
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L138{-}L143}
+\OtherTok{sourceFile ::} \DataTypeTok{MonadIO}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{FilePath} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i }\DataTypeTok{String}\NormalTok{ (}\DataTypeTok{ResourceT}\NormalTok{ m) ()}
 
 \OtherTok{samplePipe2 ::} \DataTypeTok{FilePath} \OtherTok{{-}>} \DataTypeTok{Pipe}\NormalTok{ i o (}\DataTypeTok{ResourceT} \DataTypeTok{IO}\NormalTok{) ()}
 \NormalTok{samplePipe2 fp }\OtherTok{=}
@@ -1009,7 +1021,7 @@ source file})
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L149{-}L157}
+\CommentTok{{-}{-} source: https://github.com/mstksg/inCode/tree/master/code{-}samples/misc/streaming{-}combinators{-}free.hs\#L171{-}L179}
 
 \OtherTok{toListT ::} \DataTypeTok{Monad}\NormalTok{ m }\OtherTok{=>} \DataTypeTok{Pipe}\NormalTok{ () o m a }\OtherTok{{-}>} \DataTypeTok{L.ListT}\NormalTok{ m o}
 

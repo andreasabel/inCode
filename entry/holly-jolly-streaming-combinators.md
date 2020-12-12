@@ -56,8 +56,8 @@ approach that has benefited my greatly in the past.
 All of the code in this page [can be found online at
 github](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs)!
 
-An effectful picture
---------------------
+Dreaming of an Effectful Christmas
+----------------------------------
 
 The goal here is to make a system of composable pipes that are "pull-based", so
 we can process data as it is read in from IO only as we need it, and never do
@@ -132,7 +132,7 @@ return :: a -> Pipe i o m a
 (>>) :: Pipe i o m a -> Pipe i o m b -> Pipe i o m b
 
 -- | In fact let's just make it a full fledged monad, why not?  We're designing
-our dream interface here.
+-- our dream interface here.
 (>>=) :: Pipe i o m a -> (a -> Pipe i o m b) -> Pipe i o m b
 
 -- | A pipe that simply does action in the underlying monad and terminates with
@@ -154,22 +154,22 @@ types for free. This makes the actual "work" we have to do very small.
 So, these are going to be implementing "conduit-style" streaming combinators,
 where streaming actions are monadic, and monadic sequencing represents "do this
 after this one is done." Because of this property, they work well as
-*pull-based* pipes, yields will block until a corresponding await can accept
+*pull-based* pipes: yields will block until a corresponding await can accept
 what is yielded.
 
-### Dress for the interface you want
+### Put on those Christmas Sweaters
 
-"Dress for the interface you want, not the one you have", they all told me. So
-let's pretend we already implemented this interface...what could we do with it?
+"Dress for the interface you want, not the one you have". So let's pretend we
+already implemented this interface...what could we do with it?
 
 Well, can write simple sources like "yield the contents from a file
 line-by-line":
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L68-L75
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L65-L72
 
-sourceHandle :: Handle -> Pipe i String IO ()
-sourceHandle handle = do
+sourceHandleIO :: Handle -> Pipe i String IO ()
+sourceHandleIO handle = do
     res <- lift $ tryJust (guard . isEOFError) (hGetLine handle)
     case res of
       Left  _   -> return ()
@@ -185,10 +185,10 @@ We can even write a simple sink, like "await and print the results to stdout as
 they come":
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L77-L84
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L83-L90
 
-sinkStdout :: Pipe String o IO ()
-sinkStdout = do
+sinkStdoutIO :: Pipe String o IO ()
+sinkStdoutIO = do
     inp <- await
     case inp of
       Nothing -> pure ()
@@ -201,7 +201,7 @@ And maybe we can write a pipe that takes input strings and converts them to all
 capital letters and re-yields them:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L86-L93
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L101-L108
 
 toUpperPipe :: Monad m => Pipe String String m ()
 toUpperPipe = do
@@ -216,7 +216,7 @@ toUpperPipe = do
 And we can maybe write a pipe that stops as soon as it reads the line `STOP`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L95-L104
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L110-L119
 
 untilSTOP :: Monad m => Pipe String String m ()
 untilSTOP = do
@@ -242,18 +242,18 @@ to read from a file and output its contents to stdout, until it sees a STOP
 line:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L106-L111
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L121-L126
 
-samplePipe :: Handle -> Pipe i o IO ()
-samplePipe handle =
-       sourceHandle handle
+samplePipeIO :: Handle -> Pipe i o IO ()
+samplePipeIO handle =
+       sourceHandleIO handle
     .| untilSTOP
     .| toUpperPipe
-    .| sinkStdout
+    .| sinkStdoutIO
 ```
 
-Implementing the interface you want
------------------------------------
+Setting up our Stockings
+------------------------
 
 Step 2 of our plan was to identify the primitive actions we want. Looking at our
 interface, it seems like the few things that let us "create" a `Pipe` from
@@ -314,7 +314,9 @@ For example:
 *[free](https://hackage.haskell.org/package/free)* expects, but this principle
 can be ported to any algebraic effects system.)
 
-And now...we're done! We can use the `FreeT` type from
+### A Christmas Surprise
+
+And now for the last ingredient: we can use the `FreeT` type from
 *[Control.Monad.Trans.Free](https://hackage.haskell.org/package/free/docs/Control-Monad-Trans-Free.html)*,
 and now we have our pipe interface, with a `Monad` and `MonadTrans` instance!
 
@@ -340,6 +342,13 @@ That's the essence of the free structure: it *adds* to our base functor
 (`PipeF`) exactly the structure it needs to be able to implement the instances
 it is free on. And it's all free as in beer! :D
 
+As a bonus gift, we also get a `MonadIO` instance from `FreeT`, as well:
+
+``` {.haskell}
+liftIO :: MonadIO m => IO a -> FreeT (PipeF i o) m a
+liftIO :: MonadIO m => IO a -> Pipe i o m a
+```
+
 Now we just need our functions to lift our primitives to `Pipe`, using
 `liftF :: f a -> FreeT f m a`:
 
@@ -356,27 +365,32 @@ await = liftF $ AwaitF id
 (these things you can usually just fill in using type tetris, filling in values
 with typed holes into they typecheck).
 
-Note that all of the individual pipes we had planned work as-is!
+Note that all of the individual pipes we had planned work as-is! And we can even
+even make `sourceHandle` and `sinkStdout` work for any
+`MonadIO m => Pipe i o m a`, because of the unexpected surprise Christmas gift
+we got (the `MonadIO` instance and
+`liftIO :: MonadIO m => IO a -> Pipe i o u m a`). Remember, `MonadIO m` is
+basically any `m` that supports doing IO.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L68-L104
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L74-L119
 
-sourceHandle :: Handle -> Pipe i String IO ()
+sourceHandle :: MonadIO m => Handle -> Pipe i String m ()
 sourceHandle handle = do
-    res <- lift $ tryJust (guard . isEOFError) (hGetLine handle)
+    res <- liftIO $ tryJust (guard . isEOFError) (hGetLine handle)
     case res of
       Left  _   -> return ()
       Right out -> do
         yield out
         sourceHandle handle
 
-sinkStdout :: Pipe String o IO ()
+sinkStdout :: MonadIO m => Pipe String o m ()
 sinkStdout = do
     inp <- await
     case inp of
       Nothing -> pure ()
       Just x  -> do
-        lift $ putStrLn x
+        liftIO $ putStrLn x
         sinkStdout
 
 toUpperPipe :: Monad m => Pipe String String m ()
@@ -401,7 +415,7 @@ untilSTOP = do
 ```
 
 That's because using `FreeT`, we imbue the structure required to do monadic
-chaining (do notation) and MonadTrans (`lift`) for free!
+chaining (do notation) and MonadTrans (`lift`) and MonadIO (`liftIO`) for free!
 
 To "run" our pipes, we can use `FreeT`'s "interpreter" function. This follows
 the same pattern as for many free structures: specify how to handle each
@@ -421,7 +435,7 @@ yield with `Void`, a type with no inhabitants). We can directly translate this
 to how we handle each constructor:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L60-L63
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L57-L60
 
 handlePipeF :: PipeF () Void (m a) -> m a
 handlePipeF = \case
@@ -432,7 +446,7 @@ handlePipeF = \case
 And so we get our full `runPipe`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L65-L66
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L62-L63
 
 runPipe :: Monad m => Pipe () Void m a -> m a
 runPipe = iterT handlePipeF
@@ -448,7 +462,7 @@ structures:
     and the free structure will give you a way to interpret the entire
     structure.
 
-### Chaining
+### The Final Ornament
 
 If you look at the list of all the things we wanted, we're still missing one
 thing: pipe composition/input-output chaining. That's because it isn't a
@@ -475,8 +489,8 @@ data FreeF f a b
     | Free (f b)
 ```
 
-If this looks a little complicated, don't worry: on the face of it, it can be a
-bit intimidating. And why is there a second internal data type?
+This does look a little complicated, and on the face of it, it can be a bit
+intimidating. And why is there a second internal data type?
 
 Well, you can think of `FreeF f a b` as being a fancy version of
 `Either a (f b)`. And the implementation of `FreeT` is saying that `FreeT f m a`
@@ -507,39 +521,41 @@ pf .| pg = do
       Pure x            -> pure x       -- 2
       Free (YieldF o x) -> do           -- 3
         yield o
-        pf `comp` x
+        pf .| x
       Free (AwaitF g  ) -> do           -- 4
         fRes <- lift $ runFreeT pf
         case fRes of
-          Pure _            -> pure () `comp` g Nothing     -- 5
-          Free (YieldF o y) -> y       `comp` g (Just o)    -- 6
-          Free (AwaitF f  ) -> do                           -- 7
+          Pure _            -> pure () .| g Nothing     -- 5
+          Free (YieldF o y) -> y       .| g (Just o)    -- 6
+          Free (AwaitF f  ) -> do                       -- 7
             i <- await
-            f i `comp` FreeT (pure gRes)
+            f i .| FreeT (pure gRes)
 ```
 
 Here are some numbered notes and comments:
 
 1.  Start unrolling the downstream pipe `pg`, in the underlying monad `m`!
-2.  If `pg` produced `Pure x`, it means we're done pulling anything. So just
-    quit out with `pure x`.
+2.  If `pg` produced `Pure x`, it means we're done pulling anything. The entire
+    pipe has terminated, since we will never need anything again. So just quit
+    out with `pure x`.
 3.  If `pg` produced `Free (YieldF o x)`, it means it's yielding an `o` and
     continuing on with `x`. So let's just yield that `o` and move on to the
     composition of `pf` with the next pipe `x`.
 4.  If `pg` produced `Free (AwaitF g)`, now things get interesting. We need to
     unroll `pf` until it yields some `Maybe b`, and feed that to
     `g :: Maybe b -> Pipe b c m y`.
-5.  If `pf` produced `Pure y`, that means it was done! So `g` gets a `Nothing`,
+5.  If `pf` produced `Pure y`, that means it was done! The upstream terminated,
+    so the downstream will have to terminate as well. So `g` gets a `Nothing`,
     and we move from there. Note we have to compose with a dummy pipe `pure ()`
     to make the types match up properly.
 6.  If `pf` produced `YieldF o y`, then we have found our match! So give
     `g (Just o)`, and now we recursively compose the next pipe (`y`) with the
     that `g` gave us.
 7.  If `pf` produced `AwaitF f`, then we're in a bind, aren't we? We now have
-    two layers waiting for something further upstream. So, we return a new pipe
-    that awaits it and feeds it to `f` when it gets it, give it to `f`, and then
-    compose `f i :: Pipe a b m x` with `pg`'s result (wrapping up `gRes` back
-    into a `FreeT`/`Pipe` so the types match up).
+    two layers waiting for something further upstream. So, we await from *even
+    further* upstream; when we get it, we feed it to `f` and then compose
+    `f i :: Pipe a b m x` with `pg`'s result (wrapping up `gRes` back into a
+    `FreeT`/`Pipe` so the types match up).
 
 Admittedly (!) this is the "ugly" part of this derivation: sometimes we just
 can't get everything for free. But getting the Monad, Applicative, Functor,
@@ -547,12 +563,12 @@ MonadTrans, etc. instances is probably nice enough to justify this inconvenience
 :) And who knows, there might be a free structure that I don't know about that
 gives us all of these *plus* piping for free.
 
-### Putting it all together
+### Christmas Miracle
 
-Let's see if it runs!
+It runs!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L106-L111
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L128-L133
 
 samplePipe :: Handle -> Pipe i o IO ()
 samplePipe handle =
@@ -578,24 +594,26 @@ ghci> withFile "testpipefile.txt" ReadMode $ \handle ->
 
 Smooth as silk :D
 
-Takeways
---------
+Takeways for a Happy New Year
+-----------------------------
 
-Most of this was thought up when I needed[^2] a tool that was *sort of* like
-conduit, *sort of* like pipes, *sort of* like the other libraries...and I
+Most of this post was thought up when I needed[^2] a tool that was *sort of*
+like conduit, *sort of* like pipes, *sort of* like the other libraries...and I
 thought I had to read up on the theory of pipes and iteratees and trampolines
 and fancy pants math stuff to be able to make anything useful in this space. I
 remember being very discouraged when I read about this stuff as a wee new
 Haskeller, because the techniques seemed so foreign and out of the range of my
 normal Haskell experience.
 
-However, with a level head, I just thought --- "ok, I just need a monad (trans)
-with two primitive actions: await, and yield. Why don't I just make an await and
-yield and get automatic `Monad` and `MonadTrans` instances with the appropriate
-free structure?"
+However, I found a way to maintain a level head somehow, and just thought ---
+"ok, I just need a monad (trans) with two primitive actions: await, and yield.
+Why don't I just make an await and yield and get automatic `Monad` and
+`MonadTrans` instances with the appropriate free structure?"
 
 As we can see...this works just fine! We only needed to implement one extra
-thing (`.|`) to get the interface of our dreams.
+thing (`.|`) to get the interface of our dreams. Of course, for a real
+industrial-strength streaming combinator library, we might need to be a bit more
+careful. But for my learning experience and use case, it worked perfectly.
 
 The next time you need to make some monad that might seem exotic, try this out
 and see if it works for you :)
@@ -613,7 +631,7 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
     make pre-map and post-map functions:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L126-L129
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L148-L151
 
     postMap :: Monad m => (o -> o') -> Pipe i o m a -> Pipe i o' m a
 
@@ -642,7 +660,7 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
     them to `Pipe` using `transFreeT`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L118-L130
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L140-L152
 
     postMapF :: (o -> o') -> PipeF i o a -> PipeF i o' a
 
@@ -681,18 +699,9 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
     `runResourceT :: ResourceT IO a -> IO a` our pipe.
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L133-L133
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L155-L165
 
-    sourceFile :: FilePath -> Pipe i String (ResourceT IO) ()
-    ```
-
-    (You might need to use
-    `hoistFreeT lift :: Pipe i o IO a -> Pipe i o (ResourceT IO) a`, given to us
-    by the *free* library, if you want to re-use `sourceHandle` in your
-    implementation)
-
-    ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L138-L143
+    sourceFile :: MonadIO m => FilePath -> Pipe i String (ResourceT m) ()
 
     samplePipe2 :: FilePath -> Pipe i o (ResourceT IO) ()
     samplePipe2 fp =
@@ -762,7 +771,7 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
     to convert between them! :D
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L149-L157
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L171-L179
 
     toListT :: Monad m => Pipe () o m a -> L.ListT m o
 
