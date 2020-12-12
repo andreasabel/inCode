@@ -1,7 +1,7 @@
 Roll your own Holly Jolly streaming combinators with Free
 =========================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on December 12, 2020.
 > [Read online!](https://blog.jle.im/entry/holly-jolly-streaming-combinators.html)
 
 Hi! Welcome, if you're joining us from the great [Advent of Haskell
