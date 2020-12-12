@@ -166,7 +166,7 @@ Well, can write simple sources like "yield the contents from a file
 line-by-line":
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L67-L74
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L68-L75
 
 sourceHandle :: Handle -> Pipe i String IO ()
 sourceHandle handle = do
@@ -185,7 +185,7 @@ We can even write a simple sink, like "await and print the results to stdout as
 they come":
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L76-L83
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L77-L84
 
 sinkStdout :: Pipe String o IO ()
 sinkStdout = do
@@ -201,7 +201,7 @@ And maybe we can write a pipe that takes input strings and converts them to all
 capital letters and re-yields them:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L85-L92
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L86-L93
 
 toUpperPipe :: Monad m => Pipe String String m ()
 toUpperPipe = do
@@ -216,7 +216,7 @@ toUpperPipe = do
 And we can maybe write a pipe that stops as soon as it reads the line `STOP`.
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L94-L103
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L95-L104
 
 untilSTOP :: Monad m => Pipe String String m ()
 untilSTOP = do
@@ -242,7 +242,7 @@ to read from a file and output its contents to stdout, until it sees a STOP
 line:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L105-L110
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L106-L111
 
 samplePipe :: Handle -> Pipe i o IO ()
 samplePipe handle =
@@ -289,7 +289,7 @@ In the style of the *[free](https://hackage.haskell.org/package/free)* library,
 we'd write base functions to get an ADT that describes the primitive actions:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L21-L24
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L22-L25
 
 data PipeF i o a =
     YieldF o a
@@ -344,7 +344,7 @@ Now we just need our functions to lift our primitives to `Pipe`, using
 `liftF :: f a -> FreeT f m a`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L28-L32
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L29-L33
 
 yield :: Monad m => o -> Pipe i o m ()
 yield x = liftF $ YieldF x ()
@@ -359,7 +359,7 @@ with typed holes into they typecheck).
 Note that all of the individual pipes we had planned work as-is!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L67-L103
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L68-L104
 
 sourceHandle :: Handle -> Pipe i String IO ()
 sourceHandle handle = do
@@ -421,7 +421,7 @@ yield with `Void`, a type with no inhabitants). We can directly translate this
 to how we handle each constructor:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L59-L62
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L60-L63
 
 handlePipeF :: PipeF () Void (m a) -> m a
 handlePipeF = \case
@@ -432,7 +432,7 @@ handlePipeF = \case
 And so we get our full `runPipe`:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L64-L65
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L65-L66
 
 runPipe :: Monad m => Pipe () Void m a -> m a
 runPipe = iterT handlePipeF
@@ -552,7 +552,7 @@ gives us all of these *plus* piping for free.
 Let's see if it runs!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L105-L110
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L106-L111
 
 samplePipe :: Handle -> Pipe i o IO ()
 samplePipe handle =
@@ -613,7 +613,7 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
     make pre-map and post-map functions:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L125-L128
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L126-L129
 
     postMap :: Monad m => (o -> o') -> Pipe i o m a -> Pipe i o' m a
 
@@ -642,7 +642,7 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
     them to `Pipe` using `transFreeT`:
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L117-L129
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L118-L130
 
     postMapF :: (o -> o') -> PipeF i o a -> PipeF i o' a
 
@@ -655,7 +655,60 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
     preMap f = transFreeT (preMapF f)
     ```
 
-2.  Let's say we modified our `PipeF` slightly to take another parameter `u`,
+2.  One staple of a streaming combinator system is giving you a disciplined way
+    to handle resources allocations like file handlers and properly close them
+    on completion. Our streaming combinator system has no inherent way of doing
+    this within its structure, but we can take advantage of the
+    *[resourcet](https://hackage.haskell.org/package/resourcet)* package to
+    handle it for us.
+
+    Basically, if we run our pipes over `ResourceT IO` instead of normal `IO`,
+    we get an extra action `allocate`:
+
+    ``` {.haskell}
+    allocate
+        :: IO a             -- ^ get a handler
+        -> (a -> IO ())     -- ^ close a handler
+        -> ResourceT IO (ResourceKey, a)
+
+    -- example
+    allocate (openFile fp ReadMode) hClose
+        :: ResourceT IO (ResourceKey, Handler)
+    ```
+
+    We can use this in our pipe to open a handler from a filename, and rest
+    assured that the file handler will be closed when we eventually
+    `runResourceT :: ResourceT IO a -> IO a` our pipe.
+
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L133-L133
+
+    sourceFile :: FilePath -> Pipe i String (ResourceT IO) ()
+    ```
+
+    (You might need to use
+    `hoistFreeT lift :: Pipe i o IO a -> Pipe i o (ResourceT IO) a`, given to us
+    by the *free* library, if you want to re-use `sourceHandle` in your
+    implementation)
+
+    ``` {.haskell}
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L138-L143
+
+    samplePipe2 :: FilePath -> Pipe i o (ResourceT IO) ()
+    samplePipe2 fp =
+           sourceFile fp
+        .| untilSTOP
+        .| toUpperPipe
+        .| hoistFreeT lift sinkStdout
+    ```
+
+    ``` {.haskell}
+    ghci> runResourceT . runPipe $ samplePipe2 "testpipefile.txt"
+    -- HELLO
+    -- WORLD
+    ```
+
+3.  Let's say we modified our `PipeF` slightly to take another parameter `u`,
     the result type of the upstream pipe.
 
     ``` {.haskell}
@@ -681,7 +734,7 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
     What could you do in a `CertainPipe i o m a` that you couldn't normally do
     with our `Pipe i o m a`?
 
-3.  We mentioned earlier that a "source" could have type
+4.  We mentioned earlier that a "source" could have type
 
     ``` {.haskell}
     type Source = Pipe ()
@@ -709,7 +762,7 @@ file](https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-c
     to convert between them! :D
 
     ``` {.haskell}
-    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L133-L141
+    -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/streaming-combinators-free.hs#L149-L157
 
     toListT :: Monad m => Pipe () o m a -> L.ListT m o
 
