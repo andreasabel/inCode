@@ -18,10 +18,10 @@ great as well! And an even nicer thing is that the puzzles are open-ended enough
 that there are often many ways of approaching them...including some approaches
 that can leverage math concepts in surprising ways, like [group
 theory](https://blog.jle.im/entry/alchemical-groups.html), [galilean
-transformations](https://blog.jle.im/entry/shifting-the-stars.html), and [more
-group theory](https://blog.jle.im/entry/shuffling-things-up.html). Many of the
-puzzles are often simple data transformations that Haskell is especially good
-at!
+transformations and linear
+algebra](https://blog.jle.im/entry/shifting-the-stars.html), and [more group
+theory](https://blog.jle.im/entry/shuffling-things-up.html). Many of the puzzles
+are often simple data transformations that Haskell is especially good at!
 
 Speaking of Haskell, I usually do a write-up for every day I can get around to
 about unique insights that solving in Haskell can provide to each different
@@ -38,7 +38,7 @@ here](https://github.com/mstksg/advent-of-code-2020/blob/master/reflections.md),
 but here are links to each individual one. Hopefully you can find them helpful.
 And if you haven't yet, why not try [Advent of Code](http://adventofcode.com/)
 yourself? :) And drop by the freenode \#\#advent-of-code channel, we'd love to
-say hi and chat, or help out!!
+say hi and chat, or help out!
 
 -   [Day 1 - Report
     Repair](https://github.com/mstksg/advent-of-code-2020/blob/master/reflections-out/day01.md)
@@ -87,8 +87,9 @@ say hi and chat, or help out!!
 -   [Day 23 - Crab
     Cups](https://github.com/mstksg/advent-of-code-2020/blob/master/reflections-out/day23.md)
 -   [Day 24 - Lobby
-    Layout](https://github.com/mstksg/advent-of-code-2020/blob/master/reflections-out/day24.m)
--   \[Day 25 - Combo Breaker\]\[day25\]
+    Layout](https://github.com/mstksg/advent-of-code-2020/blob/master/reflections-out/day24.md)
+-   [Day 25 - Combo
+    Breaker](https://github.com/mstksg/advent-of-code-2020/blob/master/reflections-out/day25.md)
 
 --------------------------------------------------------------------------------
 
