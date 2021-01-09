@@ -44,9 +44,10 @@ of points you have to consider grow as
 and the number of neighbors of each point to check grows as
 ![O(3\^d)](https://latex.codecogs.com/png.latex?O%283%5Ed%29 "O(3^d)")... I took
 my solution for d=4 and could *barely* churn out d=6 (in three minutes), since
-even at d=6 you have to consider 729 neighbors for (potentially) each of the
+even at d=6 you have to consider 728 neighbors for (potentially) each of the
 64,000,000 points. I had a dream that t=6, d=10 just *might* be possible...but
-clearly not without some major breakthrough.
+clearly not without some major breakthrough. At d=10, you'd need to check 59,048
+neighbors for potentially each of 10,240,000,000,000 points.
 
 Until someone brought something up...if we look at the 3d version, we see
 there's actually a *mirror symmetry*! That is, because everything starts off on
@@ -54,7 +55,7 @@ the xy plane, with z=0 and w=0, the resulting progression must be symmetrical on
 both sides.
 
 ![d=3 animation by
-u/ZuBsPaCe](/img/entries/advent-gol/life3d.gif "d=3 animation [u/ZuBsPaCe][]")
+[u/ZuBsPaCe](https://www.reddit.com/r/adventofcode/comments/kfa3nr/2020_day_17_godot_cubes_i_think_i_went_a_bit_too/)](/img/entries/advent-gol/life3d.gif "d=3 animation u/ZuBsPaCe")
 
 This means that we only have to simulate *half* of the points (for each extra
 dimension) to get the answer, *halving* the number of points for d=3, saving a
