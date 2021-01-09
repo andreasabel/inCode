@@ -13,9 +13,10 @@ and tidy, they are often *open-ended* in the interesting ways you can solve them
 or expand them.
 
 On the surface, it seems to essentially be a straightforward expansion of
-\[Conway's Game Of Life\]\[\]. GoL is a simulation played out on an infinite 2d
-grid, where certain cells are "on" and "off", and at each step of the
-simulation, the on/off cells spread and propagate in fascinating ways.
+[Conway's Game Of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
+GoL is a simulation played out on an infinite 2d grid, where certain cells are
+"on" and "off", and at each step of the simulation, the on/off cells spread and
+propagate in fascinating ways.
 
 The twist of the Advent of Code puzzle is it asks what would happen if we played
 out the rules of GoL in 3d, and then 4d! The "starting conditions" are a 8x8 2D
@@ -52,8 +53,8 @@ there's actually a *mirror symmetry*! That is, because everything starts off on
 the xy plane, with z=0 and w=0, the resulting progression must be symmetrical on
 both sides.
 
-![d=3 animation
-(u/ZuBsPaCe)](/img/entries/advent-gol/life3d.gif "d=3 animation (u/ZuBsPaCe)")
+![d=3 animation by
+u/ZuBsPaCe](/img/entries/advent-gol/life3d.gif "d=3 animation [u/ZuBsPaCe][]")
 
 This means that we only have to simulate *half* of the points (for each extra
 dimension) to get the answer, *halving* the number of points for d=3, saving a
