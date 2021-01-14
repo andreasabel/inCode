@@ -21,6 +21,44 @@
 % use microtype if available
 \IfFileExists{microtype.sty}{\usepackage{microtype}}{}
 \usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
 \usepackage{graphicx}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
@@ -64,6 +102,11 @@
 \textbf{\href{https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html}{in
 Code}}.}
 
+tldr: By exploiting multiple mathematical properties of a ``degenerate''
+hyper-dimensional game of life, each discovered one-by-one over the course of a
+month, we were able to go from ``10 dimensions may just barely be possible'' to
+``10 dimensions in 100ms, 50 dimensions tackled.''
+
 This is a story about breaking the degenerate hyper-dimensional game of life!
 Let's travel back in time to the night before December 17, 2020: The release of
 \href{https://adventofcode.com/2020/day/17}{``Conway Cubes''}, day 17 of the
@@ -96,8 +139,9 @@ were
 ###.####
 \end{verbatim}
 
-After 6 steps for 4-dimensional game of life, I had 2620 total points. And that
-was that.
+After 6 steps for 4-dimensional game of life, I had 2620 total points. I
+submitted my answer with a direct implementation (scoring the 66th spot on the
+leader board)\ldots and that was that.
 
 Simple enough, right? Afterwards, when discussing with some friends, we started
 talking about the trade-offs of different implementations and realized that
@@ -109,14 +153,14 @@ and the number of neighbors of each point to check grows as
 took my solution for d=4 and could \emph{barely} churn out d=6 (in three
 minutes), since even at d=6 you have to consider 728 neighbors for (potentially)
 each of the 64,000,000 points. I had a dream that t=6, d=10 just \emph{might} be
-possible\ldots but clearly not without some major breakthrough. At d=10, you'd
-need to check 59,048 neighbors for potentially each of 10,240,000,000,000
-points.
+possible\ldots but clearly not without some major breakthrough. After all, at
+d=10, you'd need to check 59,048 neighbors for potentially each of
+10,240,000,000,000 points.
 
-Until someone brought something up\ldots if we look at the 3d version, we see
-there's actually a \emph{mirror symmetry}! That is, because everything starts
-off on the xy plane, with z=0 and w=0, the resulting progression must be
-symmetrical on both sides.
+And\ldots a breakthrough soon came. Someone brought up that if we look at the 3d
+version, we see there's actually a \emph{mirror symmetry}! That is, because
+everything starts off on the xy plane, with z=0 and w=0, the resulting
+progression must be symmetrical on both sides.
 
 \begin{figure}
 \centering
@@ -142,11 +186,54 @@ And such a ``maybe'' (as posed in
 reddit thread I started}) turned into a month-long quest of breakthrough after
 breakthrough, exploting different aspects of this 2d degeneracy! It was a long,
 harrowing journey full of sudden twists and turns and bursts of excitement when
-new innovations came. And in the end, the hopeful question ``d=8 took 75
-minutes\ldots what if d=10 was possible?'' turned into \ldots{} (spoilers)
-\ldots{} \textbf{d=10 in 100 milliseconds, d=40 in eight minutes.}
+new innovations came. And in the end, the hopeful question ``What if d=10 was
+possible?'' turned into ``d=10 in 100ms, d=40 in eight minutes.''
 
-Curious? Let's see how the story unfolded!
+So, let's take a deep dive --- deeper than you probably ever expected to dive
+into any particular degenerate starting conditions of a hyper-dimensional game
+of life :D
+
+\hypertarget{the-baseline}{%
+\section{The Baseline}\label{the-baseline}}
+
+So let's start at the very beginning: how do you solve everything without
+anything too fancy?
+
+I discuss my basic Haskell method in
+\href{https://github.com/mstksg/advent-of-code-2020/blob/master/reflections-out/day17.md}{this
+write-up}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{{-}{-} | Given a neighbor set}
+\OtherTok{neighbsSet ::} \DataTypeTok{Vector} \DataTypeTok{Int} \OtherTok{{-}>} \DataTypeTok{Set}\NormalTok{ (}\DataTypeTok{Vector} \DataTypeTok{Int}\NormalTok{)}
+\NormalTok{neighbsSet }\OtherTok{=}\NormalTok{ S.fromList }\OperatorTok{.} \FunctionTok{tail} \OperatorTok{.} \FunctionTok{traverse}\NormalTok{ (\textbackslash{}x }\OtherTok{{-}>}\NormalTok{ [x,x}\OperatorTok{{-}}\DecValTok{1}\NormalTok{,x}\OperatorTok{+}\DecValTok{1}\NormalTok{])}
+
+\OtherTok{neighborMap ::} \DataTypeTok{Set}\NormalTok{ (}\DataTypeTok{V3} \DataTypeTok{Int}\NormalTok{) }\OtherTok{{-}>} \DataTypeTok{Map}\NormalTok{ (}\DataTypeTok{V3} \DataTypeTok{Int}\NormalTok{) }\DataTypeTok{Int}
+\NormalTok{neighborMap ps }\OtherTok{=}\NormalTok{ M.unionsWith (}\OperatorTok{+}\NormalTok{)}
+\NormalTok{    [ M.fromSet (}\FunctionTok{const} \DecValTok{1}\NormalTok{) (neighbsSet p)}
+    \OperatorTok{|}\NormalTok{ p }\OtherTok{<{-}}\NormalTok{ S.toList ps}
+\NormalTok{    ]}
+
+\NormalTok{stepper}
+\OtherTok{    ::} \DataTypeTok{Set}\NormalTok{ (}\DataTypeTok{V3} \DataTypeTok{Int}\NormalTok{)}
+    \OtherTok{{-}>} \DataTypeTok{Set}\NormalTok{ (}\DataTypeTok{V3} \DataTypeTok{Int}\NormalTok{)}
+\NormalTok{stepper ps }\OtherTok{=}\NormalTok{ stayAlive }\OperatorTok{<>}\NormalTok{ comeAlive}
+  \KeywordTok{where}
+\NormalTok{    neighborCounts }\OtherTok{=}\NormalTok{ neighborMap ps}
+\NormalTok{    stayAlive }\OtherTok{=}\NormalTok{ M.keysSet }\OperatorTok{.}\NormalTok{ M.filter (\textbackslash{}n }\OtherTok{{-}>}\NormalTok{ n }\OperatorTok{==} \DecValTok{2} \OperatorTok{||}\NormalTok{ n }\OperatorTok{==} \DecValTok{3}\NormalTok{) }\OperatorTok{$}
+\NormalTok{                  neighborCounts }\OtherTok{\textasciigrave{}M.restrictKeys\textasciigrave{}}\NormalTok{ ps}
+\NormalTok{    comeAlive }\OtherTok{=}\NormalTok{ M.keysSet }\OperatorTok{.}\NormalTok{ M.filter (}\OperatorTok{==} \DecValTok{3}\NormalTok{) }\OperatorTok{$}
+\NormalTok{                  neighborCounts }\OtherTok{\textasciigrave{}M.withoutKeys\textasciigrave{}}\NormalTok{  ps}
+\end{Highlighting}
+\end{Shaded}
+
+sim642 I wanted to ask this before but forgot: did anyone try to take advantage
+of the symmetry, e.g.~in z axis in part 1? sim642 Should halve the amount of
+calculations you have to do sim642 Only some extra work at the end to
+differentiate z=0 and z\textgreater0 positions to know which to count twice
+sim642 And in part 2 I feel like you could also exploit the symmetry in w axis
+simultaneously
 
 \hypertarget{signoff}{%
 \section{Signoff}\label{signoff}}
