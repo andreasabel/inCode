@@ -4,6 +4,8 @@ Degenerate Hyper-Dimensional Game of Life: Pushing Advent of Code to its Limits
 > Originally posted by [Justin Le](https://blog.jle.im/).
 > [Read online!](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html)
 
+poopoo
+
 tldr: By exploiting multiple mathematical properties of a "degenerate"
 hyper-dimensional game of life, each discovered one-by-one over the course of a
 month, we were able to go from "10 dimensions may just barely be possible" to
