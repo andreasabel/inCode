@@ -88,7 +88,7 @@ into any particular degenerate starting conditions of a hyper-dimensional game
 of life :D
 
 The Baseline
-============
+------------
 
 So let's start at the very beginning: how do you solve everything without
 anything too fancy?
