@@ -119,11 +119,14 @@ stepper ps = stayAlive <> comeAlive
                   neighborCounts `M.withoutKeys`  ps
 ```
 
-sim642 I wanted to ask this before but forgot: did anyone try to take advantage
-of the symmetry, e.g. in z axis in part 1? sim642 Should halve the amount of
-calculations you have to do sim642 Only some extra work at the end to
-differentiate z=0 and z\>0 positions to know which to count twice sim642 And in
-part 2 I feel like you could also exploit the symmetry in w axis simultaneously
+::: {#gol1}
+hi
+:::
+
+    sim642  I wanted to ask this before but forgot: did anyone try to take advantage of the symmetry, e.g. in z axis in part 1?
+    sim642  Should halve the amount of calculations you have to do
+    sim642  Only some extra work at the end to differentiate z=0 and z>0 positions to know which to count twice
+    sim642  And in part 2 I feel like you could also exploit the symmetry in w axis simultaneously
 
 --------------------------------------------------------------------------------
 
