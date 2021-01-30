@@ -131,6 +131,10 @@ Please enable Javascript
 Please enable Javascript
 :::
 
+::: {#golSyms}
+Please enable Javascript
+:::
+
     sim642  I wanted to ask this before but forgot: did anyone try to take advantage of the symmetry, e.g. in z axis in part 1?
     sim642  Should halve the amount of calculations you have to do
     sim642  Only some extra work at the end to differentiate z=0 and z>0 positions to know which to count twice
