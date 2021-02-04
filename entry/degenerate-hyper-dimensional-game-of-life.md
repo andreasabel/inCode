@@ -1,33 +1,34 @@
-Degenerate Hyper-Dimensional Game of Life: Pushing Advent of Code to its Limits
-===============================================================================
+Degenerate Hyper-Dimensional Game of Life
+=========================================
 
 > Originally posted by [Justin Le](https://blog.jle.im/).
 > [Read online!](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html)
 
-tldr: By exploiting multiple mathematical properties of a "degenerate"
-hyper-dimensional game of life, each discovered one-by-one over the course of a
-month, we were able to go from "10 dimensions may just barely be possible" to
-"10 dimensions in 100ms, 50 dimensions tackled."
+tldr: Over the course of a month, we were able to successive new mathematical
+properties of a "degenerate" hyper-dimensional game of life\" to take a "10
+dimensions may just barely be possible on a supercomputer" to "10 dimensions is
+easy enough to be run on any modern browser". Includes interactive
+visualizations and simulations!
 
-This is a story about breaking the degenerate hyper-dimensional game of life!
-Let's travel back in time to the night before December 17, 2020: The release of
-["Conway Cubes"](https://adventofcode.com/2020/day/17), day 17 of the "Advent of
-Code" of fun little coding puzzles building up to Christmas. One part I've
-always found especially fun is that, because the problems are so self-contained
-and tidy, they are often *open-ended* in the interesting ways you can solve them
-or expand them.
+This is a story about breaking the degenerate hyper-dimensional game of life by
+exploratory visualizations and math! Let's travel back in time: t'was the night
+before December 17, 2020, The release of ["Conway
+Cubes"](https://adventofcode.com/2020/day/17), day 17 of the "Advent of Code"
+(fun little coding puzzles building up to Christmas). One part about Advent of
+Code I've always found especially fun is that, because the problems are so
+self-contained and tidy, they are often *open-ended* in the interesting ways you
+can solve them or expand them.
 
-On the surface, it seems to essentially be a straightforward expansion of
-[Conway's Game Of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
-GoL is a simulation played out on an infinite 2d grid, where certain cells are
-"on" and "off", and at each step of the simulation, the on/off cells spread and
-propagate in fascinating ways.
+On the surface, Day 17 seemed to essentially be a straightforward extension of
+[Conway's Game Of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
+("GoL"). GoL is a simulation played out on a 2d grid, where cells are "on" and
+"off", and at each step of the simulation, the on/off cells spread and propagate
+in fascinating ways based on the state of their neighbors.
 
 The twist of the Advent of Code puzzle is it asks what would happen if we played
 out the rules of GoL in 3d, and then 4d! The "starting conditions" are a 8x8 2D
-grid that every puzzle solver receives their own one of, and to solve the puzzle
-you must simulate six steps of GoL for your personal input and count the number
-of live cells at the end of it. For example, my xy starting conditions were
+grid picked out for each participant, and the puzzle solution is the number of
+live cells after six steps. My personal starting conditions were:
 
     #####..#
     #..###.#
@@ -38,50 +39,57 @@ of live cells at the end of it. For example, my xy starting conditions were
     .##..###
     ###.####
 
-After 6 steps for 4-dimensional game of life, I had 2620 total points. I
-submitted my answer with a direct implementation (scoring the 66th spot on the
-leader board)...and that was that.
-
-Simple enough, right? Afterwards, when discussing with some friends, we started
-talking about the trade-offs of different implementations and realized that
-dimensionality was no joke...as you upped the number of dimensions, the number
-of points you have to consider grow as
-![O((2t+8)\^d)](https://latex.codecogs.com/png.latex?O%28%282t%2B8%29%5Ed%29 "O((2t+8)^d)"),
+I submitted my answer with a direct implementation (scoring the 66th spot on the
+leader board for that day)...and that was that for the "competitive" part. But
+the real fun always starts after! When discussing with some friends, we started
+talking about the trade-offs of different implementations and realized that the
+extra dimensionality was no joke...as you upped the number of dimensions, the
+number of points you have to consider grow as
+![O((2t+6)\^d)](https://latex.codecogs.com/png.latex?O%28%282t%2B6%29%5Ed%29 "O((2t+6)^d)"),
 and the number of neighbors of each point to check grows as
-![O(3\^d)](https://latex.codecogs.com/png.latex?O%283%5Ed%29 "O(3^d)")... I took
-my solution for d=4 and could *barely* churn out d=6 (in three minutes), since
-even at d=6 you have to consider 728 neighbors for (potentially) each of the
-64,000,000 points. I had a dream that t=6, d=10 just *might* be possible...but
-clearly not without some major breakthrough. After all, at d=10, you'd need to
-check 59,048 neighbors for potentially each of 10,240,000,000,000 points.
+![O(3\^d)](https://latex.codecogs.com/png.latex?O%283%5Ed%29 "O(3^d)"). So for
+4D it's definitely possible to solve naively...but anything higher is going to
+strain.
 
-And...a breakthrough soon came. Someone brought up that if we look at the 3d
+To confirm, I ran my naive solution (running six time steps) on 5D, and then 6D
+(which took three minute)...and I had to quit out of my 7D attempt because it
+took too long. At d=7 you have to consider 2186 neighbors for each of the
+potential 61,222,0032 points...that's no joke. d=7 seemed impossible on any
+commercial hardware, but I had the dream that *maybe*, with some breakthroughs
+in optimization, we could one day hit d=10. But not naively, checking 59,048
+neighbors for each potential 357,046,722,6624 points.
+
+And soon...a breakthrough did come! Someone brought up that if we look at the 3d
 version, we see there's actually a *mirror symmetry*! That is, because
-everything starts off on the xy plane, with z=0 and w=0, the resulting
-progression must be symmetrical on both sides.
+everything starts off on the xy plane, with z=0, the resulting progression must
+be symmetrical on both sides (positive and negative z).
 
 ![d=3 animation by
 [u/ZuBsPaCe](https://www.reddit.com/r/adventofcode/comments/kfa3nr/2020_day_17_godot_cubes_i_think_i_went_a_bit_too/)](/img/entries/advent-gol/life3d.gif "d=3 animation u/ZuBsPaCe")
 
-This means that we only have to simulate *half* of the points (for each extra
-dimension) to get the answer, *halving* the number of points for d=3, saving a
-factor of 4 for d=4, saving a factor of 8 for d=5, etc.
-(![O(2\^{d-2})](https://latex.codecogs.com/png.latex?O%282%5E%7Bd-2%7D%29 "O(2^{d-2})")).
-After implementing this optimization, I was able to run d=7 in under *six
-minutes* (and d=8 in 75 minutes).
+This means we can save the number of points by a factor of two for each extra
+dimension...that's a factor of 2 for d=3, a factor of 4 for d=4, and a factor of
+8 for d=5
+(![O(2\^{d-2})](https://latex.codecogs.com/png.latex?O%282%5E%7Bd-2%7D%29 "O(2^{d-2})"))!
+After implementing this, my d=7 ran in under six minutes, and my d=8 in 75
+minutes.
 
-What's more is that this made us realize that there were potentially more
-breakthroughs we could get by exploiting the fact that we are only given a 2d
-slice...we didn't know what those could be yet, but suddenly, d=10 seemed
-attainable...maybe?
+Well, it didn't get us to d=10...but this discovery completely changed how we
+saw this puzzle. It made us believe that there were potentially more
+breakthroughs we could get by exploiting interesting features in how the problem
+was set up (starting with a 2D grid). We didn't know what those could be yet,
+but suddenly, d=10 seemed attainable...maybe?
 
 And such a "maybe" (as posed in [this reddit thread I
 started](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/))
-turned into a month-long quest of breakthrough after breakthrough, exploting
+turned into a month-long quest of breakthrough after breakthrough, exploiting
 different aspects of this 2d degeneracy! It was a long, harrowing journey full
 of sudden twists and turns and bursts of excitement when new innovations came.
 And in the end, the hopeful question "What if d=10 was possible?" turned into
-"d=10 in 100ms, d=40 in eight minutes."
+"d=10 in 100ms, d=40 in eight minutes." We even got d=10 fast enough to run on
+easily any modern browser --- this post includes those simulations! Furthermore,
+the whole journey became an adventure in the power of visualization combined
+with abstract thinking.
 
 So, let's take a deep dive --- deeper than you probably ever expected to dive
 into any particular degenerate starting conditions of a hyper-dimensional game
@@ -120,6 +128,10 @@ stepper ps = stayAlive <> comeAlive
 ```
 
 ::: {#golDrawer}
+Please enable Javascript
+:::
+
+::: {#gol2D}
 Please enable Javascript
 :::
 
