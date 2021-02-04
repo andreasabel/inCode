@@ -177,21 +177,34 @@ space, and the benefits compound with every dimension due to the blessing of
 dimensionality![^1]
 
 The nice thing about this method is that it's easy enough to generalize to any
-dimension: instead of, say, keeping `[x,y]` in your set, just keep `[x,y,z]`, or
-any length array of coordinates. One minor trick you need to think through is
-generating all ![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1")
-neighbors, but but that's going to come down to a d-ary [cartesian
+dimension: instead of, say, keeping `[x,y]` in your set for 2D, just keep
+`[x,y,z]` for 3D, or any length array of coordinates. One minor trick you need
+to think through is generating all
+![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1") neighbors, but
+but that's going to come down to a d-ary [cartesian
 product](https://observablehq.com/@d3/d3-cross) of `[-1,0,1]` to itself.[^2]
 
-We can visualize this in 3D, but it might be nice to render this as a collection
-of "slices" in 3D space. Each square represents a slice at a different Z level:
-the middle one is z=0, the ones to the left and right are z=-1 and z=1, etc.
+Let's see how this looks for the 3D case! To make things easier to see, we can
+render things in "slices" in 3D space: each grid represents a slice at a
+different z level (ie, the z=0 square represents all squares
+![\<x,y,0\>](https://latex.codecogs.com/png.latex?%3Cx%2Cy%2C0%3E "<x,y,0>")).
+Press "Play" to have the simulation cycle through 6 time steps!
 
 ::: {#gol3D}
 Please enable Javascript
 :::
 
-WIP
+In "reality", each of those 13 slices above are stacked on top of each other in
+3D space. You'll see that most initial conditions will spread out from the
+center z=0 point, which means they are actually spreading "up and down" the z
+axis. If you mouse over (or tap), you'll see the all of the 26 3D neighbors of
+the point you're hovering over highlighted in blue --- these 26 points form a 3D
+cube around your mouse once everything is stacked correctly. You can use this
+cube to help see how the simulation progresses. If your mouse is hovering over a
+live cell, and there are 2 or 3 live cells highlighted in your cube, it'll stay
+alive in the next time step. If your mouse is hovering over a dead cell and
+there are exactly 3 live cells highlighted in your cube, it will come alive in
+the next step.
 
 ::: {#gol4D}
 Please enable Javascript
