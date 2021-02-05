@@ -533,7 +533,7 @@ post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_par
 > ...we can use symmetries coming from permutations, to only track cells where
 > ![\|x\_0\| \< 13,\\, \|x\_1\| \< 13,\\, 0 \\leq x\_2 \\leq x\_3 \\leq\\,\\ldots\\, \\leq x\_{d-1} \\leq t\_max](https://latex.codecogs.com/png.latex?%7Cx_0%7C%20%3C%2013%2C%5C%2C%20%7Cx_1%7C%20%3C%2013%2C%5C%2C%200%20%5Cleq%20x_2%20%5Cleq%20x_3%20%5Cleq%5C%2C%5Cldots%5C%2C%20%5Cleq%20x_%7Bd-1%7D%20%5Cleq%20t_max "|x_0| < 13,\, |x_1| < 13,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t_max").
 > There's
-> ![25\^2 \\times \\sum\_{k=0}\^{t\_max} {{d-3+k}\\choose{k}}](https://latex.codecogs.com/png.latex?25%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt_max%7D%20%7B%7Bd-3%2Bk%7D%5Cchoose%7Bk%7D%7D "25^2 \times \sum_{k=0}^{t_max} {{d-3+k}\choose{k}}")
+> ![25\^2 \\times \\sum\_{k=0}\^{t\_max} { {d-3+k} \\choose {k} }](https://latex.codecogs.com/png.latex?25%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt_max%7D%20%7B%20%7Bd-3%2Bk%7D%20%5Cchoose%20%7Bk%7D%20%7D "25^2 \times \sum_{k=0}^{t_max} { {d-3+k} \choose {k} }")
 > such cells.
 
 *(equations slightly modified)*
