@@ -547,9 +547,9 @@ represent ![d-2](https://latex.codecogs.com/png.latex?d-2 "d-2"), the number of
 higher dimensions:
 
 ![
-25\^2 \\times \\sum\_{k=0}\^{t\_max} {{\\hat{d}-1+k}\\choose{k}}
-](https://latex.codecogs.com/png.latex?%0A25%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt_max%7D%20%7B%7B%5Chat%7Bd%7D-1%2Bk%7D%5Cchoose%7Bk%7D%7D%0A "
-25^2 \times \sum_{k=0}^{t_max} {{\hat{d}-1+k}\choose{k}}
+25\^2 \\times \\sum\_{k=0}\^{t\_max} { {\\hat{d}-1+k}\\choose{k} }
+](https://latex.codecogs.com/png.latex?%0A25%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt_max%7D%20%7B%20%7B%5Chat%7Bd%7D-1%2Bk%7D%5Cchoose%7Bk%7D%20%7D%0A "
+25^2 \times \sum_{k=0}^{t_max} { {\hat{d}-1+k}\choose{k} }
 ")
 
 That sum has only the amount of terms fixed with the maximum timestamp! That
@@ -558,9 +558,9 @@ means we only ever have 6 terms to expand, no matter how high the dimensions are
 properties of the binomial distribution to get
 
 ![
-25\^2 \\times {{\\hat{d}+6}\\choose{6}}
-](https://latex.codecogs.com/png.latex?%0A25%5E2%20%5Ctimes%20%7B%7B%5Chat%7Bd%7D%2B6%7D%5Cchoose%7B6%7D%7D%0A "
-25^2 \times {{\hat{d}+6}\choose{6}}
+25\^2 \\times { {\\hat{d}+6}\\choose{6} }
+](https://latex.codecogs.com/png.latex?%0A25%5E2%20%5Ctimes%20%7B%20%7B%5Chat%7Bd%7D%2B6%7D%5Cchoose%7B6%7D%20%7D%0A "
+25^2 \times { {\hat{d}+6}\choose{6} }
 ")
 
 This binomial coefficient is actually polynomial on
