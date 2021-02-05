@@ -490,11 +490,11 @@ def reverse_neighbs_table(t_max):
 
     for i in range(t_max):
         for j in range(i, t_max):
-            for neighb, ncount in forward_neighbs((i,j)).items():
+            for neighb, ncount in forward_neighbs((i, j)).items():
                 if neighb in weights:
-                    weights[neighb] += Counter({(i, j): ncount})
+                    weights[neighb][(i, j)] = ncount
                 else:
-                    weights[neighb] = Counter({(i, j): ncount})
+                    weights[neighb] = {(i, j): ncount}
 
     return weights
 ```
