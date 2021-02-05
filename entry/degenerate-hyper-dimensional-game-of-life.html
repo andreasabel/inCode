@@ -37,7 +37,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Well, it didn’t get us to d=10…but this discovery completely changed how we saw this puzzle. With one breakthrough down, we began to believe that there would be more just around the corner, made possible by our problem’s special degeneracy (that is, that we start on a 2d slice).</p>
 <p>Such a dream (as posed in <a href="https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/">this reddit thread I started</a>) turned into a month-long quest of breakthrough after breakthrough, exploiting different aspects of this degeneracy! It was a long, harrowing journey full of sudden twists and turns and bursts of excitement when new innovations came. And in the end, the hopeful question “What if d=10 was possible?” turned into “d=10 in 100ms, d=40 in eight minutes.” I even got d=10 fast enough to run on easily any modern browser — this post includes those simulations! Furthermore, the whole journey became an adventure in the power of visualization combined with abstract thinking.</p>
 <p>So, let’s take a deep dive — deeper than you probably ever expected to dive into any particular degenerate starting conditions of a hyper-dimensional game of life :D</p>
-<h2 id="the-baseline">The Baseline</h2>
+<h2 id="starting-off">Starting Off</h2>
 <p>First of all, let’s meet our friend for the rest of this journey. In the drawer below, you can draw (with your mouse) the 8x8 grid you want to simulate for the rest of this post. As you draw, the rest of the visualizations will update to use this as their initial conditions.</p>
 <div id="golDrawer">
 <p>Please enable Javascript</p>
@@ -63,31 +63,118 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li>Keep a <em>set</em> of points that are “on”.</li>
 <li>At each step:
 <ol type="a">
-<li><p>Initialize a dynamic map (key-value store) of points to integers (this will record the number of live neighbors of each point).</p></li>
+<li><p>Initialize a dynamic map (key-value store) of points to integers. This map associates each point to the number of live neighbors it has.</p></li>
 <li><p>For each step, iterate over each of your “on” points, expand all of their neighbors <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?n_i" alt="n_i" title="n_i" /> (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%28O%283%5Ed%29%29" alt="(O(3^d))" title="(O(3^d))" />), and increment the value associated with <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?n_i" alt="n_i" title="n_i" /> in your dynamic map.</p>
-<p>For example, if the point <code>[2,3]</code> is in your set of live points, you would add increment the map’s values at keys <code>[1,2]</code>, <code>[2,2]</code>, <code>[3,2]</code>, etc.: all 8 neighbors of <code>[2,3]</code>.</p></li>
+<p>For example, if the point <code>&lt;2,3&gt;</code> is in your set of live points, you would add increment the map’s values at keys <code>&lt;1,2&gt;</code>, <code>&lt;2,2&gt;</code>, <code>&lt;3,2&gt;</code>, etc.: all 8 neighbors of <code>&lt;2,3&gt;</code>.</p></li>
 <li><p>Collect your new set of on points: keep all of the keys in your dynamic map corresponding to live points if their integers are 2 or 3, and keep all of the keys in your dynamic map corresponding to dead points if their integers are 3.</p></li>
 </ol></li>
 <li>You have a new set! Loop again six times!</li>
 </ol>
 <p>I discuss this algorithm much more deeply with actual code in <a href="https://github.com/mstksg/advent-of-code-2020/blob/master/reflections-out/day17.md">my solutions write-up in my Advent of Code reflections journal</a>.</p>
-<p>This method nets us a huge advantage because we now only have to loop over the number of items that we know are alive! Any points far away from our set of alive points can be properly ignored. This narrows down our huge iteration space, and the benefits compound with every dimension due to the blessing of dimensionality!<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
-<p>The nice thing about this method is that it’s easy enough to generalize to any dimension: instead of, say, keeping <code>[x,y]</code> in your set for 2D, just keep <code>[x,y,z]</code> for 3D, or any length array of coordinates. One minor trick you need to think through is generating all <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5Ed-1" alt="3^d-1" title="3^d-1" /> neighbors, but but that’s going to come down to a d-ary <a href="https://observablehq.com/@d3/d3-cross">cartesian product</a> of <code>[-1,0,1]</code> to itself.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<p>This method nets us a huge advantage because we now only have to loop over the number of items that we know are alive! Any points far away from our set of alive points can be properly ignored. This narrows down our huge iteration space, and the benefits compound with every dimension due to the blessing of dimensionality![^bittweak]</p>
+<p>The nice thing about this method is that it’s easy enough to generalize to any dimension: instead of, say, keeping <code>[x,y]</code> in your set for 2D, just keep <code>[x,y,z]</code> for 3D, or any length array of coordinates. One minor trick you need to think through is generating all <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5Ed-1" alt="3^d-1" title="3^d-1" /> neighbors, but but that’s going to come down to a d-ary <a href="https://observablehq.com/@d3/d3-cross">cartesian product</a> of <code>[-1,0,1]</code> to itself.[^crosstrick]</p>
+<p>Here’s a version of the set-based implementation, using a nice trick I learned from <a href="https://twitter.com/phaazon_">phaazon</a> to get the right neighbors by doing a cartesian product against <code>[0,-1,1]</code>, which leaves the first item as the <code>&lt;0,0&gt;</code> “original point” we want to exclude:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1"></a><span class="im">from</span> itertools <span class="im">import</span> islice, product</span>
+<span id="cb2-2"><a href="#cb2-2"></a><span class="im">from</span> collections <span class="im">import</span> Counter</span>
+<span id="cb2-3"><a href="#cb2-3"></a></span>
+<span id="cb2-4"><a href="#cb2-4"></a><span class="kw">def</span> mk_neighbs(point):</span>
+<span id="cb2-5"><a href="#cb2-5"></a>    <span class="co">&quot;&quot;&quot;Return neighboring points, each equally weighted</span></span>
+<span id="cb2-6"><a href="#cb2-6"></a></span>
+<span id="cb2-7"><a href="#cb2-7"></a><span class="co">    (1,2)</span></span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="co">    =&gt; [(1, 1), (1, 3), (0, 2), (0, 1), (0, 3), (2, 2), (2, 1), (2, 3)]</span></span>
+<span id="cb2-9"><a href="#cb2-9"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb2-10"><a href="#cb2-10"></a>    gen <span class="op">=</span> product(<span class="op">*</span>[[x, x<span class="dv">-1</span>, x<span class="op">+</span><span class="dv">1</span>] <span class="cf">for</span> x <span class="kw">in</span> point])</span>
+<span id="cb2-11"><a href="#cb2-11"></a>    <span class="co"># skip the first item, the original point</span></span>
+<span id="cb2-12"><a href="#cb2-12"></a>    <span class="bu">next</span>(gen)</span>
+<span id="cb2-13"><a href="#cb2-13"></a>    <span class="cf">return</span> gen</span>
+<span id="cb2-14"><a href="#cb2-14"></a></span>
+<span id="cb2-15"><a href="#cb2-15"></a><span class="kw">def</span> step(pts):</span>
+<span id="cb2-16"><a href="#cb2-16"></a>    <span class="co">&quot;&quot;&quot;Takes a set of points (tuples) and steps them in the simulation</span></span>
+<span id="cb2-17"><a href="#cb2-17"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb2-18"><a href="#cb2-18"></a>    neighbs <span class="op">=</span> Counter()</span>
+<span id="cb2-19"><a href="#cb2-19"></a>    <span class="cf">for</span> point <span class="kw">in</span> pts:</span>
+<span id="cb2-20"><a href="#cb2-20"></a>        neighbs <span class="op">+=</span> Counter(mk_neighbs(point))</span>
+<span id="cb2-21"><a href="#cb2-21"></a></span>
+<span id="cb2-22"><a href="#cb2-22"></a>    <span class="kw">def</span> validate(point, ncount):</span>
+<span id="cb2-23"><a href="#cb2-23"></a>        <span class="cf">if</span> point <span class="kw">in</span> pts:</span>
+<span id="cb2-24"><a href="#cb2-24"></a>            <span class="cf">return</span> ncount <span class="op">==</span> <span class="dv">2</span> <span class="kw">or</span> ncount <span class="op">==</span> <span class="dv">3</span></span>
+<span id="cb2-25"><a href="#cb2-25"></a>        <span class="cf">else</span>:</span>
+<span id="cb2-26"><a href="#cb2-26"></a>            <span class="cf">return</span> ncount <span class="op">==</span> <span class="dv">3</span></span>
+<span id="cb2-27"><a href="#cb2-27"></a></span>
+<span id="cb2-28"><a href="#cb2-28"></a>    <span class="cf">return</span> [p <span class="cf">for</span> p, n <span class="kw">in</span> neighbs.items() <span class="cf">if</span> validate(p, n)]</span></code></pre></div>
+<p>And…there’s actually a neat optimization we can use (brought to our attention by <a href="https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ghmllf8">Peter Tseng</a>) to avoid the check of the original set in step 2c above: when you iterate over each point, increment the eight neighbors’ map values by <em>2</em>, and then increment the point itself by 1. Then in the final integer under each key, <code>n / 2</code> or <code>n &gt;&gt; 1</code> gives you the number of neighbors and <code>n % 2</code> (modulo) gives you whether or not that cell was alive.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="im">from</span> itertools <span class="im">import</span> islice, product, chain,repeat</span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="im">from</span> collections <span class="im">import</span> Counter</span>
+<span id="cb3-3"><a href="#cb3-3"></a></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="kw">def</span> mk_neighbs(point):</span>
+<span id="cb3-5"><a href="#cb3-5"></a>    <span class="co">&quot;&quot;&quot;Return neighboring points, with special optimization trick weights</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="co">    (1,2)</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="co">    =&gt; [((1, 2), 1), ((1, 1), 2), ((1, 3), 2), ((0, 2), 2), ((0, 1), 2),</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="co">        ((0, 3), 2), ((2, 2), 2), ((2, 1), 2), ((2, 3), 2)</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a><span class="co">       ]</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a>    neighb_pts <span class="op">=</span> product(<span class="op">*</span>[[x, x<span class="dv">-1</span>, x<span class="op">+</span><span class="dv">1</span>] <span class="cf">for</span> x <span class="kw">in</span> point])</span>
+<span id="cb3-13"><a href="#cb3-13"></a>    <span class="co"># associate the original point with +1, and the neighbors with +2</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a>    <span class="cf">return</span> <span class="bu">zip</span>(neighb_pts, chain([<span class="dv">1</span>], repeat(<span class="dv">2</span>)))</span>
+<span id="cb3-15"><a href="#cb3-15"></a></span>
+<span id="cb3-16"><a href="#cb3-16"></a><span class="kw">def</span> step(pts):</span>
+<span id="cb3-17"><a href="#cb3-17"></a>    <span class="co">&quot;&quot;&quot;Takes a set of points (tuples) and steps them in the simulation</span></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="co">    &quot;&quot;&quot;</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a>    neighbs <span class="op">=</span> Counter()</span>
+<span id="cb3-20"><a href="#cb3-20"></a>    <span class="cf">for</span> point <span class="kw">in</span> pts:</span>
+<span id="cb3-21"><a href="#cb3-21"></a>        neighbs <span class="op">+=</span> Counter(<span class="bu">dict</span>(mk_neighbs(point)))</span>
+<span id="cb3-22"><a href="#cb3-22"></a></span>
+<span id="cb3-23"><a href="#cb3-23"></a>    <span class="kw">def</span> validate(val):</span>
+<span id="cb3-24"><a href="#cb3-24"></a>        <span class="co"># the true neighbor count, since we inserted +2 for neighbors</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a>        ncount <span class="op">=</span> val <span class="op">//</span> <span class="dv">2</span></span>
+<span id="cb3-26"><a href="#cb3-26"></a>        <span class="co"># was originally alive if odd, since we inserted +1 for self</span></span>
+<span id="cb3-27"><a href="#cb3-27"></a>        <span class="cf">if</span> val <span class="op">%</span> <span class="dv">2</span> <span class="op">==</span> <span class="dv">1</span>:</span>
+<span id="cb3-28"><a href="#cb3-28"></a>            <span class="cf">return</span> ncount <span class="op">==</span> <span class="dv">2</span> <span class="kw">or</span> ncount <span class="op">==</span> <span class="dv">3</span></span>
+<span id="cb3-29"><a href="#cb3-29"></a>        <span class="cf">else</span>:</span>
+<span id="cb3-30"><a href="#cb3-30"></a>            <span class="cf">return</span> ncount <span class="op">==</span> <span class="dv">3</span></span>
+<span id="cb3-31"><a href="#cb3-31"></a></span>
+<span id="cb3-32"><a href="#cb3-32"></a>    <span class="cf">return</span> [p <span class="cf">for</span> p, q <span class="kw">in</span> neighbs.items() <span class="cf">if</span> validate(q)]</span></code></pre></div>
+<h2 id="three-dimensions">Three Dimensions</h2>
 <p>Let’s see how this looks for the 3D case! To make things easier to see, we can render things in “slices” in 3D space: each grid represents a slice at a different z level (ie, the z=0 square represents all squares <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%3Cx%2Cy%2C0%3E" alt="&lt;x,y,0&gt;" title="&lt;x,y,0&gt;" />). Press “Play” to have the simulation cycle through 6 time steps!</p>
 <div id="gol3D">
 <p>Please enable Javascript</p>
 </div>
-<p>In “reality”, each of those 13 slices above are stacked on top of each other in 3D space. You’ll see that most initial conditions will spread out from the center z=0 point, which means they are actually spreading “up and down” the z axis. If you mouse over (or tap), you’ll see the all of the 26 3D neighbors of the point you’re hovering over highlighted in blue — these 26 points form a 3D cube around your mouse once everything is stacked correctly. You can use this cube to help see how the simulation progresses. If your mouse is hovering over a live cell, and there are 2 or 3 live cells highlighted in your cube, it’ll stay alive in the next time step. If your mouse is hovering over a dead cell and there are exactly 3 live cells highlighted in your cube, it will come alive in the next step.</p>
-<div id="gol4D">
-<p>Please enable Javascript</p>
-</div>
-<div id="golFlat">
-<p>Please enable Javascript</p>
-</div>
+<p>In “reality”, each of those 13 slices above are stacked on top of each other in 3D space. You’ll see that most initial conditions will spread out from the center z=0 point, which means they are actually spreading “up and down” the z axis.</p>
+<p>If you mouse over (or tap) any individual tiny <code>&lt;x,y&gt;</code> cell, you’ll see the all of the 26 (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5Ed-1" alt="3^d-1" title="3^d-1" />) <code>&lt;x,y,z&gt;</code> 3D neighbors of the point you’re hovering over highlighted in blue — these 26 points form a 3D cube around your mouse once everything is stacked correctly. You can use this cube to help see how the simulation progresses. If your mouse is hovering over a live cell, and there are 2 or 3 live cells highlighted in your cube, it’ll stay alive in the next time step. If your mouse is hovering over a dead cell and there are exactly 3 live cells highlighted in your cube, it will come alive in the next step.</p>
+<h3 id="axis-reflection-symmetry">Axis Reflection Symmetry</h3>
+<p>Try playing around with different initial conditions to see how they evolve! See any patterns?</p>
+<p>Well, the yellow highlight might have given given things away, but…note that the entire thing has reflection symmetry across z=0! z=1 is always the same as z=-1, z=2 is always the same as z=-2, etc. Fundamentally, this is because our starting solution has z-plane symmetry: the initial 2D slice is symmetric with reflections across z, because z=0. This is the first “degeneracy” that this blog post’s title is referring to. The negative and positive directions are interchangeable! This is reflected in the yellow highlight on hover: when you mouse-over a z square, its corresponding reflected twin is highlighted, and will always be identical.</p>
+<p>This means that we actually only need to simulate <em>positive</em> z’s…and for our final answer we just “un-reflect” to get the total number.</p>
+<p>Well, actually…the picture is slightly more complicated. We also need to change how to distribute neighbors. That’s because, once we commit to only keeping the positive z’s, some cells need to be double-counted as neighbors. In particular, any <code>z=0</code> cell would previously had a neighbor at both <code>z=-1</code> and <code>z=1</code>…but now if we only keep the positive z’s, it would have <code>z=1</code> as a neighbor <em>twice</em>.</p>
+<p>The following interactive element lets you explore what this looks like:</p>
 <div id="golSyms3DForward">
 <p>Please enable Javascript</p>
 </div>
+<p>Each square represents an entire “slice” of z. When you mouse-over or tap a z-cell, its z-neighbors are highlighted with how many times that neighbor has to be counted, and the green bar tells you from what direction that neighborship arose from. For example, mousing over z=3, z=2 and z=4 get highlighted with the values “1” because they are neighbors of 3, on the left and right side (respectively). Note that one neat property for all squares (except for z=6, which goes off the scale) is that the “total” higher-dimensional neighbors is always 2 (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5E%28d-2%29-1" alt="3^(d-2)-1" title="3^(d-2)-1" />), it’s just that where those neighbors fall is re-arranged slightly.</p>
+<p>The tricky square is now z=0: if you mouse-over it, you’ll see that it has a single neighbor z=1 that is counted twice, as a neighbor from both the left and right side.</p>
+<p>We can compute the above diagram by expanding z=0 to its neighbors (z=-1, and z=1), applying the absolute value function, and seeing how points double-up. This gives us the “forward neighbors”, and we can directly use it for the original “keep the full array” GoL implementation.</p>
+<p>However, for the “keep active points and expand their neighbors” GoL implementation…we have to find the opposite. Remember that to build our “neighbors map” (the map of points to how many active neighbors they have), we have each cell “pro-actively” add its contributions to all of its neighbors. <code>&lt;1,2,3&gt;</code> is a neighbor to <code>&lt;1,3,4&gt;</code> once, so when we expand <code>&lt;1,2,3&gt;</code> we would increment the value in the map at <code>&lt;1,3,4&gt;</code> by 1 because <code>&lt;1,2,3&gt;</code> is a neighbor of <code>&lt;1,3,4&gt;</code> once.</p>
+<p>Now, how do we count <code>&lt;1,3,1&gt;</code> expanding into <code>&lt;1,3,0&gt;</code>? Well, normally, <code>&lt;1,3,1&gt;</code> is a neighbor of <code>&lt;1,3,0&gt;</code> once. However, if we only keep the normalized z values, <code>&lt;1,3,1&gt;</code> is a neighbor of <code>&lt;1,3,0&gt;</code>…twice! To compute the total neighbor count of <code>&lt;1,3,0&gt;</code>, we have to count the contribution from <code>&lt;1,3,1&gt;</code> twice (once for <code>&lt;1,3,1&gt;</code> and once for <code>&lt;1,3,-1&gt;</code>, which was normalized away).</p>
+<p>That means we have to follow the rules in the previous element <em>backwards</em>, like:</p>
 <div id="golSyms3DReverse">
+<p>Please enable Javascript</p>
+</div>
+<p>These are the “reverse neighbors”: how much times a given point counts as a neighbor for its surrounding points. Here, mousing over z=1 shows that it counts as a neighbor for z=0 twice, from both the left and the right. It also counts as a neighbor for z=2 once (from the left side).</p>
+<p>We can account for this by hard-coding the rules into our step algorithm: if our z goes from <code>1</code> to <code>0</code>, increment its value twice in the neighbor map. Otherwise, simply increment by 1 as normal.</p>
+<p>This rule is relatively easy to implement, and as a result we now halved our total number of points we need to keep and check for 3D! It’s also simple enough to generalize (just do the <code>1 -&gt; 0</code> check for every “higher dimension” and double its contribution for each <code>1 -&gt; 0</code> transition is seen)…and that means we reduce the number of 4D points we need to track by a factor of four, the number of 5D points by a factor of eight, the number of 6D points by a factor of 16… now our total points to check only grows as <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?O%28n%5Ed%20%2F%202%5E%7Bd-2%7D%29" alt="O(n^d / 2^{d-2})" title="O(n^d / 2^{d-2})" /> instead of <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?O%28n%5Ed%29" alt="O(n^d)" title="O(n^d)" />!</p>
+<p>This discovery late in the night of December 16th was what inspired us to believe and dream that more breakthroughs might be possible to bring things down even further.</p>
+<p>And those breakthroughs soon came…</p>
+<h2 id="four-dimensions">Four Dimensions</h2>
+<p>Let’s look at how the 4 dimensions works! We can visualize this by taking “z-w” slices at different x-y planes as well. The labels in these boxes are the <code>&lt;z,w&gt;</code> of each slice. The very center is <code>&lt;z,w&gt; = &lt;0,0&gt;</code> the row in the middle from the top is <code>w=0</code>, and the column in the very middle from the left is <code>z=0</code>. It’s basically taking the 3D visualization above and expanding it in an extra dimension. Press “Play” to run your initial conditions!</p>
+<div id="gol4D">
+<p>Please enable Javascript</p>
+</div>
+<p>We get something interesting as well: most initial conditions will spread out from the center <code>&lt;z,w&gt; = &lt;0,0&gt;</code> point radially, spreading outwards into positive and negative z and w. Mouse-over or tap any individual tiny <code>&lt;x.y&gt;</code> cell and you’ll see each of its 80 (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5Ed-1" alt="3^d-1" title="3^d-1" />) <code>&lt;x,y,z,w&gt;</code> 4D neighbors highlighted in blue, forming a little 3x3x3 “tesseract” (4D cube, or hypercube). Like in the 3D case, you can use this little hypercube to track how the simulation progresses: if your mouse if hovering over a live cell with 2 or 3 live cells in its hypercube, it’ll stay alive in the next step, if it’s hovering over a dead cell with 3 live cells in its hypercube, it’ll come alive in the next step.</p>
+<h3 id="diagonal-reflection-symmetry">Diagonal Reflection Symmetry</h3>
+<p>Play around and explore how simulations evolve! You will notice that the axis reflection symmetry is still preserved, but four ways (the slice at <code>&lt;z,w&gt; = &lt;3,4&gt;</code> is always going to be identical to the slice at <code>&lt;-3,4&gt;</code>, <code>&lt;3,-4&gt;</code>, and <code>&lt;-3,-4&gt;</code>). These are reflected in the “dark yellow” highlights above.</p>
+<p>(TODO)</p>
+<div id="golFlat">
 <p>Please enable Javascript</p>
 </div>
 <div id="golSyms4DForward">
@@ -108,14 +195,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <pre><code>sim642  I wanted to ask this before but forgot: did anyone try to take advantage of the symmetry, e.g. in z axis in part 1?
 sim642  Should halve the amount of calculations you have to do
 sim642  Only some extra work at the end to differentiate z=0 and z&gt;0 positions to know which to count twice
-sim642  And in part 2 I feel like you could also exploit the symmetry in w axis simultaneously</code></pre>
-<section class="footnotes" role="doc-endnotes">
-<hr />
-<ol>
-<li id="fn1" role="doc-endnote"><p>There is a small tweak (brought to our attention by <a href="https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ghmllf8">Peter Tseng</a>) that people often add to this to avoid the costly check of the original set in step 2c: when you iterate over each point, normally you’d increment the eight neighbors’ map values by 1. Instead, you can increment the eight neighbors’ map values by <em>2</em>, and then increment the point itself by 1. Then in the final integer under each key, <code>n / 2</code> or <code>n &gt;&gt; 1</code> gives you the number of neighbors and <code>n % 2</code> (modulo) gives you whether or not that cell was alive.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2" role="doc-endnote"><p>A cute trick (that I forgot who I heard it from first) with this is that if you cartesian-product <code>[0,-1,1]</code> to itself d times, the first item will be <code>[0,0,0..]</code>! This integrates extremely well with the other bit shifty tweak: to generate all of the contributions for d=3, cartesian product <code>[0,-1,1]</code> to itself three times, increment the key of the first resulting item by 1, and increment the key of the rest of them by 2.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-</ol>
-</section></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im" class="email">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
+sim642  And in part 2 I feel like you could also exploit the symmetry in w axis simultaneously</code></pre></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im" class="email">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
 <p>If you feel inclined, or this post was particularly helpful for you, why not consider <a href="https://www.patreon.com/justinle/overview">supporting me on Patreon</a>, or a <a href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">BTC donation</a>? :)</p></div><div class="clear"></div><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Advent of Code&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+advent-of-code.html" class="tag-a-series" title="+Advent of Code"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/advent-of-code.html" class="tag-a-tag">#advent of code</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/series/+advent-of-code.html" class="tag-a-series">+Advent of Code</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing &quot;in Code&quot;!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html';
     this.page.identifier = 'advent-gol';

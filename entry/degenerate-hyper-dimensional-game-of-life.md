@@ -90,7 +90,7 @@ So, let's take a deep dive --- deeper than you probably ever expected to dive
 into any particular degenerate starting conditions of a hyper-dimensional game
 of life :D
 
-The Baseline
+Starting Off
 ------------
 
 First of all, let's meet our friend for the rest of this journey. In the drawer
@@ -145,8 +145,8 @@ of our points will be "off", there's another method.
 
 1.  Keep a *set* of points that are "on".
 2.  At each step:
-    a.  Initialize a dynamic map (key-value store) of points to integers (this
-        will record the number of live neighbors of each point).
+    a.  Initialize a dynamic map (key-value store) of points to integers. This
+        map associates each point to the number of live neighbors it has.
 
     b.  For each step, iterate over each of your "on" points, expand all of
         their neighbors ![n\_i](https://latex.codecogs.com/png.latex?n_i "n_i")
@@ -155,9 +155,9 @@ of our points will be "off", there's another method.
         ![n\_i](https://latex.codecogs.com/png.latex?n_i "n_i") in your dynamic
         map.
 
-        For example, if the point `[2,3]` is in your set of live points, you
-        would add increment the map's values at keys `[1,2]`, `[2,2]`, `[3,2]`,
-        etc.: all 8 neighbors of `[2,3]`.
+        For example, if the point `<2,3>` is in your set of live points, you
+        would add increment the map's values at keys `<1,2>`, `<2,2>`, `<3,2>`,
+        etc.: all 8 neighbors of `<2,3>`.
 
     c.  Collect your new set of on points: keep all of the keys in your dynamic
         map corresponding to live points if their integers are 2 or 3, and keep
@@ -174,7 +174,7 @@ This method nets us a huge advantage because we now only have to loop over the
 number of items that we know are alive! Any points far away from our set of
 alive points can be properly ignored. This narrows down our huge iteration
 space, and the benefits compound with every dimension due to the blessing of
-dimensionality![^1]
+dimensionality!\[\^bittweak\]
 
 The nice thing about this method is that it's easy enough to generalize to any
 dimension: instead of, say, keeping `[x,y]` in your set for 2D, just keep
@@ -182,7 +182,91 @@ dimension: instead of, say, keeping `[x,y]` in your set for 2D, just keep
 to think through is generating all
 ![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1") neighbors, but
 but that's going to come down to a d-ary [cartesian
-product](https://observablehq.com/@d3/d3-cross) of `[-1,0,1]` to itself.[^2]
+product](https://observablehq.com/@d3/d3-cross) of `[-1,0,1]` to
+itself.\[\^crosstrick\]
+
+Here's a version of the set-based implementation, using a nice trick I learned
+from [phaazon](https://twitter.com/phaazon_) to get the right neighbors by doing
+a cartesian product against `[0,-1,1]`, which leaves the first item as the
+`<0,0>` "original point" we want to exclude:
+
+``` {.python}
+from itertools import islice, product
+from collections import Counter
+
+def mk_neighbs(point):
+    """Return neighboring points, each equally weighted
+
+    (1,2)
+    => [(1, 1), (1, 3), (0, 2), (0, 1), (0, 3), (2, 2), (2, 1), (2, 3)]
+    """
+    gen = product(*[[x, x-1, x+1] for x in point])
+    # skip the first item, the original point
+    next(gen)
+    return gen
+
+def step(pts):
+    """Takes a set of points (tuples) and steps them in the simulation
+    """
+    neighbs = Counter()
+    for point in pts:
+        neighbs += Counter(mk_neighbs(point))
+
+    def validate(point, ncount):
+        if point in pts:
+            return ncount == 2 or ncount == 3
+        else:
+            return ncount == 3
+
+    return [p for p, n in neighbs.items() if validate(p, n)]
+```
+
+And...there's actually a neat optimization we can use (brought to our attention
+by [Peter
+Tseng](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ghmllf8))
+to avoid the check of the original set in step 2c above: when you iterate over
+each point, increment the eight neighbors' map values by *2*, and then increment
+the point itself by 1. Then in the final integer under each key, `n / 2` or
+`n >> 1` gives you the number of neighbors and `n % 2` (modulo) gives you
+whether or not that cell was alive.
+
+``` {.python}
+from itertools import islice, product, chain,repeat
+from collections import Counter
+
+def mk_neighbs(point):
+    """Return neighboring points, with special optimization trick weights
+
+    (1,2)
+    => [((1, 2), 1), ((1, 1), 2), ((1, 3), 2), ((0, 2), 2), ((0, 1), 2),
+        ((0, 3), 2), ((2, 2), 2), ((2, 1), 2), ((2, 3), 2)
+       ]
+    """
+    neighb_pts = product(*[[x, x-1, x+1] for x in point])
+    # associate the original point with +1, and the neighbors with +2
+    return zip(neighb_pts, chain([1], repeat(2)))
+
+def step(pts):
+    """Takes a set of points (tuples) and steps them in the simulation
+    """
+    neighbs = Counter()
+    for point in pts:
+        neighbs += Counter(dict(mk_neighbs(point)))
+
+    def validate(val):
+        # the true neighbor count, since we inserted +2 for neighbors
+        ncount = val // 2
+        # was originally alive if odd, since we inserted +1 for self
+        if val % 2 == 1:
+            return ncount == 2 or ncount == 3
+        else:
+            return ncount == 3
+
+    return [p for p, q in neighbs.items() if validate(q)]
+```
+
+Three Dimensions
+----------------
 
 Let's see how this looks for the 3D case! To make things easier to see, we can
 render things in "slices" in 3D space: each grid represents a slice at a
@@ -197,28 +281,154 @@ Please enable Javascript
 In "reality", each of those 13 slices above are stacked on top of each other in
 3D space. You'll see that most initial conditions will spread out from the
 center z=0 point, which means they are actually spreading "up and down" the z
-axis. If you mouse over (or tap), you'll see the all of the 26 3D neighbors of
-the point you're hovering over highlighted in blue --- these 26 points form a 3D
-cube around your mouse once everything is stacked correctly. You can use this
-cube to help see how the simulation progresses. If your mouse is hovering over a
-live cell, and there are 2 or 3 live cells highlighted in your cube, it'll stay
-alive in the next time step. If your mouse is hovering over a dead cell and
-there are exactly 3 live cells highlighted in your cube, it will come alive in
-the next step.
+axis.
 
-::: {#gol4D}
-Please enable Javascript
-:::
+If you mouse over (or tap) any individual tiny `<x,y>` cell, you'll see the all
+of the 26 (![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1"))
+`<x,y,z>` 3D neighbors of the point you're hovering over highlighted in blue ---
+these 26 points form a 3D cube around your mouse once everything is stacked
+correctly. You can use this cube to help see how the simulation progresses. If
+your mouse is hovering over a live cell, and there are 2 or 3 live cells
+highlighted in your cube, it'll stay alive in the next time step. If your mouse
+is hovering over a dead cell and there are exactly 3 live cells highlighted in
+your cube, it will come alive in the next step.
 
-::: {#golFlat}
-Please enable Javascript
-:::
+### Axis Reflection Symmetry
+
+Try playing around with different initial conditions to see how they evolve! See
+any patterns?
+
+Well, the yellow highlight might have given given things away, but...note that
+the entire thing has reflection symmetry across z=0! z=1 is always the same as
+z=-1, z=2 is always the same as z=-2, etc. Fundamentally, this is because our
+starting solution has z-plane symmetry: the initial 2D slice is symmetric with
+reflections across z, because z=0. This is the first "degeneracy" that this blog
+post's title is referring to. The negative and positive directions are
+interchangeable! This is reflected in the yellow highlight on hover: when you
+mouse-over a z square, its corresponding reflected twin is highlighted, and will
+always be identical.
+
+This means that we actually only need to simulate *positive* z's...and for our
+final answer we just "un-reflect" to get the total number.
+
+Well, actually...the picture is slightly more complicated. We also need to
+change how to distribute neighbors. That's because, once we commit to only
+keeping the positive z's, some cells need to be double-counted as neighbors. In
+particular, any `z=0` cell would previously had a neighbor at both `z=-1` and
+`z=1`...but now if we only keep the positive z's, it would have `z=1` as a
+neighbor *twice*.
+
+The following interactive element lets you explore what this looks like:
 
 ::: {#golSyms3DForward}
 Please enable Javascript
 :::
 
+Each square represents an entire "slice" of z. When you mouse-over or tap a
+z-cell, its z-neighbors are highlighted with how many times that neighbor has to
+be counted, and the green bar tells you from what direction that neighborship
+arose from. For example, mousing over z=3, z=2 and z=4 get highlighted with the
+values "1" because they are neighbors of 3, on the left and right side
+(respectively). Note that one neat property for all squares (except for z=6,
+which goes off the scale) is that the "total" higher-dimensional neighbors is
+always 2
+(![3\^(d-2)-1](https://latex.codecogs.com/png.latex?3%5E%28d-2%29-1 "3^(d-2)-1")),
+it's just that where those neighbors fall is re-arranged slightly.
+
+The tricky square is now z=0: if you mouse-over it, you'll see that it has a
+single neighbor z=1 that is counted twice, as a neighbor from both the left and
+right side.
+
+We can compute the above diagram by expanding z=0 to its neighbors (z=-1, and
+z=1), applying the absolute value function, and seeing how points double-up.
+This gives us the "forward neighbors", and we can directly use it for the
+original "keep the full array" GoL implementation.
+
+However, for the "keep active points and expand their neighbors" GoL
+implementation...we have to find the opposite. Remember that to build our
+"neighbors map" (the map of points to how many active neighbors they have), we
+have each cell "pro-actively" add its contributions to all of its neighbors.
+`<1,2,3>` is a neighbor to `<1,3,4>` once, so when we expand `<1,2,3>` we would
+increment the value in the map at `<1,3,4>` by 1 because `<1,2,3>` is a neighbor
+of `<1,3,4>` once.
+
+Now, how do we count `<1,3,1>` expanding into `<1,3,0>`? Well, normally,
+`<1,3,1>` is a neighbor of `<1,3,0>` once. However, if we only keep the
+normalized z values, `<1,3,1>` is a neighbor of `<1,3,0>`...twice! To compute
+the total neighbor count of `<1,3,0>`, we have to count the contribution from
+`<1,3,1>` twice (once for `<1,3,1>` and once for `<1,3,-1>`, which was
+normalized away).
+
+That means we have to follow the rules in the previous element *backwards*,
+like:
+
 ::: {#golSyms3DReverse}
+Please enable Javascript
+:::
+
+These are the "reverse neighbors": how much times a given point counts as a
+neighbor for its surrounding points. Here, mousing over z=1 shows that it counts
+as a neighbor for z=0 twice, from both the left and the right. It also counts as
+a neighbor for z=2 once (from the left side).
+
+We can account for this by hard-coding the rules into our step algorithm: if our
+z goes from `1` to `0`, increment its value twice in the neighbor map.
+Otherwise, simply increment by 1 as normal.
+
+This rule is relatively easy to implement, and as a result we now halved our
+total number of points we need to keep and check for 3D! It's also simple enough
+to generalize (just do the `1 -> 0` check for every "higher dimension" and
+double its contribution for each `1 -> 0` transition is seen)...and that means
+we reduce the number of 4D points we need to track by a factor of four, the
+number of 5D points by a factor of eight, the number of 6D points by a factor of
+16... now our total points to check only grows as
+![O(n\^d / 2\^{d-2})](https://latex.codecogs.com/png.latex?O%28n%5Ed%20%2F%202%5E%7Bd-2%7D%29 "O(n^d / 2^{d-2})")
+instead of
+![O(n\^d)](https://latex.codecogs.com/png.latex?O%28n%5Ed%29 "O(n^d)")!
+
+This discovery late in the night of December 16th was what inspired us to
+believe and dream that more breakthroughs might be possible to bring things down
+even further.
+
+And those breakthroughs soon came...
+
+Four Dimensions
+---------------
+
+Let's look at how the 4 dimensions works! We can visualize this by taking "z-w"
+slices at different x-y planes as well. The labels in these boxes are the
+`<z,w>` of each slice. The very center is `<z,w> = <0,0>` the row in the middle
+from the top is `w=0`, and the column in the very middle from the left is `z=0`.
+It's basically taking the 3D visualization above and expanding it in an extra
+dimension. Press "Play" to run your initial conditions!
+
+::: {#gol4D}
+Please enable Javascript
+:::
+
+We get something interesting as well: most initial conditions will spread out
+from the center `<z,w> = <0,0>` point radially, spreading outwards into positive
+and negative z and w. Mouse-over or tap any individual tiny `<x.y>` cell and
+you'll see each of its 80
+(![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1")) `<x,y,z,w>` 4D
+neighbors highlighted in blue, forming a little 3x3x3 "tesseract" (4D cube, or
+hypercube). Like in the 3D case, you can use this little hypercube to track how
+the simulation progresses: if your mouse if hovering over a live cell with 2 or
+3 live cells in its hypercube, it'll stay alive in the next step, if it's
+hovering over a dead cell with 3 live cells in its hypercube, it'll come alive
+in the next step.
+
+### Diagonal Reflection Symmetry
+
+Play around and explore how simulations evolve! You will notice that the axis
+reflection symmetry is still preserved, but four ways (the slice at
+`<z,w> = <3,4>` is always going to be identical to the slice at `<-3,4>`,
+`<3,-4>`, and `<-3,-4>`). These are reflected in the "dark yellow" highlights
+above.
+
+(TODO)
+
+::: {#golFlat}
 Please enable Javascript
 :::
 
@@ -259,20 +469,3 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
-
-[^1]: There is a small tweak (brought to our attention by [Peter
-    Tseng](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ghmllf8))
-    that people often add to this to avoid the costly check of the original set
-    in step 2c: when you iterate over each point, normally you'd increment the
-    eight neighbors' map values by 1. Instead, you can increment the eight
-    neighbors' map values by *2*, and then increment the point itself by 1. Then
-    in the final integer under each key, `n / 2` or `n >> 1` gives you the
-    number of neighbors and `n % 2` (modulo) gives you whether or not that cell
-    was alive.
-
-[^2]: A cute trick (that I forgot who I heard it from first) with this is that
-    if you cartesian-product `[0,-1,1]` to itself d times, the first item will
-    be `[0,0,0..]`! This integrates extremely well with the other bit shifty
-    tweak: to generate all of the contributions for d=3, cartesian product
-    `[0,-1,1]` to itself three times, increment the key of the first resulting
-    item by 1, and increment the key of the rest of them by 2.
