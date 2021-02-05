@@ -599,7 +599,29 @@ Please enable Javascript
 
 These are the ``forward neighbors''; we can compute them by expanding a point to
 its neighbors, and then normalizing our points and seeing how they double (or
-quadruple) up. For example, mouse over
+quadruple) up.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{def}\NormalTok{ normalize(point):}
+    \CommentTok{"""Normalize a point by sorting the absolute values}
+
+\CommentTok{    (2, {-}1)}
+\CommentTok{    => (1, 2)}
+\CommentTok{    """}
+    \ControlFlowTok{return} \BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{sorted}\NormalTok{([}\BuiltInTok{abs}\NormalTok{(x) }\ControlFlowTok{for}\NormalTok{ x }\KeywordTok{in}\NormalTok{ point]))}
+
+\KeywordTok{def}\NormalTok{ forward\_neighbs(point):}
+    \CommentTok{"""Generate the forward neighbors of a point}
+
+\CommentTok{    (0, 1)}
+\CommentTok{    => \{(0, 1): 2, (1, 2): 2, (1, 1): 2, (0, 0): 1, (0, 2): 1\}}
+\CommentTok{    """}
+    \ControlFlowTok{return}\NormalTok{ Counter([normalize(neighb) }\ControlFlowTok{for}\NormalTok{ neighb }\KeywordTok{in}\NormalTok{ mk\_neighbs(point)])}
+\end{Highlighting}
+\end{Shaded}
+
+For example, mouse over
 \texttt{\textless{}z,w\textgreater{}=\textless{}3,3\textgreater{}} and see it
 has eight total higher-dimensional neighbors (like all points should, though
 this visualization leaves out points at w\textgreater6). It's \emph{supposed} to
@@ -632,9 +654,29 @@ expand all its neighbors
 \includegraphics{https://latex.codecogs.com/png.latex?a_i}, normalize that
 neighbor, and then set
 \includegraphics{https://latex.codecogs.com/png.latex?a_i} in the cache to the
-multiplicity after normalization. But this is pretty expensive to do in the
-general case, so we'd like to maybe find a formula to be able to do this using
-mathematical operations. So, let's explore!
+multiplicity after normalization.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{def}\NormalTok{ reverse\_neighbs\_table(t\_max):}
+    \CommentTok{"""Tabulate the reverse neighbors of all zw slices reachable before t\_max}
+\CommentTok{    """}
+\NormalTok{    weights }\OperatorTok{=}\NormalTok{ \{\}}
+
+    \ControlFlowTok{for}\NormalTok{ i }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(t\_max):}
+        \ControlFlowTok{for}\NormalTok{ j }\KeywordTok{in} \BuiltInTok{range}\NormalTok{(i, t\_max):}
+            \ControlFlowTok{for}\NormalTok{ neighb, ncount }\KeywordTok{in}\NormalTok{ forward\_neighbs((i,j)).items():}
+                \ControlFlowTok{if}\NormalTok{ neighb }\KeywordTok{in}\NormalTok{ weights:}
+\NormalTok{                    weights[neighb] }\OperatorTok{+=}\NormalTok{ Counter(\{(i, j): ncount\})}
+                \ControlFlowTok{else}\NormalTok{:}
+\NormalTok{                    weights[neighb] }\OperatorTok{=}\NormalTok{ Counter(\{(i, j): ncount\})}
+
+    \ControlFlowTok{return}\NormalTok{ weights}
+\end{Highlighting}
+\end{Shaded}
+
+This seems pretty expensive and wasteful, so we'd like to maybe find a formula
+to be able to do this using mathematical operations. So, let's explore!
 
 \leavevmode\hypertarget{golSyms4DReverse}{}%
 Please enable Javascript
@@ -806,7 +848,7 @@ using for the rest of this post.
 \item
   I'll also start using \textbf{slice coset} to talk about the set of all
   \texttt{\textless{}z,w,..\textgreater{}} *slices) across its permutations and
-  negations. So entire slice at z-w coordinates of
+  negations. The slices at z-w coordinates of
   \texttt{\textless{}1,2\textgreater{}}, \texttt{\textless{}2,1\textgreater{}},
   \texttt{\textless{}-1,2\textgreater{}},
   \texttt{\textless{}1,-2\textgreater{}},
@@ -837,8 +879,9 @@ It's a bit difficult to duplicate the same forward/reverse neighbor demos for 4D
 as we had for 4D, so here's a different representation. Here is a demo of all of
 the \texttt{\textless{}z,w,q\textgreater{}} slice cosets (the wedge of
 normalized points we track for our implementation) and both their forward and
-reverse neighbor weights of each other. The \texttt{q} axis is represented as
-stacked zw sections from left to right.
+reverse neighbor weights of each other (computable using the method we used for
+4D). The \texttt{q} axis is represented as stacked zw sections from left to
+right.
 
 \leavevmode\hypertarget{golSyms5D}{}%
 Please enable Javascript
@@ -858,16 +901,21 @@ come from the non-normalized reflections of
 \texttt{\textless{}1,3,4\textgreater{}},
 \texttt{\textless{}1,4,3\textgreater{}},
 \texttt{\textless{}-1,3,4\textgreater{}}, and
-\texttt{\textless{}-1,4,3\textgreater{}}.
+\texttt{\textless{}-1,4,3\textgreater{}}. Some squares are also neighbors to
+themselves (like \texttt{\textless{}1,4,5\textgreater{}}) and some are not (like
+\texttt{\textless{}1,3,5\textgreater{}}).
 \href{https://www.youtube.com/watch?v=rSfebOXSBOE}{Mind bottling}!
 
 Anyway, you can explore this a little bit and try to come up with a set of
 ad-hoc rules like we did for 4D\ldots but I think we've reached the limits of
-how far that method can go. We can generate these values simply enough by just
-expanding all of the reflections and normalizing and counting the normalized
-values, but there should be a way to compute these weights \emph{directly}, in a
-clean fashion that doesn't require branching special cases and patterns. It's
-clear that we are limited until we can find this method.
+how far that method can go. We can generate these values simply enough using the
+expand-normalize-tabulate method we did for 4D, but there should be a way to
+compute these weights \emph{directly}, in a clean fashion that doesn't require
+branching special cases and patterns. It's clear that we are limited until we
+can find this method.\footnote{Okay, so this is a sliiight deviation from what
+  actually happened. We were actually able to pretty much immediately hit d=10
+  with the explicit brute-force neighbor tabulation done for 4D. But I'm
+  stretching this out a bit to draw out the narrative :)}
 
 \hypertarget{tackling-the-neighbor-problem}{%
 \section{Tackling the Neighbor Problem}\label{tackling-the-neighbor-problem}}

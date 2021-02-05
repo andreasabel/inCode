@@ -437,7 +437,27 @@ Please enable Javascript
 
 These are the "forward neighbors"; we can compute them by expanding a point to
 its neighbors, and then normalizing our points and seeing how they double (or
-quadruple) up. For example, mouse over `<z,w>=<3,3>` and see it has eight total
+quadruple) up.
+
+``` {.python}
+def normalize(point):
+    """Normalize a point by sorting the absolute values
+
+    (2, -1)
+    => (1, 2)
+    """
+    return tuple(sorted([abs(x) for x in point]))
+
+def forward_neighbs(point):
+    """Generate the forward neighbors of a point
+
+    (0, 1)
+    => {(0, 1): 2, (1, 2): 2, (1, 1): 2, (0, 0): 1, (0, 2): 1}
+    """
+    return Counter([normalize(neighb) for neighb in mk_neighbs(point)])
+```
+
+For example, mouse over `<z,w>=<3,3>` and see it has eight total
 higher-dimensional neighbors (like all points should, though this visualization
 leaves out points at w\>6). It's *supposed* to have a neighbor at `<4,3>`, but
 that gets reflected back onto `<3,4>` during our normalization process, so you
@@ -460,9 +480,27 @@ We can compute this in brute-force using a cache: iterate over each point,
 expand all its neighbors
 ![a\_i](https://latex.codecogs.com/png.latex?a_i "a_i"), normalize that
 neighbor, and then set ![a\_i](https://latex.codecogs.com/png.latex?a_i "a_i")
-in the cache to the multiplicity after normalization. But this is pretty
-expensive to do in the general case, so we'd like to maybe find a formula to be
-able to do this using mathematical operations. So, let's explore!
+in the cache to the multiplicity after normalization.
+
+``` {.python}
+def reverse_neighbs_table(t_max):
+    """Tabulate the reverse neighbors of all zw slices reachable before t_max
+    """
+    weights = {}
+
+    for i in range(t_max):
+        for j in range(i, t_max):
+            for neighb, ncount in forward_neighbs((i,j)).items():
+                if neighb in weights:
+                    weights[neighb] += Counter({(i, j): ncount})
+                else:
+                    weights[neighb] = Counter({(i, j): ncount})
+
+    return weights
+```
+
+This seems pretty expensive and wasteful, so we'd like to maybe find a formula
+to be able to do this using mathematical operations. So, let's explore!
 
 ::: {#golSyms4DReverse}
 Please enable Javascript
@@ -611,8 +649,8 @@ using for the rest of this post.
     and the coset it represents as the same thing.
 
 -   I'll also start using **slice coset** to talk about the set of all
-    `<z,w,..>` \*slices) across its permutations and negations. So entire slice
-    at z-w coordinates of `<1,2>`, `<2,1>`, `<-1,2>`, `<1,-2>`, `<-1,-2>`,
+    `<z,w,..>` \*slices) across its permutations and negations. The slices at
+    z-w coordinates of `<1,2>`, `<2,1>`, `<-1,2>`, `<1,-2>`, `<-1,-2>`,
     `<-2,1>`, `<2,-1>`, and `<-2,-1>` are all a part of the same coset,
     represented by the normalized form `<1,2>`. All of the slices at each of
     those zw coordinates will always be identical, so we can talk the state of a
@@ -634,7 +672,8 @@ It's a bit difficult to duplicate the same forward/reverse neighbor demos for 4D
 as we had for 4D, so here's a different representation. Here is a demo of all of
 the `<z,w,q>` slice cosets (the wedge of normalized points we track for our
 implementation) and both their forward and reverse neighbor weights of each
-other. The `q` axis is represented as stacked zw sections from left to right.
+other (computable using the method we used for 4D). The `q` axis is represented
+as stacked zw sections from left to right.
 
 ::: {#golSyms5D}
 Please enable Javascript
@@ -648,15 +687,17 @@ times the hovered slice is a neighbor of the other slice). For example, if you
 hover over `<z,w,q>=<1,3,4>`, you can see that `<0,3,4>` is its neighbor twice,
 and `<1,3,4>` is `<0,3,4>`'s neighbor four times. These four times come from the
 non-normalized reflections of `<1,3,4>` at `<1,3,4>`, `<1,4,3>`, `<-1,3,4>`, and
-`<-1,4,3>`. [Mind bottling](https://www.youtube.com/watch?v=rSfebOXSBOE)!
+`<-1,4,3>`. Some squares are also neighbors to themselves (like `<1,4,5>`) and
+some are not (like `<1,3,5>`). [Mind
+bottling](https://www.youtube.com/watch?v=rSfebOXSBOE)!
 
 Anyway, you can explore this a little bit and try to come up with a set of
 ad-hoc rules like we did for 4D...but I think we've reached the limits of how
-far that method can go. We can generate these values simply enough by just
-expanding all of the reflections and normalizing and counting the normalized
-values, but there should be a way to compute these weights *directly*, in a
-clean fashion that doesn't require branching special cases and patterns. It's
-clear that we are limited until we can find this method.
+far that method can go. We can generate these values simply enough using the
+expand-normalize-tabulate method we did for 4D, but there should be a way to
+compute these weights *directly*, in a clean fashion that doesn't require
+branching special cases and patterns. It's clear that we are limited until we
+can find this method.[^1]
 
 Tackling the Neighbor Problem
 -----------------------------
@@ -688,3 +729,8 @@ repository](https://github.com/mstksg/inCode).
 If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
+
+[^1]: Okay, so this is a sliiight deviation from what actually happened. We were
+    actually able to pretty much immediately hit d=10 with the explicit
+    brute-force neighbor tabulation done for 4D. But I'm stretching this out a
+    bit to draw out the narrative :)
