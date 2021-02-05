@@ -174,7 +174,7 @@ This method nets us a huge advantage because we now only have to loop over the
 number of items that we know are alive! Any points far away from our set of
 alive points can be properly ignored. This narrows down our huge iteration
 space, and the benefits compound with every dimension due to the blessing of
-dimensionality!\[\^bittweak\]
+dimensionality!
 
 The nice thing about this method is that it's easy enough to generalize to any
 dimension: instead of, say, keeping `[x,y]` in your set for 2D, just keep
@@ -182,8 +182,7 @@ dimension: instead of, say, keeping `[x,y]` in your set for 2D, just keep
 to think through is generating all
 ![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1") neighbors, but
 but that's going to come down to a d-ary [cartesian
-product](https://observablehq.com/@d3/d3-cross) of `[-1,0,1]` to
-itself.\[\^crosstrick\]
+product](https://observablehq.com/@d3/d3-cross) of `[-1,0,1]` to itself.
 
 Here's a version of the set-based implementation, using a nice trick I learned
 from [phaazon](https://twitter.com/phaazon_) to get the right neighbors by doing
