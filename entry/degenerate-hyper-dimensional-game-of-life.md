@@ -611,7 +611,7 @@ using for the rest of this post.
     and the coset it represents as the same thing.
 
 -   I'll also start using **slice coset** to talk about the set of all
-    `<z,w,..>` \*slices) across its permutations and negatiions. So entire slice
+    `<z,w,..>` \*slices) across its permutations and negations. So entire slice
     at z-w coordinates of `<1,2>`, `<2,1>`, `<-1,2>`, `<1,-2>`, `<-1,-2>`,
     `<-2,1>`, `<2,-1>`, and `<-2,-1>` are all a part of the same coset,
     represented by the normalized form `<1,2>`. All of the slices at each of
