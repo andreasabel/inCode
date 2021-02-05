@@ -311,12 +311,23 @@ always be identical.
 This means that we actually only need to simulate *positive* z's...and for our
 final answer we just "un-reflect" to get the total number.
 
-Well, actually...the picture is slightly more complicated. We also need to
-change how to distribute neighbors. That's because, once we commit to only
-keeping the positive z's, some cells need to be double-counted as neighbors. In
-particular, any `z=0` cell would previously had a neighbor at both `z=-1` and
-`z=1`...but now if we only keep the positive z's, it would have `z=1` as a
-neighbor *twice*.
+This is exactly what freenode IRC user sim642 noticed late into the night of
+December 16th:
+
+> I wanted to ask this before but forgot: did anyone try to take advantage of
+> the symmetry, e.g. in z axis in part 1? Should halve the amount of
+> calculations you have to do.
+>
+> Only some extra work at the end to differentiate z=0 and z\>0 positions to
+> know which to count twice And in part 2 I feel like you could also exploit the
+> symmetry in w axis simultaneously
+
+Wow, let's do this! Apparently the picture is slightly more complicated than
+simply halving the points. We also need to change how to distribute neighbors.
+That's because, once we commit to only keeping the positive z's, some cells need
+to be double-counted as neighbors. In particular, any `z=0` cell would
+previously had a neighbor at both `z=-1` and `z=1`...but now if we only keep the
+positive z's, it would have `z=1` as a neighbor *twice*.
 
 The following interactive element lets you explore what this looks like:
 
@@ -423,22 +434,120 @@ in the next step.
 Play around and explore how simulations evolve! You will notice that the axis
 reflection symmetry is still preserved, but four ways (the slice at
 `<z,w> = <3,4>` is always going to be identical to the slice at `<-3,4>`,
-`<3,-4>`, and `<-3,-4>`). These are reflected in the "dark yellow" highlights
-above.
+`<3,-4>`, and `<-3,-4>`). These are reflected in the "deep yellow" highlights
+above when you mouse over a zw square. (Ignore the lighter yellow highlights for
+now!)
 
-(TODO)
+And now, for the next big breakthrough. I think this situation shows the power
+of visualization well, because this exact visualization was what reddit user
+*u/cetttbycett* was looking at when [they made this
+post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_part_2_using_symmetry_in_4d_space/)...and
+everything changed forever.
 
-::: {#golFlat}
-Please enable Javascript
-:::
+> I noticed that the expansion of active cubes for part 2 is symmetric with
+> respect to two hyperplanes in 4d space: These hyperplanes can be described by
+> w = 0 and w-z = 0.
+>
+> Using these symmetries could make the code nearly eight times as fast.I was
+> wondering if anyone tried that.
+
+What *u/cetttbycettt* saw is what you can see now in the element above: it's all
+of the *light yellow* highlighted squares when you mouse-over. In addition to
+the z=0 and w=0 lines (the two lines down the middle, up-down and left-right),
+we also have another line of symmetry: z=w and w=z, the diagonal lines!
+
+That's right, a zw slice at `<z,w>=<3,4>` is *identical* to the one at `<4,3>`,
+and so also `<-3,4>`, `<3,-4>`, `<-3,-4>`, `<-4,3>`, `<4,-3>`, and `<-4,-3>`!
+Each slice is potentially repeated *eight* times! The exceptions are the points
+on the lines of symmetry themselves, which are each repeated four times, and
+also `<z,w>=<0,0>`, which is in its own class.
+
+So, our first breakthrough meant that we only have to simulate *positive*
+coordinates (a single quadrant)...our next breakthrough means that we only have
+to simulate coordinates on a single "wedge" half-quadrant...and then duplicate
+those eight times at the end.
+
+Arbitrarily, let's say we only simulate the points `<z,w>` where both components
+are positive and in non-decreasing order. So, `<4,-3>` gets "normalized" to
+`<3,4>`.
+
+Okay, so we found a new symmetry...but we ran into the same issue as before. How
+do we propagate neighbors? To help us, see what's going on, let's look at the
+map of neighbors between different `<z,w>` squares, for the single zw wedge we
+are simulating.
 
 ::: {#golSyms4DForward}
 Please enable Javascript
 :::
 
+These are the "forward neighbors"; we can compute them by expanding a point to
+its neighbors, and then normalizing our points and seeing how they double (or
+quadruple) up. For example, mouse over `<z,w>=<3,3>` and see it has eight total
+higher-dimensional neighbors (like all points should, though this visualization
+leaves out points at w\>6). It's *supposed* to have a neighbor at `<4,3>`, but
+that gets reflected back onto `<3,4>` during our normalization process, so you
+see that the point `<3,3>` has a neighbor at `<3,4>` "double-counted". The green
+squares (in the north and west positions) at `<3,4>` when you hover over `<3,3>`
+show that `<3,4>` is a neighbor of `<3,3>` both to its north and to its west.
+
+Also, we have something really odd show up for the first time. Mouse over a
+point like `<z,w>=<2,3>` and see that it has a neighbor in...itself? What's
+going on here? Well, it is *supposed* to have a neighbor at `<3,2>` but that
+gets normalized/reflected back onto `<2,3>` --- it reflects onto itself! The
+green square in the Southeast means that `<2,3>`'s southeast neighbor
+is...itself!
+
+The "forward neighbors" are useful for understanding what's going on, but to
+actually run our simulation we again need to find the "reverse neighbors": from
+a given point A, how many times is that point a neighbor of another point B?
+
+We can compute this in brute-force using a cache: iterate over each point,
+expand all its neighbors
+![a\_i](https://latex.codecogs.com/png.latex?a_i "a_i"), normalize that
+neighbor, and then set ![a\_i](https://latex.codecogs.com/png.latex?a_i "a_i")
+in the cache to the multiplicity after normalization. But this is pretty
+expensive to do in the general case, so we'd like to maybe find a formula to be
+able to do this using mathematical operations. So, let's explore!
+
 ::: {#golSyms4DReverse}
 Please enable Javascript
 :::
+
+After exploring this interactively, we can maybe think of some rules we can
+apply.
+
+1.  If we have a point `<z,z>` directly on the z=w diagonal, just use its five
+    normal left/up neighbors with weight 1 each.
+2.  If we have a point `<z,z+1>` on the "inner-er" diagonal, use its five normal
+    left/up neighbors with weight 1, but its south and west neighbors have
+    weight 2, and the point reflects onto *itself* with weight 1.
+3.  If we're on `z=1` and we move into `z=0`, double that count (phew, the same
+    rule as in the 3D case earlier)
+4.  If we're on w=1 and we move into w=0, double that count (same as before)
+5.  And...I guess `<0,1>` reflects onto itself *twice*? I guess that technically
+    falls under a combination of rule 2 and rule 4, but we don't directly
+    observe the motion into w=0 before it gets reflected so it has to be
+    special-cased.
+
+Okay, those rules are *sliiightly* more complicated than our 3D rules ("if we go
+from z=1 to z=0, double-count it")...but they're at least mechanical enough to
+code in, even if not beautiful. You can probably foresee that it might be tough
+to generalize, but...we'll tackle that when we get there :)
+
+For now, we have a super-fast implementation of 4D GoL with our special
+degeneracy! The runtime gets reduced by a factor of 8!
+
+Now, onward to 5D!
+
+Five Dimensions
+---------------
+
+::: {#golSyms5D}
+Please enable Javascript
+:::
+
+Tackling the Neighbor Problem
+-----------------------------
 
 ::: {#golTreeForward}
 Please enable Javascript
@@ -448,14 +557,12 @@ Please enable Javascript
 Please enable Javascript
 :::
 
-::: {#golSyms5D}
+Arbitrary Dimensions
+--------------------
+
+::: {#golFlat}
 Please enable Javascript
 :::
-
-    sim642  I wanted to ask this before but forgot: did anyone try to take advantage of the symmetry, e.g. in z axis in part 1?
-    sim642  Should halve the amount of calculations you have to do
-    sim642  Only some extra work at the end to differentiate z=0 and z>0 positions to know which to count twice
-    sim642  And in part 2 I feel like you could also exploit the symmetry in w axis simultaneously
 
 --------------------------------------------------------------------------------
 

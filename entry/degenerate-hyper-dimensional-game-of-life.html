@@ -146,7 +146,12 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Try playing around with different initial conditions to see how they evolve! See any patterns?</p>
 <p>Well, the yellow highlight might have given given things away, but…note that the entire thing has reflection symmetry across z=0! z=1 is always the same as z=-1, z=2 is always the same as z=-2, etc. Fundamentally, this is because our starting solution has z-plane symmetry: the initial 2D slice is symmetric with reflections across z, because z=0. This is the first “degeneracy” that this blog post’s title is referring to. The negative and positive directions are interchangeable! This is reflected in the yellow highlight on hover: when you mouse-over a z square, its corresponding reflected twin is highlighted, and will always be identical.</p>
 <p>This means that we actually only need to simulate <em>positive</em> z’s…and for our final answer we just “un-reflect” to get the total number.</p>
-<p>Well, actually…the picture is slightly more complicated. We also need to change how to distribute neighbors. That’s because, once we commit to only keeping the positive z’s, some cells need to be double-counted as neighbors. In particular, any <code>z=0</code> cell would previously had a neighbor at both <code>z=-1</code> and <code>z=1</code>…but now if we only keep the positive z’s, it would have <code>z=1</code> as a neighbor <em>twice</em>.</p>
+<p>This is exactly what freenode IRC user sim642 noticed late into the night of December 16th:</p>
+<blockquote>
+<p>I wanted to ask this before but forgot: did anyone try to take advantage of the symmetry, e.g. in z axis in part 1? Should halve the amount of calculations you have to do.</p>
+<p>Only some extra work at the end to differentiate z=0 and z&gt;0 positions to know which to count twice And in part 2 I feel like you could also exploit the symmetry in w axis simultaneously</p>
+</blockquote>
+<p>Wow, let’s do this! Apparently the picture is slightly more complicated than simply halving the points. We also need to change how to distribute neighbors. That’s because, once we commit to only keeping the positive z’s, some cells need to be double-counted as neighbors. In particular, any <code>z=0</code> cell would previously had a neighbor at both <code>z=-1</code> and <code>z=1</code>…but now if we only keep the positive z’s, it would have <code>z=1</code> as a neighbor <em>twice</em>.</p>
 <p>The following interactive element lets you explore what this looks like:</p>
 <div id="golSyms3DForward">
 <p>Please enable Javascript</p>
@@ -172,30 +177,53 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 </div>
 <p>We get something interesting as well: most initial conditions will spread out from the center <code>&lt;z,w&gt; = &lt;0,0&gt;</code> point radially, spreading outwards into positive and negative z and w. Mouse-over or tap any individual tiny <code>&lt;x.y&gt;</code> cell and you’ll see each of its 80 (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5Ed-1" alt="3^d-1" title="3^d-1" />) <code>&lt;x,y,z,w&gt;</code> 4D neighbors highlighted in blue, forming a little 3x3x3 “tesseract” (4D cube, or hypercube). Like in the 3D case, you can use this little hypercube to track how the simulation progresses: if your mouse if hovering over a live cell with 2 or 3 live cells in its hypercube, it’ll stay alive in the next step, if it’s hovering over a dead cell with 3 live cells in its hypercube, it’ll come alive in the next step.</p>
 <h3 id="diagonal-reflection-symmetry">Diagonal Reflection Symmetry</h3>
-<p>Play around and explore how simulations evolve! You will notice that the axis reflection symmetry is still preserved, but four ways (the slice at <code>&lt;z,w&gt; = &lt;3,4&gt;</code> is always going to be identical to the slice at <code>&lt;-3,4&gt;</code>, <code>&lt;3,-4&gt;</code>, and <code>&lt;-3,-4&gt;</code>). These are reflected in the “dark yellow” highlights above.</p>
-<p>(TODO)</p>
-<div id="golFlat">
-<p>Please enable Javascript</p>
-</div>
+<p>Play around and explore how simulations evolve! You will notice that the axis reflection symmetry is still preserved, but four ways (the slice at <code>&lt;z,w&gt; = &lt;3,4&gt;</code> is always going to be identical to the slice at <code>&lt;-3,4&gt;</code>, <code>&lt;3,-4&gt;</code>, and <code>&lt;-3,-4&gt;</code>). These are reflected in the “deep yellow” highlights above when you mouse over a zw square. (Ignore the lighter yellow highlights for now!)</p>
+<p>And now, for the next big breakthrough. I think this situation shows the power of visualization well, because this exact visualization was what reddit user <em>u/cetttbycett</em> was looking at when <a href="https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_part_2_using_symmetry_in_4d_space/">they made this post</a>…and everything changed forever.</p>
+<blockquote>
+<p>I noticed that the expansion of active cubes for part 2 is symmetric with respect to two hyperplanes in 4d space: These hyperplanes can be described by w = 0 and w-z = 0.</p>
+<p>Using these symmetries could make the code nearly eight times as fast.I was wondering if anyone tried that.</p>
+</blockquote>
+<p>What <em>u/cetttbycettt</em> saw is what you can see now in the element above: it’s all of the <em>light yellow</em> highlighted squares when you mouse-over. In addition to the z=0 and w=0 lines (the two lines down the middle, up-down and left-right), we also have another line of symmetry: z=w and w=z, the diagonal lines!</p>
+<p>That’s right, a zw slice at <code>&lt;z,w&gt;=&lt;3,4&gt;</code> is <em>identical</em> to the one at <code>&lt;4,3&gt;</code>, and so also <code>&lt;-3,4&gt;</code>, <code>&lt;3,-4&gt;</code>, <code>&lt;-3,-4&gt;</code>, <code>&lt;-4,3&gt;</code>, <code>&lt;4,-3&gt;</code>, and <code>&lt;-4,-3&gt;</code>! Each slice is potentially repeated <em>eight</em> times! The exceptions are the points on the lines of symmetry themselves, which are each repeated four times, and also <code>&lt;z,w&gt;=&lt;0,0&gt;</code>, which is in its own class.</p>
+<p>So, our first breakthrough meant that we only have to simulate <em>positive</em> coordinates (a single quadrant)…our next breakthrough means that we only have to simulate coordinates on a single “wedge” half-quadrant…and then duplicate those eight times at the end.</p>
+<p>Arbitrarily, let’s say we only simulate the points <code>&lt;z,w&gt;</code> where both components are positive and in non-decreasing order. So, <code>&lt;4,-3&gt;</code> gets “normalized” to <code>&lt;3,4&gt;</code>.</p>
+<p>Okay, so we found a new symmetry…but we ran into the same issue as before. How do we propagate neighbors? To help us, see what’s going on, let’s look at the map of neighbors between different <code>&lt;z,w&gt;</code> squares, for the single zw wedge we are simulating.</p>
 <div id="golSyms4DForward">
 <p>Please enable Javascript</p>
 </div>
+<p>These are the “forward neighbors”; we can compute them by expanding a point to its neighbors, and then normalizing our points and seeing how they double (or quadruple) up. For example, mouse over <code>&lt;z,w&gt;=&lt;3,3&gt;</code> and see it has eight total higher-dimensional neighbors (like all points should, though this visualization leaves out points at w&gt;6). It’s <em>supposed</em> to have a neighbor at <code>&lt;4,3&gt;</code>, but that gets reflected back onto <code>&lt;3,4&gt;</code> during our normalization process, so you see that the point <code>&lt;3,3&gt;</code> has a neighbor at <code>&lt;3,4&gt;</code> “double-counted”. The green squares (in the north and west positions) at <code>&lt;3,4&gt;</code> when you hover over <code>&lt;3,3&gt;</code> show that <code>&lt;3,4&gt;</code> is a neighbor of <code>&lt;3,3&gt;</code> both to its north and to its west.</p>
+<p>Also, we have something really odd show up for the first time. Mouse over a point like <code>&lt;z,w&gt;=&lt;2,3&gt;</code> and see that it has a neighbor in…itself? What’s going on here? Well, it is <em>supposed</em> to have a neighbor at <code>&lt;3,2&gt;</code> but that gets normalized/reflected back onto <code>&lt;2,3&gt;</code> — it reflects onto itself! The green square in the Southeast means that <code>&lt;2,3&gt;</code>’s southeast neighbor is…itself!</p>
+<p>The “forward neighbors” are useful for understanding what’s going on, but to actually run our simulation we again need to find the “reverse neighbors”: from a given point A, how many times is that point a neighbor of another point B?</p>
+<p>We can compute this in brute-force using a cache: iterate over each point, expand all its neighbors <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?a_i" alt="a_i" title="a_i" />, normalize that neighbor, and then set <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?a_i" alt="a_i" title="a_i" /> in the cache to the multiplicity after normalization. But this is pretty expensive to do in the general case, so we’d like to maybe find a formula to be able to do this using mathematical operations. So, let’s explore!</p>
 <div id="golSyms4DReverse">
 <p>Please enable Javascript</p>
 </div>
+<p>After exploring this interactively, we can maybe think of some rules we can apply.</p>
+<ol type="1">
+<li>If we have a point <code>&lt;z,z&gt;</code> directly on the z=w diagonal, just use its five normal left/up neighbors with weight 1 each.</li>
+<li>If we have a point <code>&lt;z,z+1&gt;</code> on the “inner-er” diagonal, use its five normal left/up neighbors with weight 1, but its south and west neighbors have weight 2, and the point reflects onto <em>itself</em> with weight 1.</li>
+<li>If we’re on <code>z=1</code> and we move into <code>z=0</code>, double that count (phew, the same rule as in the 3D case earlier)</li>
+<li>If we’re on w=1 and we move into w=0, double that count (same as before)</li>
+<li>And…I guess <code>&lt;0,1&gt;</code> reflects onto itself <em>twice</em>? I guess that technically falls under a combination of rule 2 and rule 4, but we don’t directly observe the motion into w=0 before it gets reflected so it has to be special-cased.</li>
+</ol>
+<p>Okay, those rules are <em>sliiightly</em> more complicated than our 3D rules (“if we go from z=1 to z=0, double-count it”)…but they’re at least mechanical enough to code in, even if not beautiful. You can probably foresee that it might be tough to generalize, but…we’ll tackle that when we get there :)</p>
+<p>For now, we have a super-fast implementation of 4D GoL with our special degeneracy! The runtime gets reduced by a factor of 8!</p>
+<p>Now, onward to 5D!</p>
+<h2 id="five-dimensions">Five Dimensions</h2>
+<div id="golSyms5D">
+<p>Please enable Javascript</p>
+</div>
+<h2 id="tackling-the-neighbor-problem">Tackling the Neighbor Problem</h2>
 <div id="golTreeForward">
 <p>Please enable Javascript</p>
 </div>
 <div id="golTreeReverse">
 <p>Please enable Javascript</p>
 </div>
-<div id="golSyms5D">
+<h2 id="arbitrary-dimensions">Arbitrary Dimensions</h2>
+<div id="golFlat">
 <p>Please enable Javascript</p>
-</div>
-<pre><code>sim642  I wanted to ask this before but forgot: did anyone try to take advantage of the symmetry, e.g. in z axis in part 1?
-sim642  Should halve the amount of calculations you have to do
-sim642  Only some extra work at the end to differentiate z=0 and z&gt;0 positions to know which to count twice
-sim642  And in part 2 I feel like you could also exploit the symmetry in w axis simultaneously</code></pre></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im" class="email">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
+</div></div><footer><hr><div class="copy-content"><p>Hi, thanks for reading! You can reach me via email at <a href="mailto:justin@jle.im" class="email">justin@jle.im</a>, or at twitter at <a href="https://twitter.com/mstk">@mstk</a>! This post and all others are published under the <a href="https://creativecommons.org/licenses/by-nc-nd/3.0/">CC-BY-NC-ND 3.0</a> license. Corrections and edits via pull request are welcome and encouraged at <a href="https://github.com/mstksg/inCode">the source repository</a>.</p>
 <p>If you feel inclined, or this post was particularly helpful for you, why not consider <a href="https://www.patreon.com/justinle/overview">supporting me on Patreon</a>, or a <a href="bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU">BTC donation</a>? :)</p></div><div class="clear"></div><ul class="entry-series"><li><div>This entry is a part of a series called <b>&quot;Advent of Code&quot;</b>.  Find the rest of the entries in this series at its <a href="https://blog.jle.im/entries/series/+advent-of-code.html" class="tag-a-series" title="+Advent of Code"> series history</a>.</div></li></ul><ul class="tag-list"><li><a href="https://blog.jle.im/entries/tagged/advent-of-code.html" class="tag-a-tag">#advent of code</a></li><li><a href="https://blog.jle.im/entries/tagged/haskell.html" class="tag-a-tag">#haskell</a></li><li><a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category">@HASKELL</a></li><li><a href="https://blog.jle.im/entries/series/+advent-of-code.html" class="tag-a-series">+Advent of Code</a></li></ul><aside class="social-buttons"><div class="addthis_toolbox addthis_default_style addthis-buttons"><a class="addthis_button_facebook_like" fb:like:layout="button_count"></a><a class="addthis_button_tweet"></a><a class="addthis_button_google_plusone" g:plusone:size="medium"></a><a class="addthis_counter addthis_pill_style"></a></div><div class="custom-social-buttons"><div class="custom-social-button"><a href="https://www.reddit.com/submit" onclick="window.location = &#39;https://www.reddit.com/submit?url=&#39;+ encodeURIComponent(window.location); return false"><img src="https://www.reddit.com/static/spreddit7.gif" alt="submit to reddit"></a></div></div></aside><nav class="next-prev-links"><ul><li class="next-entry-link">(Next) <a href="https://blog.jle.im/entry/introducing-in-code.html">Introducing &quot;in Code&quot;!</a> &rarr;</li></ul></nav></footer></article><div class="post-entry"><div class="tile"><div id="disqus_thread"></div><script type="text/javascript">var disqus_config = function () {
     this.page.url = 'https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html';
     this.page.identifier = 'advent-gol';
