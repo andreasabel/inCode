@@ -597,8 +597,9 @@ using for the rest of this post.
     spot --- they are the tiny squares inside each grid in the simulations
     above.
 
--   I'll start using the word **coset** to refer the set of all of the
-    duplicates of an `<x,y>` across all permutations and negations of
+-   I'll start using the word
+    **[coset](https://www.youtube.com/watch?v=Dp8sYTlLQRY)** to refer the set of
+    all of the duplicates of an `<x,y>` across all permutations and negations of
     `<z,w,q,..>`, since they all behave the same (they are either all on or all
     off together). So `<x,y,1,2>`, `<x,y,2,1>`, `<x,y,-1,2>`, `<x,y,1,-2>`,
     `<x,y,-1,-2>`, `<x,y,-2,1>`, `<x,y,2,-1>`, and `<x,y,-2,-1>` are all a part
