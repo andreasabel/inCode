@@ -625,7 +625,7 @@ also now know that this method lets us keep our point set *polynomial* on the
 dimension, instead of exponential.
 
 To put a concrete number for context, for that dream of d=10, here are only
-![{ (8+6) \\choose 6 }](https://latex.codecogs.com/png.latex?%7B%20%288%2B6%29%20%5Cchoose%206%20%7D "{ (8+6) \choose 6 }"),
+![{ {8+6} \\choose 6 }](https://latex.codecogs.com/png.latex?%7B%20%7B8%2B6%7D%20%5Cchoose%206%20%7D "{ {8+6} \choose 6 }"),
 or 3003 potential unique `<z,w,...>` points, once you factor out symmetries! The
 number went down from
 ![13\^8](https://latex.codecogs.com/png.latex?13%5E8 "13^8") (815,730,721)
