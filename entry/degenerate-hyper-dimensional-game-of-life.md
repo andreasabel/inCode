@@ -574,9 +574,9 @@ post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_par
 > (at least if time goes to infinity).
 >
 > ...we can use symmetries coming from permutations, to only track cells where
-> ![\|x\_0\| \< 13,\\, \|x\_1\| \< 13,\\, 0 \\leq x\_2 \\leq x\_3 \\leq\\,\\ldots\\, \\leq x\_{d-1} \\leq t\_max](https://latex.codecogs.com/png.latex?%7Cx_0%7C%20%3C%2013%2C%5C%2C%20%7Cx_1%7C%20%3C%2013%2C%5C%2C%200%20%5Cleq%20x_2%20%5Cleq%20x_3%20%5Cleq%5C%2C%5Cldots%5C%2C%20%5Cleq%20x_%7Bd-1%7D%20%5Cleq%20t_max "|x_0| < 13,\, |x_1| < 13,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t_max").
+> ![\|x\_0\| \< 13,\\, \|x\_1\| \< 13,\\, 0 \\leq x\_2 \\leq x\_3 \\leq\\,\\ldots\\, \\leq x\_{d-1} \\leq t](https://latex.codecogs.com/png.latex?%7Cx_0%7C%20%3C%2013%2C%5C%2C%20%7Cx_1%7C%20%3C%2013%2C%5C%2C%200%20%5Cleq%20x_2%20%5Cleq%20x_3%20%5Cleq%5C%2C%5Cldots%5C%2C%20%5Cleq%20x_%7Bd-1%7D%20%5Cleq%20t "|x_0| < 13,\, |x_1| < 13,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t").
 > There's
-> ![20\^2 \\times \\sum\_{k=0}\^{t\_max} { {d-3+k} \\choose {k} }](https://latex.codecogs.com/png.latex?20%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt_max%7D%20%7B%20%7Bd-3%2Bk%7D%20%5Cchoose%20%7Bk%7D%20%7D "20^2 \times \sum_{k=0}^{t_max} { {d-3+k} \choose {k} }")
+> ![20\^2 \\times \\sum\_{k=0}\^{t} { {d-3+k} \\choose {k} }](https://latex.codecogs.com/png.latex?20%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt%7D%20%7B%20%7Bd-3%2Bk%7D%20%5Cchoose%20%7Bk%7D%20%7D "20^2 \times \sum_{k=0}^{t} { {d-3+k} \choose {k} }")
 > such cells.
 
 *(equations slightly modified)*
@@ -590,9 +590,9 @@ represent ![d-2](https://latex.codecogs.com/png.latex?d-2 "d-2"), the number of
 higher dimensions:
 
 ![
-20\^2 \\times \\sum\_{k=0}\^{t\_max} { {\\hat{d}-1+k}\\choose{k} }
-](https://latex.codecogs.com/png.latex?%0A20%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt_max%7D%20%7B%20%7B%5Chat%7Bd%7D-1%2Bk%7D%5Cchoose%7Bk%7D%20%7D%0A "
-20^2 \times \sum_{k=0}^{t_max} { {\hat{d}-1+k}\choose{k} }
+20\^2 \\times \\sum\_{k=0}\^{t} { {\\hat{d}-1+k}\\choose{k} }
+](https://latex.codecogs.com/png.latex?%0A20%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt%7D%20%7B%20%7B%5Chat%7Bd%7D-1%2Bk%7D%5Cchoose%7Bk%7D%20%7D%0A "
+20^2 \times \sum_{k=0}^{t} { {\hat{d}-1+k}\choose{k} }
 ")
 
 That sum has only the amount of terms fixed with the maximum timestamp! That
@@ -639,7 +639,7 @@ dimensions.
 And in a flash, 10D didn't feel like a dream anymore. It felt like an
 inevitability. And now, it was a race to see who could get there first.
 
-### Reaching 10D
+### The Race to 10D
 
 Unfortunately, the exact record of who reached and posted 10D first is a bit
 lost to history due to reddit's editing records. A few people maintained and
