@@ -704,12 +704,12 @@ terminology we'll be using for the rest of this post.
     and the coset it represents as the same thing.
 
 -   I'll also start using **slice coset** to talk about the set of all
-    `<z,w,..>` \*slices) across its permutations and negations. The slices at
-    z-w coordinates of `<1,2>`, `<2,1>`, `<-1,2>`, `<1,-2>`, `<-1,-2>`,
-    `<-2,1>`, `<2,-1>`, and `<-2,-1>` are all a part of the same coset,
-    represented by the normalized form `<1,2>`. All of the slices at each of
-    those zw coordinates will always be identical, so we can talk the state of a
-    single slice at `<1,2>` as representing the state of its entire coset.
+    `<z,w,...>` slices) across its permutations and negations. The slices at z-w
+    coordinates of `<1,2>`, `<2,1>`, `<-1,2>`, `<1,-2>`, `<-1,-2>`, `<-2,1>`,
+    `<2,-1>`, and `<-2,-1>` are all a part of the same coset, represented by the
+    normalized form `<1,2>`. All of the slices at each of those zw coordinates
+    will always be identical, so we can talk the state of a single slice at
+    `<1,2>` as representing the state of its entire coset.
 
     Slice cosets are what are being highlighted on mouseovers for the 3D and 4D
     simulations. They are also what the big squares represent for the forward
