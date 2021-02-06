@@ -762,9 +762,9 @@ times the hovered slice is a neighbor of the other slice). For example, if you
 hover over `<z,w,q>=<1,3,4>`, you can see that `<0,3,4>` is its neighbor twice,
 and `<1,3,4>` is `<0,3,4>`'s neighbor four times. These four times come from the
 non-normalized reflections of `<1,3,4>` at `<1,3,4>`, `<1,4,3>`, `<-1,3,4>`, and
-`<-1,4,3>`. Some squares are also neighbors to themselves (like `<1,4,5>`) and
-some are not (like `<1,3,5>`). [Mind
-bottling](https://www.youtube.com/watch?v=rSfebOXSBOE)!
+`<-1,4,3>`. Some squares are also neighbors to themselves (like `<1,4,5>`, which
+reflects off of the top edge at `<1,5,4>`) and some are not (like `<1,3,5>`).
+[Mind bottling](https://www.youtube.com/watch?v=rSfebOXSBOE)!
 
 Anyway, you can explore this a little bit and try to come up with a set of
 ad-hoc rules like we did for 4D...but I think we've reached the limits of how
