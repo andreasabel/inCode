@@ -776,23 +776,172 @@ how the sum of forward neighbors for interior points in 3D is
 2D is
 ![3\^2-1 = 2](https://latex.codecogs.com/png.latex?3%5E2-1%20%3D%202 "3^2-1 = 2").
 
+Another very important pattern is that "is a neighbor" seems to be reversible:
+the set of all *forward* neighbors of a point is the same as all *reverse*
+neighbors of a point --- the only difference is the multiplicities! But,
+wherever you see a red dot, you will also always see a blue dot. No single-dot
+squares.
+
 Anyway, you can explore this a little bit and try to come up with a set of
 ad-hoc rules like we did for 4D...but I think we've reached the limits of how
 far that method can go. We can generate these values simply enough using the
 expand-normalize-tabulate method we did for 4D, but there should be a way to
 compute these weights *directly*, in a clean fashion that doesn't require
 branching special cases and patterns. It's clear that we are limited until we
-can find this method.[^2]
+can find this method.
 
 ### Go with the Flow
+
+One way to arrive at the key insight is to look at what the "valid" normalized
+coordinates are, and find a better way to encode them in a way that is always
+valid *by construction*.
+
+In our case, what do all our normalized `<z,w,...>` coordinates look like? Well,
+they are always non-decreasing, and always are less than the current timestep.
+Keeping t=6 as our goal still, this means that valid coordinates in 10D are
+strings of eight numbers, like `0,1,1,1,3,5,5,6`, or `0,0,3,4,4,4,6,6`, or
+`1,1,2,3,3,4,5,5`.[^2]
+
+Working directly with is not quite the best choice. For example, let's say we
+want to compute a neighbor of `0,1,1,1,3,5,5,6`. Well, We can imagine that the
+very first `1` moves to be a `2`, resulting in `0,2,1,1,3,5,5,6`. However, we're
+now in un-normalized territory...we have to re-sort it to turn it into
+`0,1,1,2,3,5,5,6`. It's just not something we can directly manipulate with
+simple rules and still stay in the valid state space without complicated
+restrictions or rules.
+
+If you stare at many different sample points (slice cosets, to be precise) for a
+while, you might start to build an internal model in your head...these points
+are really all just consecutive runs of 1s, 2s, 3s, etc., at different lengths.
+For example, you start seeing `0,1,1,1,3,5,5,6` as "one 0, three 1s, one 3, two
+5s, one 6". You also start seeing `0,0,3,4,4,4,6,6` in your head as "two 0s, one
+3, three 4s, two 6s".
+
+You build this mental model in your head that helps you understand/process the
+common structure between all of these points. And now, maybe we can turn that
+model into an encoding. What if we encoded each higher-dimensional coordinate as
+"number of each position seen?" For example, we can encode `0,1,1,1,3,5,5,6` as
+`1-3-0-1-0-2-1`: the first slot represents how many 0s we have the second how
+many 1s, the next how many 2s, the next how many 3s, etc. We can encode
+`0,0,3,4,4,4,6,6` as `2-0-0-1-3-0-2` and `1,1,2,3,3,4,5,5` as `0-2-1-2-1-2-0`.
+All valid 10D points encode to a vector of *six* numbers (at t=6), which is
+valid as long as all of the components sum to 8!
+(![10-2](https://latex.codecogs.com/png.latex?10-2 "10-2"))
+
+Similarly for, say, 20D's higher-dimensional coordinates: they're all vectors of
+six numbers, valid as long as all components sum to 18!
+
+And now, a "valid transition" becomes extremely easy to encode. You just
+represent a valid transition as an amount "flowing" from one of those bins to
+another. For example, turning a `1` into a `2` in `1-3-0-1-0-2-1` turns it into
+`1-2-1-1-0-2-1`. We took one of the three 1s and turned them into a single 2. In
+this method, we don't have to do any normalization because this "flowing"
+operation automatically preserves the sum-to-a-fixed-number invariant!
+
+The only tricky mathy thing we need to remember is that we have to ask "how many
+ways" we could move from three 1s and zero 2s to two 1s and one 2. In our case,
+there are three ways: we could move the first 1, the second 1, or the third 1.
+From `0,1,1,1,3,5,5,6`, we could have done `0,2,1,1,3,5,5,6`, `0,1,2,1,3,5,5,6`,
+or `0,1,1,2,3,5,5,6`, and all of those would count as a possible way to
+transition from `1-3-0-1-0-2-1` to `1-2-1-1-0-2-1`.
+
+In general, here's a way to compute it: we start out with a single bin of 3, and
+then we end up with a bin of 2 and a bin of 1. The number of transitions there
+is
+![3! / (2! 1!)](https://latex.codecogs.com/png.latex?3%21%20%2F%20%282%21%201%21%29 "3! / (2! 1!)"):
+the number of ways we can arrange our original three elements into a bin of 2
+and 1.
+
+That's basically it! We can walk bin-by-bin, assembling a new vector from an old
+one, by looking at the different bin-to-bin flows step-by-step. To find the
+multiplicities, in the case of forward neighbors, we can start out with the
+total ways to rearrange the total components we have (the
+![3!](https://latex.codecogs.com/png.latex?3%21 "3!") we had earlier), and at
+each step divide by the resulting bin sizes we end up with (the
+![2! 1!](https://latex.codecogs.com/png.latex?2%21%201%21 "2! 1!") we had
+earlier).
+
+One final note: we do have to treat transitions from `0` to `1` slightly
+differently, because some of them could have been transitions from 0 to -1. For
+example, if we had `2-0-0-0` into `0-2-0-0`, you could have had two 0s both turn
+into 1s, or you could have had one 0 turn into a 1 and one turn into a -1 (which
+get reflected as 0 to 1 once you normalize), or you could have had both 0s turn
+into -1s. All in the end this factors to a multiplication of
+![2\^n](https://latex.codecogs.com/png.latex?2%5En "2^n"),
+![n](https://latex.codecogs.com/png.latex?n "n") being the number of 0-to-1
+transitions, at the end.
+
+Because of the special care taken for 0 to 1 transitions, it's more convenient
+to move "backwards", from the highest component to the 0 component, so that your
+options at the 0 component are already pre-determined for you by the choices you
+have already made.
+
+Alright, enough words, let's look at this in action! Here is a *tree* describing
+all the ways you can flow from bin to bin! As an example, let's look the 6D case
+of ways each point is a neighbor of `0,2,2,3` (`1-0-2-1`), which you can pick
+from the drop-down.
 
 ::: {#golTreeForward}
 Please enable Javascript
 :::
 
+As you can see, each "branch" in three (flowing from left to right) is a
+different way to fill in the bin. At each node, the upper vector is the "source"
+vector, and the lower vector is the "target" vector we build step-by-step. And
+bin-by-bin, we begin to move components from our source vector into our target
+vector. The branches in the tree reflects different ways we can commit a bin in
+our target vector. For example, at the very first split, we can either pick our
+final vector to be `?-?-?-?-0` (leaving that 3 bin alone) or `?-?-?-?-1`
+(swiping a component from that 3 bin in the source vector). The number to the
+right of the node represents how we modify our weights according to the choices
+we make according to the logic above. And all other nodes on the far right are
+the end products: the actual neighbors, along with their multiplicities.
+
+If you mouse-over or tap a node, it'll highlight the trace from the beginning to
+the node you are highlighting, so you can see all of the choices made, as well
+as all the modifications made to our running multiplicity counter at each step.
+It'll also show the "regular" representation, ie `<[2,2],2,4>`, which means that
+that node has already commited to having `<?,?,2,4>` in the target vector, but
+still has two 2s in the source vector to pull in and distribute.
+
+One final thing we need to keep track of is to not count a point transitioning
+to itself if it results from no actual internal changes. This can be done by
+checking if each of our bin choices involved exactly no inter-bin flows.
+
+Phew! That's a bit of a mathematical doozy, huh? But trust me when I say it's
+easier to understand if you try out a few different points from the drop-down
+menu and trace out the different possible paths, and how the multiplicities are
+affected. After a few examples in different dimensions, it might start to make
+sense. Try looking at the lower dimensions too to see if they match up with what
+we figured out before.
+
+### Reverse Flow
+
+That's great and all, but we're really here for the reverse neighbor weights,
+right? Because that's what we actually need to compute the simulation.
+
+Luckily, as we noted before in the 5D case, "is a neighbor" is a reversible
+relationship: If a point is a forward neighbor, it is also a reverse neighbor.
+This means that the branching structure for forward and reverse neighbor trees
+are all the same. The only difference is the multiplicities.
+
+The tweak here is that we go backwards: We start at 1, and then multiply by the
+possibilities of getting the final total arrangement in the bin you have. For
+example, moving from `0-4-1` to `0-2-3`, on that final bin, represents an
+increase in multiplicity of
+![3! / (2! 1!)](https://latex.codecogs.com/png.latex?3%21%20%2F%20%282%21%201%21%29 "3! / (2! 1!)"):
+![3!](https://latex.codecogs.com/png.latex?3%21 "3!") for the final count, and a
+![2!](https://latex.codecogs.com/png.latex?2%21 "2!") from the ways the two 1
+bin components could move into the 2 bin, and a
+![1!](https://latex.codecogs.com/png.latex?1%21 "1!") from the way that the
+single 2-bin component stays in place.
+
 ::: {#golTreeReverse}
 Please enable Javascript
 :::
+
+And that's it! We have tackled the reverse neighbor weights problem with some
+branching bin flows and combinatorics!
 
 Stacks On Stacks: Visualizting Arbitrary Dimensions
 ---------------------------------------------------
@@ -821,7 +970,8 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     pretty big improvement over the original situation
     (![20\^2 \\times 815730721](https://latex.codecogs.com/png.latex?20%5E2%20%5Ctimes%20815730721 "20^2 \times 815730721")).
 
-[^2]: Okay, so this is a sliiight deviation from what actually happened. We were
-    actually able to pretty much immediately hit d=10 with the explicit
-    brute-force neighbor tabulation done for 4D. But I'm stretching this out a
-    bit to draw out the narrative :)
+[^2]: It's also interesting to note that above 9D (where there are 7
+    higher-dimensional coordinates), there is always at least one duplicated
+    number. Although I don't really know a way to explicitly exploit that fact
+    even now, it does mean that there's a qualitative difference between 9D and
+    below and 10D and above: anything above 9D is...especially degenerate.
