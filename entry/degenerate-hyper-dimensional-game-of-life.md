@@ -11,24 +11,23 @@ easy enough to be run on any modern browser, and 40 dimensions can be reached
 with a compiled language". Includes interactive visualizations and simulations!
 
 This is a story about breaking the degenerate hyper-dimensional game of life by
-exploratory visualizations and math! Let's travel back in time: t'was the night
-before Thursday, December 17, 2020, The release of ["Conway
+interactive exploratory visualizations and math! T'was the night before
+Thursday, December 17, 2020, The release of ["Conway
 Cubes"](https://adventofcode.com/2020/day/17), day 17 of the "Advent of Code"
-(fun little coding puzzles building up to Christmas). One part about Advent of
-Code I've always found especially fun is that, because the problems are so
-self-contained and tidy, they are often *open-ended* in the interesting ways you
-can solve them or expand them.
+(fun little coding puzzles building up to Christmas). I always loved these;
+because Advent of Code problems problems are so self-contained and tidy, they
+are often *open-ended* in the interesting ways you can solve them or expand
+them.
 
 On the surface, Day 17 seemed to essentially be a straightforward extension of
 [Conway's Game Of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)
 ("GoL"). GoL is a simulation played out on a 2d grid, where cells are "on" and
 "off", and at each step of the simulation, the on/off cells spread and propagate
-in fascinating ways based on the state of their neighbors.
-
-The twist of the Advent of Code puzzle is it asks what would happen if we played
-out the rules of GoL in 3d, and then 4d! The "starting conditions" are a 8x8 2D
-grid picked out for each participant, and the puzzle solution is the number of
-live cells after six steps. My personal starting conditions were:
+in fascinating ways based on the state of their neighbors. The twist of the
+Advent of Code puzzle is it asks what would happen if we played out the rules of
+GoL in 3d, and then 4d! The "starting conditions" are a 8x8 2D grid picked for
+each participant, and the puzzle solution is the number of live cells after six
+steps. My personal starting conditions were:
 
     #####..#
     #..###.#
@@ -39,7 +38,7 @@ live cells after six steps. My personal starting conditions were:
     .##..###
     ###.####
 
-I submitted my answer with a direct implementation (scoring the 66th spot on the
+I submitted my answer with a naive implementation (scoring the 66th spot on the
 leader board for that day)...and that was that for the "competitive" part. But
 the real fun always starts after! When discussing with some friends, we started
 talking about the trade-offs of different implementations and realized that the
@@ -53,36 +52,37 @@ strain. My naive solution on 6D took three minutes, and 7D in a reasonable
 amount of time (612,220,032 points with 2,186 neighbors each) seemed
 *impossible* on commercial consumer hardware because of the sheer number of
 points in 7D space. But I thought...what if a breakthrough in optimization was
-possible? I set my goal as 10D (3,570,467,226,624 points with 59,048 neighbors
-each), not knowing if it was possible.
+possible? I set a personal goal of reaching 10D (3,570,467,226,624 points with
+59,048 neighbors each), not knowing if it was possible.
 
 And soon...a breakthrough did come! Someone brought up that if we look at the 3d
 version, we see there's actually a *mirror symmetry*! That is, because
 everything starts off on the xy plane, with z=0, the resulting progression must
 be symmetrical on both sides (positive and negative z).
 
-![d=3 animation by
-[u/ZuBsPaCe](https://www.reddit.com/r/adventofcode/comments/kfa3nr/2020_day_17_godot_cubes_i_think_i_went_a_bit_too/)](/img/entries/advent-gol/life3d.gif "d=3 animation u/ZuBsPaCe")
+\[3D GoL animation by
+[u/ZuBsPaCe](https://www.reddit.com/r/adventofcode/comments/kfa3nr/2020_day_17_godot_cubes_i_think_i_went_a_bit_too/),
+demonstrating mirror symmetry\](/img/entries/advent-gol/life3d.gif "3D GoL
+animation u/ZuBsPaCe", demonstrating mirror symmetry)
 
-In the end that means we only have to simulate one of the "halves"/"quadrants"
-of the higher-dimensional space, since all "quadrants" are identical! This saves
-down the number of points by a factor of two for each extra dimension
+This meant that we only have to simulate the *positive* points (since the
+negative points are identical). This saves down the number of points by a factor
+of two for each extra dimension
 (![O(2\^{d-2})](https://latex.codecogs.com/png.latex?O%282%5E%7Bd-2%7D%29 "O(2^{d-2})")).
-My 7D implementation completed in 6 minutes! 8D still hung forever, though.
 
-Well, it didn't get us to d=10...but this discovery completely changed how we
-saw this puzzle. With one breakthrough down, we began to believe that there
-would be more just around the corner, made possible by our problem's special
-degeneracy (that is, that we start on a 2d slice).
+It didn't quite get us to 1010, but this discovery completely changed how we saw
+this puzzle. With one breakthrough down, we began to believe that there would be
+more just around the corner, made possible by our problem's special degeneracy
+(that is, that we start on a 2d slice).
 
 Such a dream (as posed in [this reddit thread I
 started](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/))
 turned into a month-long quest of breakthrough after breakthrough, exploiting
-different aspects of this degeneracy! It was a long, harrowing journey full of
+different aspects of this degeneracy. It was a long, harrowing journey full of
 sudden twists and turns and bursts of excitement when new innovations came. And
-in the end, the hopeful question "What if d=10 was possible?" turned into "d=10
-in 100ms, d=40 in eight minutes." I even got d=10 fast enough to run on easily
-any modern browser --- this post includes those simulations! Furthermore, the
+in the end, the hopeful question "What if 10D was possible?" turned into "10D in
+100ms, 40D in eight minutes." This post even includes simulations to prove that
+got 10D fast enough to run on easily on any modern browser. Furthermore, the
 whole journey became an adventure in the power of visualization combined with
 abstract thinking.
 
