@@ -892,12 +892,13 @@ It'll also show the contributions from the left, center, and right of the
 current bin being picked (the
 ![2+1+3](https://latex.codecogs.com/png.latex?2%2B1%2B3 "2+1+3") in the example
 above), and also the "regular" representation. For example, `<[2,2],2,4>` means
-that that node has already commited to having `<?,?,2,4>` in the target vector,
+that that node has already committed to having `<?,?,2,4>` in the target vector,
 but still has two 2s in the source vector to pull in and distribute.
 
 One final thing we need to keep track of is to not count a point transitioning
 to itself if it results from no actual internal changes. This can be done by
-checking if each of our bin choices involved exactly no inter-bin flows.
+checking if each of our bin choices involved exactly no inter-bin flows (they
+were all of the form `0+x+0`).
 
 Phew! That's a bit of a mathematical doozy, huh? But trust me when I say it's
 easier to understand if you try out a few different points from the drop-down
@@ -906,14 +907,14 @@ affected. After a few examples in different dimensions, it might start to make
 sense. Try looking at the lower dimensions too to see if they match up with what
 we figured out before.
 
-You can also flip the switch to compute reverse and forward neighbors. Luckily,
-as we noted before in the 5D case, "is a neighbor" is a reversible relationship:
-If a point is a forward neighbor, it is also a reverse neighbor. This means that
-the branching structure for forward and reverse neighbor trees are all the same.
-The only difference is how the multiplicities are calculated. In this case, the
-forward direction is just the original calculation reversed. The diagram shows
-how the multiplicities are accumulated; feel free to try to work out how this
-works as an exercise!
+You can also flip the switch on the demo to compute reverse and forward
+neighbors. Luckily, as we noted before in the 5D case, "is a neighbor" is a
+reversible relationship: If a point is a forward neighbor, it is also a reverse
+neighbor. This means that the branching structure for forward and reverse
+neighbor trees are all the same. The only difference is how the multiplicities
+are calculated. In this case, the forward direction is just the original
+calculation reversed. The diagram shows how the multiplicities are accumulated;
+feel free to try to work out how this works as an exercise!
 
 That's it, for real! We have tackled the reverse neighbor weights problem with
 some branching bin flows and combinatorics!\[\^honesty\]
