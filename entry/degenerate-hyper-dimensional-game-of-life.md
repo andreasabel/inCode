@@ -941,7 +941,7 @@ Please enable Javascript
 :::
 
 And that's it! We have tackled the reverse neighbor weights problem with some
-branching bin flows and combinatorics!
+branching bin flows and combinatorics!\[\^honesty\]
 
 Stacks On Stacks: Visualizting Arbitrary Dimensions
 ---------------------------------------------------
