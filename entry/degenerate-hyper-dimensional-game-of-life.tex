@@ -195,6 +195,11 @@ So, let's take a deep dive --- deeper than you probably ever expected to dive
 into any particular degenerate starting conditions of a hyper-dimensional game
 of life :D
 
+There will be python code samples here and there, but just for context, my
+actual solvers I developed along the way were written in Haskell, and all of the
+solving logic embedded in this post was written in Purescript and compiled to
+Javascript.
+
 \hypertarget{starting-off}{%
 \section{Starting Off}\label{starting-off}}
 
@@ -717,8 +722,8 @@ degeneracy! The runtime gets reduced by a factor of 8!
 
 Now, onward to 5D!
 
-\hypertarget{five-dimensions}{%
-\section{Five Dimensions}\label{five-dimensions}}
+\hypertarget{breaking-through}{%
+\section{Breaking Through}\label{breaking-through}}
 
 By stepping into looking at 5D, we've stepped into a brand new territory ---
 we're now past what the original question was asking about, and into simply
@@ -759,7 +764,7 @@ track can be reduced by factor of
 \ldots we can use symmetries coming from permutations, to only track cells where
 \includegraphics{https://latex.codecogs.com/png.latex?\%7Cx_0\%7C\%20\%3C\%2013\%2C\%5C\%2C\%20\%7Cx_1\%7C\%20\%3C\%2013\%2C\%5C\%2C\%200\%20\%5Cleq\%20x_2\%20\%5Cleq\%20x_3\%20\%5Cleq\%5C\%2C\%5Cldots\%5C\%2C\%20\%5Cleq\%20x_\%7Bd-1\%7D\%20\%5Cleq\%20t_max}.
 There's
-\includegraphics{https://latex.codecogs.com/png.latex?25\%5E2\%20\%5Ctimes\%20\%5Csum_\%7Bk\%3D0\%7D\%5E\%7Bt_max\%7D\%20\%7B\%20\%7Bd-3\%2Bk\%7D\%20\%5Cchoose\%20\%7Bk\%7D\%20\%7D}
+\includegraphics{https://latex.codecogs.com/png.latex?20\%5E2\%20\%5Ctimes\%20\%5Csum_\%7Bk\%3D0\%7D\%5E\%7Bt_max\%7D\%20\%7B\%20\%7Bd-3\%2Bk\%7D\%20\%5Cchoose\%20\%7Bk\%7D\%20\%7D}
 such cells.
 \end{quote}
 
@@ -773,28 +778,28 @@ more closely, using
 represent \includegraphics{https://latex.codecogs.com/png.latex?d-2}, the number
 of higher dimensions:
 
-{[} 25\^{}2 \textbackslash times \textbackslash sum\_\{k=0\}\^{}\{t\_max\} \{
+{[} 20\^{}2 \textbackslash times \textbackslash sum\_\{k=0\}\^{}\{t\_max\} \{
 \{\textbackslash hat\{d\}-1+k\}\textbackslash choose\{k\}
-\}{]}(https://latex.codecogs.com/png.latex?\%0A25\%5E2\%20\%5Ctimes\%20\%5Csum\_\%7Bk\%3D0\%7D\%5E\%7Bt\_max\%7D\%20\%7B\%20\%7B\%5Chat\%7Bd\%7D-1\%2Bk\%7D\%5Cchoose\%7Bk\%7D\%20\%7D\%0A
-" 25\^{}2 \times \sum\_\{k=0\}\^{}\{t\_max\} \{ \{\hat{d}-1+k\}\choose{k} \} ")
+\}{]}(https://latex.codecogs.com/png.latex?\%0A20\%5E2\%20\%5Ctimes\%20\%5Csum\_\%7Bk\%3D0\%7D\%5E\%7Bt\_max\%7D\%20\%7B\%20\%7B\%5Chat\%7Bd\%7D-1\%2Bk\%7D\%5Cchoose\%7Bk\%7D\%20\%7D\%0A
+" 20\^{}2 \times \sum\_\{k=0\}\^{}\{t\_max\} \{ \{\hat{d}-1+k\}\choose{k} \} ")
 
 That sum has only the amount of terms fixed with the maximum timestamp! That
 means we only ever have 6 terms to expand, no matter how high the dimensions are
 --- at 10D and even 100D! Furthermore, we can simplify the above using
 properties of the binomial distribution to get
 
-{[} 25\^{}2 \textbackslash times \{
+{[} 20\^{}2 \textbackslash times \{
 \{\textbackslash hat\{d\}+6\}\textbackslash choose\{6\}
-\}{]}(https://latex.codecogs.com/png.latex?\%0A25\%5E2\%20\%5Ctimes\%20\%7B\%20\%7B\%5Chat\%7Bd\%7D\%2B6\%7D\%5Cchoose\%7B6\%7D\%20\%7D\%0A
-" 25\^{}2 \times { {\hat{d}+6}\choose{6} } ")
+\}{]}(https://latex.codecogs.com/png.latex?\%0A20\%5E2\%20\%5Ctimes\%20\%7B\%20\%7B\%5Chat\%7Bd\%7D\%2B6\%7D\%5Cchoose\%7B6\%7D\%20\%7D\%0A
+" 20\^{}2 \times { {\hat{d}+6}\choose{6} } ")
 
 This binomial coefficient is actually polynomial on
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Chat\%7Bd\%7D} --- it's
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Cfrac\%7B1\%7D\%7B6\%21\%7D\%20\%5Cprod_\%7Bk\%3D1\%7D\%5E6\%20\%28\%5Chat\%7Bd\%7D\%2Bk\%29}
 --- a sixth degree polynomial (leading term
 \includegraphics{https://latex.codecogs.com/png.latex?\%5Cfrac\%7B1\%7D\%7B6\%21\%7D\%20x\%5E6}),
-in fact. This means that we have turned the number of points we need to track
-from exponential
+in fact. This means that we have turned the number of points we potentially need
+to track from exponential
 (\includegraphics{https://latex.codecogs.com/png.latex?O\%2813\%5E\%7B\%5Chat\%7Bd\%7D\%7D\%29})
 to slightly smaller exponential with the negative/positive simplification
 (\includegraphics{https://latex.codecogs.com/png.latex?O\%286\%5E\%7B\%5Chat\%7Bd\%7D\%7D\%29})
@@ -805,14 +810,71 @@ So, not only did we figure out a way to generalize/compute our symmetries, we
 also now know that this method lets us keep our point set \emph{polynomial} on
 the dimension, instead of exponential.
 
+To put a concrete number for context, for that dream of d=10, here are only
+\includegraphics{https://latex.codecogs.com/png.latex?\%7B\%20\%288\%2B6\%29\%20\%5Cchoose\%206\%20\%7D},
+or 3003 potential unique \texttt{\textless{}z,w,...\textgreater{}} points, once
+you factor out symmetries! The number went down from
+\includegraphics{https://latex.codecogs.com/png.latex?13\%5E8} (815,730,721)
+potential unique \texttt{\textless{}z,w,...\textgreater{}} points to
+\includegraphics{https://latex.codecogs.com/png.latex?6\%5E8} (1,679,616)
+potential unique points with positive/negative symmetry to just 3003 with
+permutation symmetry.\footnote{For dramatic effect, I've omitted the fact that
+  while there are only 3003 possible higher-dimensional points, there are
+  \includegraphics{https://latex.codecogs.com/png.latex?20\%5E2\%20\%5Ctimes\%203003}
+  actual unique points possible factoring in the 20x20 x-y grid. Still, it's a
+  pretty big improvement over the original situation
+  (\includegraphics{https://latex.codecogs.com/png.latex?20\%5E2\%20\%5Ctimes\%20815730721}).}
+Furthermore, because of the blessing of dimensionality mentioned earlier, we can
+expect more and more of those to be empty as we increase our dimensions.
+
 And in a flash, 10D didn't feel like a dream anymore. It felt like an
 inevitability. And now, it was a race to see who could get there first.
 
-\hypertarget{terminology}{%
-\subsection{Terminology}\label{terminology}}
+\hypertarget{reaching-10d}{%
+\subsection{Reaching 10D}\label{reaching-10d}}
 
-Before we go any further, let's clarify and introduce some terminology we'll be
-using for the rest of this post.
+Unfortunately, the exact record of who reached and posted 10D first is a bit
+lost to history due to reddit's editing records. A few people maintained and
+updated their posts to prevent clutter, but the record and time stamp of when
+they first hit 10D is lost. If any of them happens to read this and can more
+accurately verify their times, I'd be happy to update!
+
+For me, I'm sure I was not the first one, but in my chat logs I chimed into
+freenode's \texttt{\#\#adventofcode-spoilers} channel in excitement in the wee
+morning hours (PST) Saturday December 19th:
+
+\begin{verbatim}
+2020-12-19 02:32:42       jle`    d=10 in 9m58s
+2020-12-19 02:33:05       jle`    hooray my goal :)
+2020-12-19 02:33:08       jle`    time to sleep now
+2020-12-19 02:33:12       xerox_  goodnight
+2020-12-19 02:33:35       jle`    xerox_: thanks :)
+\end{verbatim}
+
+Pure joy! :D
+
+\href{https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ggaaqsy/}{Peter
+Tseng} made a post on Thursday night with times, but I can't remember if it
+incorporated all the symmetries or originally included d=10. {[}Michal
+Marsalek{]}{[}michalpost{]} was apparently able to implement the idea that they
+originally proposed by the following Wednesday (December 23rd) in Nim to blow
+everyone's time out of the water: 3.0 seconds!
+
+At that point, it was pretty unbelievable to me that what started out as a dream
+goal that we couldn't have completed on a supercomputer had, through successive
+revelations and insights building on each other one by one, could now be done in
+3 seconds.
+
+But hey, I promised 100ms in the introduction, and a fast d=40, right?
+
+With our goal completed, it was now time to dig in a little deeper and see how
+far this baby could go.
+
+\hypertarget{diving-deeper-terminology}{%
+\subsection{Diving Deeper: Terminology}\label{diving-deeper-terminology}}
+
+Before we go any further, let's take a break to clarify and introduce some
+terminology we'll be using for the rest of this post.
 
 \begin{itemize}
 \item
@@ -868,12 +930,31 @@ using for the rest of this post.
   a neighbor of the other.
 \end{itemize}
 
-\hypertarget{visualizing-5d-neighbors}{%
-\subsection{Visualizing 5D Neighbors}\label{visualizing-5d-neighbors}}
+\hypertarget{tackling-the-neighbor-problem}{%
+\section{Tackling the Neighbor Problem}\label{tackling-the-neighbor-problem}}
 
-Okay, one last pit stop before we generalize to arbitrary dimensions. Now that
-we know the nature of the symmetries, let's start visualizing how they might
-look in 5D.
+My initial d=10 time clocked in at just under 10 minutes initially, but as early
+as next Wednesady we knew that a sub-5 second time was possible. So where was
+the gap?
+
+Well, I didn't really know what to do about the neighbor multiplicity problem. I
+was still brute-forcing by way of forward neighbors + normalizing (as in the
+sample 4D python code snippet earlier). The naive brute-force method requires
+computing \emph{all}
+\includegraphics{https://latex.codecogs.com/png.latex?3\%5E\%7B\%20\%7B\%5Chat\%7Bd\%7D\%7D\%20\%7D\%20-\%201}
+higher-dimensional neighbors\ldots so even though the number of points I'd have
+to track grows polynomially, I still had that pesky exponential factor in
+building my neighbor map. And at high dimensions, that exponential factor
+dominates over everything.
+
+So put on your hard hats and working boots \ldots{} we're going to dive deep
+into the world of hyper-dimensional symmetries!
+
+\hypertarget{five-dimensions}{%
+\subsection{Five Dimensions}\label{five-dimensions}}
+
+First, let's start visualizing how things look like in 5 dimensions, now that we
+know what our slice coset/representative structure looks like.
 
 It's a bit difficult to duplicate the same forward/reverse neighbor demos for 4D
 as we had for 4D, so here's a different representation. Here is a demo of all of
@@ -917,8 +998,8 @@ can find this method.\footnote{Okay, so this is a sliiight deviation from what
   with the explicit brute-force neighbor tabulation done for 4D. But I'm
   stretching this out a bit to draw out the narrative :)}
 
-\hypertarget{tackling-the-neighbor-problem}{%
-\section{Tackling the Neighbor Problem}\label{tackling-the-neighbor-problem}}
+\hypertarget{go-with-the-flow}{%
+\subsection{Go with the Flow}\label{go-with-the-flow}}
 
 \leavevmode\hypertarget{golTreeForward}{}%
 Please enable Javascript
@@ -926,8 +1007,9 @@ Please enable Javascript
 \leavevmode\hypertarget{golTreeReverse}{}%
 Please enable Javascript
 
-\hypertarget{arbitrary-dimensions}{%
-\section{Arbitrary Dimensions}\label{arbitrary-dimensions}}
+\hypertarget{stacks-on-stacks-visualizting-arbitrary-dimensions}{%
+\section{Stacks On Stacks: Visualizting Arbitrary
+Dimensions}\label{stacks-on-stacks-visualizting-arbitrary-dimensions}}
 
 \leavevmode\hypertarget{golFlat}{}%
 Please enable Javascript
