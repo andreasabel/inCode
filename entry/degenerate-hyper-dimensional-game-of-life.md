@@ -611,11 +611,11 @@ This binomial coefficient is actually polynomial on
 it's
 ![\\frac{1}{6!} \\prod\_{k=1}\^6 (\\hat{d}+k)](https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B6%21%7D%20%5Cprod_%7Bk%3D1%7D%5E6%20%28%5Chat%7Bd%7D%2Bk%29 "\frac{1}{6!} \prod_{k=1}^6 (\hat{d}+k)")
 --- a sixth degree polynomial (leading term
-![\\frac{1}{6!} x\^6](https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B6%21%7D%20x%5E6 "\frac{1}{6!} x^6")),
+![\\frac{1}{6!} \\hat{d}\^6](https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B6%21%7D%20%5Chat%7Bd%7D%5E6 "\frac{1}{6!} \hat{d}^6")),
 in fact. This means that we have turned the number of points we potentially need
 to track from exponential
 (![O(13\^{\\hat{d}})](https://latex.codecogs.com/png.latex?O%2813%5E%7B%5Chat%7Bd%7D%7D%29 "O(13^{\hat{d}})"))
-to slightly smaller exponential with the negative/positive simplification
+to slightly smaller exponential
 (![O(6\^{\\hat{d}})](https://latex.codecogs.com/png.latex?O%286%5E%7B%5Chat%7Bd%7D%7D%29 "O(6^{\hat{d}})"))
 to now *polynomial*
 ![O(\\hat{d}\^6)](https://latex.codecogs.com/png.latex?O%28%5Chat%7Bd%7D%5E6%29 "O(\hat{d}^6)")!
@@ -722,7 +722,7 @@ Tackling the Neighbor Problem
 -----------------------------
 
 My initial d=10 time clocked in at just under 10 minutes initially, but as early
-as next Wednesady we knew that a sub-5 second time was possible. So where was
+as next Wednesday we knew that a sub-5 second time was possible. So where was
 the gap?
 
 Well, I didn't really know what to do about the neighbor multiplicity problem. I
@@ -741,7 +741,9 @@ world of hyper-dimensional symmetries!
 ### Five Dimensions
 
 First, let's start visualizing how things look like in 5 dimensions, now that we
-know what our slice coset/representative structure looks like.
+know what our slice coset/representative structure looks like. Partially to help
+us gain an intuition for some of what's going on, and also partially to show
+that intuition at the individual component level can only get so far.
 
 It's a bit difficult to duplicate the same forward/reverse neighbor demos for 4D
 as we had for 4D, so here's a different representation. Here is a demo of all of
@@ -765,6 +767,14 @@ non-normalized reflections of `<1,3,4>` at `<1,3,4>`, `<1,4,3>`, `<-1,3,4>`, and
 `<-1,4,3>`. Some squares are also neighbors to themselves (like `<1,4,5>`, which
 reflects off of the top edge at `<1,5,4>`) and some are not (like `<1,3,5>`).
 [Mind bottling](https://www.youtube.com/watch?v=rSfebOXSBOE)!
+
+At least one pattern we can see clearly is that if your points are 4 or lower,
+the sum of all the red dots (the forward neighbors) is
+![3\^3-1](https://latex.codecogs.com/png.latex?3%5E3-1 "3^3-1") = 26, just like
+how the sum of forward neighbors for interior points in 3D is
+![3\^2-1=8](https://latex.codecogs.com/png.latex?3%5E2-1%3D8 "3^2-1=8"), and for
+2D is
+![3\^2-1 = 2](https://latex.codecogs.com/png.latex?3%5E2-1%20%3D%202 "3^2-1 = 2").
 
 Anyway, you can explore this a little bit and try to come up with a set of
 ad-hoc rules like we did for 4D...but I think we've reached the limits of how
