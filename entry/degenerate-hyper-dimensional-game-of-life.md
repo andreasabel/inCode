@@ -151,8 +151,9 @@ of our points will be "off", there's another method.
 
 1.  Keep a *set* of points that are "on".
 2.  At each step:
-    a.  Initialize a dynamic map (key-value store) of points to integers. This
-        map associates each point to the number of live neighbors it has.
+    a.  Initialize a dynamic map (key-value store, like a python dict) of points
+        to integers. This map associates each point to the number of live
+        neighbors it has.
 
     b.  For each step, iterate over each of your "on" points, expand all of
         their neighbors ![n\_i](https://latex.codecogs.com/png.latex?n_i "n_i")
@@ -200,22 +201,20 @@ from itertools import islice, product
 from collections import Counter
 
 def mk_neighbs(point):
-    """Return neighboring points, each equally weighted
+    """Return neighboring points
 
-    (1,2)
-    => [(1, 1), (1, 3), (0, 2), (0, 1), (0, 3), (2, 2), (2, 1), (2, 3)]
+    (1, 2)
+    => [(1, 2), (1, 1), (1, 3), (0, 2), (0, 1), (0, 3), (2, 2), (2, 1), (2, 3)]
     """
-    gen = product(*[[x, x-1, x+1] for x in point])
-    # skip the first item, the original point
-    next(gen)
-    return gen
+    return list(product(*[[x, x-1, x+1] for x in point]))
 
-def step(pts):
+def step_naive(pts):
     """Takes a set of points (tuples) and steps them in the simulation
     """
     neighbs = Counter()
     for point in pts:
-        neighbs += Counter(mk_neighbs(point))
+        # skip the first item, the original point
+        neighbs += Counter(mk_neighbs(point)[1:])
 
     def validate(point, ncount):
         if point in pts:
@@ -223,7 +222,7 @@ def step(pts):
         else:
             return ncount == 3
 
-    return [p for p, n in neighbs.items() if validate(p, n)]
+    return frozenset(p for p, n in neighbs.items() if validate(p, n))
 ```
 
 Three Dimensions
@@ -455,7 +454,7 @@ def normalize(point):
     return tuple(sorted([abs(x) for x in point]))
 
 def forward_neighbs(point):
-    """Generate the forward neighbors of a point
+    """Generate the higher-dimensional forward neighbors of a point
 
     (0, 1)
     => {(0, 1): 2, (1, 2): 2, (1, 1): 2, (0, 0): 1, (0, 2): 1}
@@ -535,6 +534,43 @@ to generalize, but...we'll tackle that when we get there :)
 
 For now, we have a super-fast implementation of 4D GoL with our special
 degeneracy! The runtime gets reduced by a factor of 8!
+
+For clarity, here's a pseudocode implementation of how we can do this
+higher-dimensional wrangling:
+
+``` {.python}
+def reverse_neighbs(point):
+    """Return higher-dimensional points, with their reverse multiplicities
+
+    (0, 1)
+    => {(0, 0): 4, (0, 1): 2, (1, 1): 2, (0, 2): 1, (1, 2): 1}
+    """
+    return {} # implementation elided
+
+def step_with_weights(pts):
+    neighbs = Counter()
+    for point in pts:
+        # 2d component
+        pt_2d = point[:2]
+        # higher-dimension components
+        pt_nd = point[2:]
+
+        # insert neighbors in the same 2d slice, not including itself
+        neighbs += Counter([ngb + pt_nd for ngb in mk_neighbs(pt_2d)[1:]])
+        # insert neighbors in the neighboring 2d slices
+        neighbs += Counter({(ngb_2 + ngb_n): wt
+                                for ngb_n, wt in reverse_neighbs(pt_nd)
+                                for ngb_2 in mk_neighbs(pt_2d)
+                          })
+
+    def validate(point, ncount):
+        if point in pts:
+            return ncount == 2 or ncount == 3
+        else:
+            return ncount == 3
+
+    return frozenset(p for p, n in neighbs.items() if validate(p, n))
+```
 
 Now, onward to 5D!
 
@@ -625,7 +661,7 @@ So, not only did we figure out a way to generalize/compute our symmetries, we
 also now know that this method lets us keep our point set *polynomial* on the
 dimension, instead of exponential.
 
-To put a concrete number for context, for that dream of d=10, here are only
+To put a concrete number for context, for that dream of 10D, here are only
 ![{ {8+6} \\choose 6 }](https://latex.codecogs.com/png.latex?%7B%20%7B8%2B6%7D%20%5Cchoose%206%20%7D "{ {8+6} \choose 6 }"),
 or 3003 potential unique `<z,w,...>` points, once you factor out symmetries! The
 number went down from
@@ -663,7 +699,7 @@ Pure joy! :D
 [Peter
 Tseng](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ggaaqsy/)
 made a post on Thursday night with times, but I can't remember if it
-incorporated all the symmetries or originally included d=10. [Michal
+incorporated all the symmetries or originally included 10D, [Michal
 Marsalek](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ggsx9e9/)
 was apparently able to implement the idea that they originally proposed by the
 following Wednesday (December 23rd) in Nim to blow everyone's time out of the
@@ -674,7 +710,7 @@ goal that we couldn't have completed on a supercomputer had, through successive
 revelations and insights building on each other one by one, could now be done in
 3 seconds.
 
-But hey, I promised 100ms in the introduction, and a fast d=40, right?
+But hey, I promised 100ms in the introduction, and a way to reach 40D, right?
 
 With our goal completed, it was now time to dig in a little deeper and see how
 far this baby could go.
@@ -986,6 +1022,43 @@ mind-bottling hyper-dimensional deal, it's now simply *normal 2D cellular
 automata* with funky rules! It's like a normal 2D game of life, but with funky
 rules for 2D points spreading to each other.
 
+``` {.python}
+def step_with_stacks(stacks):
+    neighbs = {}
+    for pt_2d, pt_stack in stacks.items():
+        # higher-dimension components
+        for pt_nd in pt_stack:
+            rev_neighbs = Counter(reverse_neighbs(pt_nd))
+            rev_neighbs_incl_self = rev_neighbs + Counter(pt_nd)
+
+            # the actual propagation
+            # 1. add in the same stack; don't include self
+            if pt_2d in neighbs:
+                neighbs[pt_2d] += rev_neighbs
+            else:
+                neighbs[pt_2d] = rev_neighbs
+            # 2. add to nieghboring stacks
+            for ngb_2 in mk_neighbs(pt_2d)[1:]:
+                # add to neighboring stacks; include self
+                if ngb_2 in neighbs:
+                    neighbs[ngb_2] += rev_neighbs_incl_self
+                else:
+                    neighbs[ngb_2] = rev_neighbs_incl_self
+
+    def validate(pt_2d, pt_nd, ncount):
+        if pt_nd in stacks[pt_2d]:
+            return ncount == 2 or ncount == 3
+        else:
+            return ncount == 3
+
+    return {pt_2d: frozenset(
+                       pt_nd for pt_nd, n in pt_counts.items()
+                             if validate(pt_2d, pt_nd, n)
+                   )
+              for pt_2d, pt_counts in neighbs
+           }
+```
+
 And here is the final animation: we plot a single 2D grid, and each cell is
 colored according to the size of the coset stack under that point (how many
 points exist with that `<x,y>`). You can slide this one up all the way to 10D to
@@ -995,11 +1068,17 @@ simulate it in your browser!
 Please enable Javascript
 :::
 
-Not only is it kinda pretty, it also demonstrates that this whole ordeal is
-really "just a normal 2D cellular automata": it's like a "multi-valued" game of
-life, where instead of cells being on and off, they are one of a few choices of
-values. Instead of a "binary" game of life with a boolean at each cell, it's an
-"integer" game of life with a finite choice at each cell.
+Play around with it! :D You can move all the way up to 10D; some computers might
+struggle, but on my lower-end cell phone it seems to run in less than a second.
+If you mouse-over a cell, the text box will show all of the slice cosets where
+that xy cell is alive in (the "coset stack").
+
+Not only is it kinda pretty (in my humble opinion), it also demonstrates that
+this whole ordeal is really "just a normal 2D cellular automata": it's like a
+"multi-valued" game of life, where instead of cells being on and off, they are
+one of a few choices of values. Instead of a "binary" game of life with a
+boolean at each cell, it's an "integer" game of life with a finite choice at
+each cell.
 
 Because there are
 ![{ {\\hat{d}}+t} \\choose t](https://latex.codecogs.com/png.latex?%7B%20%7B%5Chat%7Bd%7D%7D%2Bt%7D%20%5Cchoose%20t "{ {\hat{d}}+t} \choose t")
@@ -1027,6 +1106,77 @@ Implementing things this way (and taking advantage of the fact that coset stacks
 are usually very sparse and have few members) gave a big improvement. But
 there's one final thing that this view would unlock that would make the biggest
 difference.
+
+### Repeated Stacks
+
+You might have noticed in the final 10D simulation, if you mouse over an xy cell
+it'll also highlight over all of the other xy cells that share the same coset
+stack.
+
+For most initial starting positions, you might notice something maybe even more
+curious --- a *lot* of those stacks are duplicated.
+
+In my sample input, *most* of the stacks were duplicated many times across
+different xy cells. If you highlight any arbitrary starting condition through
+t=6, you'll see too that many (if not most) xy cells have multiple other xy
+cells that have identical stacks to them.
+
+This final insight yields the final optimization we have discovered, as of time
+of writing.
+
+``` {.python}
+def step_with_stack_cache(stacks):
+    neighbs = {}
+    stack_cache = {}
+
+    for pt_2d, pt_stack in stacks.items():
+        # get what to place in the same xy cell, and what to place in neighbor
+        # xy cells
+        if pt_stack in stack_cache:
+            # get it from the cache if it exists
+            (rev_neighbs, rev_neighbs_incl_self) = stack_cache[pt_stack]
+        else:
+            # otherwise, build it and store it in the cache
+            rev_neighbs = Counter()
+            for pt_nd in pt_stack:
+                rev_neighbs += Counter(reverse_neighbs(pt_nd))
+            rev_neighbs_incl_self = rev_neighbs + Counter(pt_stack)
+            stack_cache[pt_stack] = (rev_neighbs, rev_neighbs_incl_self)
+
+        # the actual propagation
+        # 1. add in the same stack; don't include self
+        if pt_2d in neighbs:
+            neighbs[pt_2d] += rev_neighbs
+        else:
+            neighbs[pt_2d] = rev_neighbs
+        # 2. add to nieghboring stacks
+        for ngb_2 in mk_neighbs(pt_2d)[1:]:
+            # add to neighboring stacks; include self
+            if ngb_2 in neighbs:
+                neighbs[ngb_2] += rev_neighbs_incl_self
+            else:
+                neighbs[ngb_2] = rev_neighbs_incl_self
+
+    def validate(pt_2d, pt_nd, ncount):
+        if pt_nd in stacks[pt_2d]:
+            return ncount == 2 or ncount == 3
+        else:
+            return ncount == 3
+
+    return {pt_2d: frozenset(
+                       pt_nd for pt_nd, n in pt_counts.items()
+                             if validate(pt_2d, pt_nd, n)
+                   )
+              for pt_2d, pt_counts in neighbs
+           }
+```
+
+With this final piece of the puzzle, I was able to reach 18D *3 seconds* in my
+Haskell solution! And after explaining the method, Michal Marsalek was also able
+to build this into their fast Nim solver to \[reach 40D in 8 minutes, 50D in 32
+minutes, 60D in 120 minutes\]\[finalmichal\].
+
+And as far as I know, this seems to be where things stand today.
 
 --------------------------------------------------------------------------------
 
