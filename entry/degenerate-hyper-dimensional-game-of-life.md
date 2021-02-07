@@ -971,7 +971,8 @@ coordinates). I no longer store `<z,w,...>` points as vectors, but rather as a
 single integer representing their index in that enumeration, which is easier to
 access and store. I also found a way to do streaming decoding and encoding
 between that index and the components it represents, allowing me to stream
-neighbor weights in constant time.
+neighbor weights in constant time. This dense index encoding was actually really
+useful in implementing the Javascript demos on this page :)
 
 Another factor contributing to the overall lull was that Advent of Code was
 still running, and we all definitely enjoyed doing new puzzles every day. But
