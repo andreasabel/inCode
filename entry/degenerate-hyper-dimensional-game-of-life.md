@@ -92,8 +92,9 @@ of life :D
 
 There will be python code samples here and there, but just for context, my
 actual solvers I developed along the way were written in Haskell, and all of the
-solving logic embedded in this post was written in Purescript and compiled to
-Javascript.
+solving logic embedded in this post was written in Purescript ([online
+here](https://github.com/mstksg/inCode/blob/master/app-purescript/Gol.purs)) and
+compiled to Javascript.
 
 Starting Off
 ------------
@@ -802,13 +803,10 @@ But we run into problems working with this format. For example, if we're
 computing a neighbor of `0,1,1,1,3,5,5,6`, we can imagine that the very first
 `1` moves to be a `2`, resulting in `0,2,1,1,3,5,5,6`. However, we're now in
 un-normalized territory...we have to re-sort it to turn it into
-`0,1,1,2,3,5,5,6`. It's just not something we can directly manipulate with
-simple rules and still stay in the valid state space without complicated
-restrictions or rules.
+`0,1,1,2,3,5,5,6`. This encoding isn't something we can directly manipulate in a
+nice way.
 
-If you stare at many different sample points, you might start to build an
-internal model in your head...these points are really all just consecutive runs
-of 1s, 2s, 3s, etc., at different lengths. What if we encoded each
+Because of how everything is always non-decreasing, what if we encoded each
 higher-dimensional coordinate as "number of each position seen?" For example, we
 can encode `0,1,1,1,3,5,5,6` as `1-3-0-1-0-2-1`: the first slot represents how
 many 0s we have the second how many 1s, the next how many 2s, the next how many
@@ -819,50 +817,43 @@ total number of higher dimensions (ie, 10D vectors sum to 8)
 And now, a "valid transition" becomes easy to enforce: it's an amount "flowing"
 from one of those bins to another. For example, turning a `1` into a `2` in
 `1-3-0-1-0-2-1` turns it into `1-2-1-1-0-2-1`. We took one of the three 1s and
-turned them into a single 2. In this method, we don't have to do any
-normalization because this "flowing" operation automatically preserves the
-sum-to-a-fixed-number invariant!
+turned them into a single 2. This "flowing" operation automatically gives us a
+valid number without any renormalizing necessary! This gives us an algorithm to
+compute neighbors: we can walk bin-to-bin, "flowing" components from our origin
+vector to our new vector.
 
-That's it, really! We can walk bin-to-bin, assembling a new vector from the old
-ones, by looking at the different possible bin-to-bin flows step-by-step!
+This was our goal! A way to compute neighbors without requiring renormalization.
+We no longer have to try all
+![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1") (exponential)
+candidates and re-normalize: we can now only iterate through the ones we care
+about.
 
-Now, the tricky math is the with multiplicities. Interestingly enough, in this
-case the *reverse* direction is actually easier to conceptualize than the
-forward direction. Good for us, because it's the reverse direction we actually
-need.
+However, the tricky math is the with multiplicities. Interestingly enough, in
+this case the *reverse* direction is actually easier to conceptualize than the
+forward direction. Good for us, though, because it's the reverse direction we
+actually need!
 
-Let's say that we start at `0-2-1-3` (`1,1,2,3,3,3`) and we want it to "flow"
-to, say, `0-0-5-0` (`2,2,2,2,2`): dump all our bins into 2. How many ways could
-this flow happen? Well, we end up with 5 points in the slot, which could have
-been picked ![5!](https://latex.codecogs.com/png.latex?5%21 "5!") ways. We came
-to it via three sources `2+1+3` (two from the left, one from here, three from
-the right), so for our final multiplicity we have to quotient by the
-![2!](https://latex.codecogs.com/png.latex?2%21 "2!") ways the
-![1 \\rightarrow 2](https://latex.codecogs.com/png.latex?1%20%5Crightarrow%202 "1 \rightarrow 2")
-flow could have happened, the
-![1!](https://latex.codecogs.com/png.latex?1%21 "1!") way the
-![2 \\rightarrow 2](https://latex.codecogs.com/png.latex?2%20%5Crightarrow%202 "2 \rightarrow 2")
-flow could have happened, and the
-![3!](https://latex.codecogs.com/png.latex?3%21 "3!") ways the
-![3 \\rightarrow 2](https://latex.codecogs.com/png.latex?3%20%5Crightarrow%202 "3 \rightarrow 2")
-flow could have happened (aka, the [multinomial
-coefficient](https://en.wikipedia.org/wiki/Multinomial_theorem) \$5
-\choose {2,1,3} \$).
+If we start at `0-2-1-3` (`1,1,2,3,3,3`) and "flow" to, say, `0-0-5-0`
+(`2,2,2,2,2`) and dump all our bins into 2. How many ways could this flow
+happen? The answer happens to be the [multinomial
+coefficient](https://en.wikipedia.org/wiki/Multinomial_theorem)
+![5 \\choose {2,1,3}](https://latex.codecogs.com/png.latex?5%20%5Cchoose%20%7B2%2C1%2C3%7D "5 \choose {2,1,3}")
+(or
+![5! / (2! 1! 3!)](https://latex.codecogs.com/png.latex?5%21%20%2F%20%282%21%201%21%203%21%29 "5! / (2! 1! 3!)")):
+there are ![5!](https://latex.codecogs.com/png.latex?5%21 "5!") ways to end up
+with 5 in the bin, but that `5` came from contributions of `2+1+3` from either
+side, and so we divide by the ways we could pick from those contributing bins
+(2!, 1!, and 3!).
 
-One final note: we have to treat transitions from 0 to 1 slightly differently,
-because some of them could have been transitions from 0 to -1. For example, if
-we had `2-0-0-0` into `0-2-0-0`, you could have had two 0s both turn into 1s, or
-you could have had one 0 turn into a 1 and one turn into a -1 (which get
-reflected as 0 to 1 once you normalize), or you could have had both 0s turn into
--1s. All in the end this factors to a multiplication of
-![2\^n](https://latex.codecogs.com/png.latex?2%5En "2^n") (the sum of the nth
-row in the pascal triangle), ![n](https://latex.codecogs.com/png.latex?n "n")
-being the number of 0-to-1 transitions, at the end.
-
-Because of the special care taken for 0 to 1 transitions, it's more convenient
-to fill in bin-by-bins "backwards", from the 6 slot to the 5 slot to the 4 slot,
-etc., because your options at the 0 component are already pre-determined for you
-by the choices you have already made. It keeps the tree a more manageable shape.
+One final note: we have to treat multiplicities for transitions from 0 to 1
+slightly differently, because they can arise either a 0 to 1 transition or a 0
+to -1 transition. This comes out to a multiplication of
+![2\^n](https://latex.codecogs.com/png.latex?2%5En "2^n") at the end (n being
+the number of 0-to-1 flow). Because of this special care, it's actually more
+convenient to fill in bin-by-bin "backwards", from the 6 slot to the 5 slot to
+the 4 slot, etc., because your options at the 0 component are already
+pre-determined for you by the choices you have already made. It keeps the tree a
+more manageable shape.
 
 Alright, enough words, let's look at this in action! Here is a *tree* describing
 all the ways you can flow from bin to bin! As an example, let's look the 6D case
@@ -880,7 +871,7 @@ Bin-by-bin, we begin to move components from our source vector into our target
 vector. The branches in the tree reflects different ways we can commit a bin in
 our target vector. For example, at the very first split, we can either pick our
 final vector to be `?-?-?-?-0` (leaving that 3 bin alone) or `?-?-?-?-1`
-(swiping a component from that 3 bin in the source vector). The number to the
+(swiping a component from that 3 bin in the source vector). The operation to the
 right of the node represents how we modify our weights according to the choices
 we make according to the logic above. And all other nodes on the far right are
 the end products: the actual neighbors, along with their multiplicities.
@@ -901,26 +892,46 @@ checking if each of our bin choices involved exactly no inter-bin flows (they
 were all of the form `0+x+0`).
 
 Phew! That's a bit of a mathematical doozy, huh? But trust me when I say it's
-easier to understand if you try out a few different points from the drop-down
-menu and trace out the different possible paths, and how the multiplicities are
-affected. After a few examples in different dimensions, it might start to make
+easier to understand if play around with the interactive demo and follow along
+the traces. After a few examples in different dimensions, it might start to make
 sense. Try looking at the lower dimensions too to see if they match up with what
 we figured out before.
 
 You can also flip the switch on the demo to compute reverse and forward
-neighbors. Luckily, as we noted before in the 5D case, "is a neighbor" is a
-reversible relationship: If a point is a forward neighbor, it is also a reverse
-neighbor. This means that the branching structure for forward and reverse
-neighbor trees are all the same. The only difference is how the multiplicities
-are calculated. In this case, the forward direction is just the original
-calculation reversed. The diagram shows how the multiplicities are accumulated;
-feel free to try to work out how this works as an exercise!
+neighbors. Luckily, as we noted before, if a point is a forward neighbor, it is
+also a reverse neighbor. This means that the branching structure for forward and
+reverse neighbor trees are exactly the same; the only difference is how the
+multiplicities are calculated. In this case, the forward direction is just the
+original calculation reversed! The diagram shows how the multiplicities are
+accumulated; feel free to try to work out how this works as an exercise!
 
 That's it, for real! We have tackled the reverse neighbor weights problem with
 some branching bin flows and combinatorics!\[\^honesty\]
 
 Stacks On Stacks: Visualizting Arbitrary Dimensions
 ---------------------------------------------------
+
+You might have noticed that since our 4D record, we haven't had a new
+visualization of simulation, despite now having higher dimensions in our grasp.
+Why not?
+
+Well, there's the question of *how* you might even visualize this. You can "zoom
+out" and take higher-dimensional slices of our 4D visualization and repeat this
+ad nauseum, but that doesn't really add anything or give any insight as to
+what's really going on.
+
+And honestly, I believe that that's the reason we all collectively got "stuck"
+together around 20 dimensions. The rush of the revelations one after within a
+single week pushed us into trying many different things. I had a couple of
+dead-end forays into pre-cacheing and had a lot of code (that I was ecstatic to
+be able to delete) working with an sqlite3 database.
+
+Another factor was that Advent of Code was still running, and we all definitely
+enjoyed doing new puzzles every day. But soon, Christmas passed, the daily rush
+of doing a new puzzle faded, and we started to return back to tinkering on this
+hyper-dimensional game of life. And it wasn't until January 1st (just over two
+weeks after the puzzle originally came out) that a new revelation arise that
+would pave the way shoot past 20D.
 
 ::: {#golFlat}
 Please enable Javascript
