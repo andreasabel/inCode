@@ -1091,11 +1091,11 @@ and be present or not coset). That means at 2D
 we have a normal 2-valued game of life
 (![2\^1](https://latex.codecogs.com/png.latex?2%5E1 "2^1")), at 3D we have
 ![7 \\choose 6](https://latex.codecogs.com/png.latex?7%20%5Cchoose%206 "7 \choose 6")
-(7) possible points at t=6, so that's a
+or 7 possible points at t=6, so that's a
 ![2\^7](https://latex.codecogs.com/png.latex?2%5E7 "2^7") or 128-valued game of
 life, at 4D we have
 ![8 \\choose 6](https://latex.codecogs.com/png.latex?8%20%5Cchoose%206 "8 \choose 6")
-(28) possible points at t=6, and so that's a
+or 28 possible points at t=6, and so that's a
 ![2\^28](https://latex.codecogs.com/png.latex?2%5E28 "2^28") or 268435456-valued
 game of life.
 
@@ -1174,8 +1174,8 @@ def step_with_stack_cache(stacks):
 
 With this final piece of the puzzle, I was able to reach 18D *3 seconds* in my
 Haskell solution! Michal Marsalek was also able to build this into their fast
-Nim solver to \[reach 40D in 8 minutes, 50D in 32 minutes, 60D in 120
-minutes\]\[finalmichal\].
+Nim solver to [reach 40D in 8 minutes, 50D in 32 minutes, 60D in 120
+minutes](https://www.reddit.com/user/MichalMarsalek/).
 
 And as far as I know, this seems to be where things stand today.
 
