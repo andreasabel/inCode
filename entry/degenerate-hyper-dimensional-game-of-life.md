@@ -90,8 +90,10 @@ into any particular degenerate starting conditions of a hyper-dimensional game
 of life :D
 
 There will be python code samples here and there, but just for context, my
-actual solvers I developed along the way were written in Haskell, and all of the
-solving logic embedded in this post was written in Purescript ([online
+actual solvers I developed along the way were [written in
+Haskell](https://github.com/mstksg/advent-of-code-2020/blob/master/src/AOC/Challenge/Day17.hs),
+and all of the solving logic embedded in this post was written in Purescript
+([online
 here](https://github.com/mstksg/inCode/blob/master/app-purescript/Gol.purs)) and
 compiled to Javascript.
 
