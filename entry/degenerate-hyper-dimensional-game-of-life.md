@@ -1116,8 +1116,8 @@ or 7 possible points at t=6, so that's a
 life, at 4D we have
 ![8 \\choose 6](https://latex.codecogs.com/png.latex?8%20%5Cchoose%206 "8 \choose 6")
 or 28 possible points at t=6, and so that's a
-![2\^28](https://latex.codecogs.com/png.latex?2%5E28 "2^28") or 268435456-valued
-game of life.
+![2\^{28}](https://latex.codecogs.com/png.latex?2%5E%7B28%7D "2^{28}") or
+268435456-valued game of life.
 
 And you can see this demonstrated in the simulation above, as well. As you
 progress, each 2D cell "spreads" to its neighbors according to some complex
