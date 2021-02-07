@@ -185,8 +185,8 @@ dimensionality!
 
 The nice thing about this method is that it's easy enough to generalize to any
 dimension: instead of, say, keeping `[x,y]` in your set for 2D, just keep
-`[x,y,z]` for 3D, or any length array of coordinates. One minor trick you need
-to think through is generating all
+`[x,y,z]` for 3D, or any length array of coordinates.[^1] One minor trick you
+need to think through is generating all
 ![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1") neighbors, but
 but that's going to come down to a d-ary [cartesian
 product](https://observablehq.com/@d3/d3-cross) of `[-1,0,1]` to itself.
@@ -669,7 +669,7 @@ number went down from
 potential unique `<z,w,...>` points to
 ![6\^8](https://latex.codecogs.com/png.latex?6%5E8 "6^8") (1,679,616) potential
 unique points with positive/negative symmetry to just 3003 with permutation
-symmetry.[^1] Furthermore, because of the blessing of dimensionality mentioned
+symmetry.[^2] Furthermore, because of the blessing of dimensionality mentioned
 earlier, we can expect more and more of those to be empty as we increase our
 dimensions.
 
@@ -833,7 +833,7 @@ What do all our valid normalized `<z,w,...>` coordinates look like? Well, they
 are always non-decreasing, and always are less than the current timestep.
 Keeping t=6 as our goal still, this means that valid coordinates in 10D are
 strings of eight numbers, like `0,1,1,1,3,5,5,6`, or `0,0,3,4,4,4,6,6`, or
-`1,1,2,3,3,4,5,5`.[^2]
+`1,1,2,3,3,4,5,5`.[^3]
 
 But we run into problems working with this format. For example, if we're
 computing a neighbor of `0,1,1,1,3,5,5,6`, we can imagine that the very first
@@ -1172,9 +1172,9 @@ def step_with_stack_cache(stacks):
 ```
 
 With this final piece of the puzzle, I was able to reach 18D *3 seconds* in my
-Haskell solution! And after explaining the method, Michal Marsalek was also able
-to build this into their fast Nim solver to \[reach 40D in 8 minutes, 50D in 32
-minutes, 60D in 120 minutes\]\[finalmichal\].
+Haskell solution! Michal Marsalek was also able to build this into their fast
+Nim solver to \[reach 40D in 8 minutes, 50D in 32 minutes, 60D in 120
+minutes\]\[finalmichal\].
 
 And as far as I know, this seems to be where things stand today.
 
@@ -1191,14 +1191,23 @@ If you feel inclined, or this post was particularly helpful for you, why not
 consider [supporting me on Patreon](https://www.patreon.com/justinle/overview),
 or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
 
-[^1]: For dramatic effect, I've omitted the fact that while there are only 3003
+[^1]: And...there's actually a neat optimization we can use (brought to our
+    attention by [Peter
+    Tseng](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ghmllf8))
+    to avoid the check of the original set in step 2c above: when you iterate
+    over each point, increment the eight neighbors' map values by *2*, and then
+    increment the point itself by 1. Then in the final integer under each key,
+    `n / 2` or `n >> 1` gives you the number of neighbors and `n % 2` (modulo)
+    gives you whether or not that cell was alive.
+
+[^2]: For dramatic effect, I've omitted the fact that while there are only 3003
     possible higher-dimensional points, there are
     ![20\^2 \\times 3003](https://latex.codecogs.com/png.latex?20%5E2%20%5Ctimes%203003 "20^2 \times 3003")
     actual unique points possible factoring in the 20x20 x-y grid. Still, it's a
     pretty big improvement over the original situation
     (![20\^2 \\times 815730721](https://latex.codecogs.com/png.latex?20%5E2%20%5Ctimes%20815730721 "20^2 \times 815730721")).
 
-[^2]: It's also interesting to note that above 9D (where there are 7
+[^3]: It's also interesting to note that above 9D (where there are 7
     higher-dimensional coordinates), there is always at least one duplicated
     number. Although I don't really know a way to explicitly exploit that fact
     even now, it does mean that there's a qualitative difference between 9D and
