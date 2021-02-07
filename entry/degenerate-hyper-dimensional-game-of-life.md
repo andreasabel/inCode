@@ -81,7 +81,7 @@ different aspects of this degeneracy. It was a long, harrowing journey full of
 sudden twists and turns and bursts of excitement when new innovations came. And
 in the end, the hopeful question "What if 10D was possible?" turned into "10D in
 100ms, 40D in eight minutes." This post even includes simulations to prove that
-got 10D fast enough to run on easily on any modern browser. Furthermore, the
+we got 10D fast enough to run on easily on any modern browser. Even more, the
 whole journey became an adventure in the power of visualization combined with
 abstract thinking.
 
