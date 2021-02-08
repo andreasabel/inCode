@@ -682,10 +682,11 @@ inevitability. And now, it was a race to see who could get there first.
 ### The Race to 10D
 
 Unfortunately, the exact record of who reached and posted 10D first is a bit
-lost to history due to reddit's editing records. A few people maintained and
-updated their posts to prevent clutter, but the record and time stamp of when
-they first hit 10D is lost. If any of them happens to read this and can more
-accurately verify their times, I'd be happy to update!
+lost to history due to reddit's editing records (not that "first" is necessarily
+a meaningful distinction). A few people maintained and updated their posts to
+prevent clutter, but the record and time stamp of when they first hit 10D is
+lost. If any of them happens to read this and can more accurately verify their
+times, I'd be happy to update!
 
 For me, I'm sure I was not the first one, but in my chat logs I chimed into
 freenode's `##adventofcode-spoilers` channel in excitement in the wee morning
