@@ -826,10 +826,10 @@ squares.
 Anyway, you can explore this a little bit and try to come up with a set of
 ad-hoc rules like we did for 4D...but I think we've reached the limits of how
 far that method can go. We can generate these values simply enough using the
-expand-normalize-tabulate method we did for 4D, but there should be a way to
-compute these weights *directly*, in a clean fashion that doesn't require
-branching special cases and patterns. It's clear that we are limited until we
-can find this method.
+expand-normalize-tabulate method we did for 4D, but it's pretty inefficient, and
+there should be a way to compute these weights *directly* in a clean fashion
+that doesn't require hard-coding special cases and patterns. It's clear that we
+are limited until we can find this method.
 
 ### Go with the Flow
 
