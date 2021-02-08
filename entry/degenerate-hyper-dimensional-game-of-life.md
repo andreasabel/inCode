@@ -707,7 +707,7 @@ incorporated all the symmetries or originally included 10D, [Michal
 Marsalek](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ggsx9e9/)
 was apparently able to implement the idea that they originally proposed by the
 following Wednesday (December 23rd) in Nim to blow everyone's time out of the
-water: 3.0 seconds!
+water: 3 seconds flat flat flat flat!
 
 At that point, it was pretty unbelievable to me that what started out as a dream
 goal that we couldn't have completed on a supercomputer had, through successive
