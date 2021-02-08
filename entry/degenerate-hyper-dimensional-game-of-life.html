@@ -38,11 +38,15 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="starting-off">Starting Off</h2>
 <p>First of all, let’s meet our friend for the rest of this journey. In the drawer below, you can draw (with your mouse) the 8x8 grid you want to simulate for the rest of this post. As you draw, the rest of the visualizations will update to use this as their initial conditions.</p>
 <div id="golDrawer">
+<div id="golDrawerCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>And for fun, here’s a 2D vanilla game of life implementation (for six time steps) to test out your creation. I recommend trying out some of the <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life#Examples_of_patterns">interesting well-known patterns</a>!</p>
 <div id="gol2D">
+<div id="gol2DCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>Now that that’s there, let’s start at the beginning: what’s the naive, baseline solution?</p>
 <p>A reasonable initial thought would be:</p>
@@ -101,7 +105,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="three-dimensions">Three Dimensions</h2>
 <p>Let’s see how this looks for the 3D case! To make things easier to see, we can render things in “slices” in 3D space: each grid represents a slice at a different z level (ie, the z=0 square represents all squares <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%3Cx%2Cy%2C0%3E" alt="&lt;x,y,0&gt;" title="&lt;x,y,0&gt;" />). Press “Play” to have the simulation cycle through 6 time steps!</p>
 <div id="gol3D">
+<div id="gol3DCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>In “reality”, each of those 13 slices above are stacked on top of each other in 3D space. You’ll see that most initial conditions will spread out from the center z=0 point, which means they are actually spreading “up and down” the z axis.</p>
 <p>If you mouse over (or tap) any individual tiny <code>&lt;x,y&gt;</code> cell, you’ll see the all of the 26 (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5Ed-1" alt="3^d-1" title="3^d-1" />) <code>&lt;x,y,z&gt;</code> 3D neighbors of the point you’re hovering over highlighted in blue — these 26 points form a 3D cube around your mouse once everything is stacked correctly. You can use this cube to help see how the simulation progresses. If your mouse is hovering over a live cell, and there are 2 or 3 live cells highlighted in your cube, it’ll stay alive in the next time step. If your mouse is hovering over a dead cell and there are exactly 3 live cells highlighted in your cube, it will come alive in the next step.</p>
@@ -117,7 +123,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Wow, let’s do this! Apparently the picture is slightly more complicated than simply halving the points. We also need to change how to distribute neighbors. That’s because, once we commit to only keeping the positive z’s, some cells need to be double-counted as neighbors. In particular, any <code>z=0</code> cell would previously had a neighbor at both <code>z=-1</code> and <code>z=1</code>…but now if we only keep the positive z’s, it would have <code>z=1</code> as a neighbor <em>twice</em>.</p>
 <p>The following interactive demo lets you explore what this looks like:</p>
 <div id="golSyms3DForward">
+<div id="golSyms3DForwardCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>Each square represents an entire “slice” of z. When you mouse-over or tap a z-cell, its z-neighbors are highlighted with how many times that neighbor has to be counted, and the green bar tells you from what direction that neighborship arose from. For example, mousing over z=3, z=2 and z=4 get highlighted with the values “1” because they are neighbors of 3, on the left and right side (respectively). Note that one neat property for all squares (except for z=6, which goes off the scale) is that the “total” higher-dimensional neighbors is always 2 (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5E%28d-2%29-1" alt="3^(d-2)-1" title="3^(d-2)-1" />), it’s just that where those neighbors fall is re-arranged slightly.</p>
 <p>The tricky square is now z=0: if you mouse-over it, you’ll see that it has a single neighbor z=1 that is counted twice, as a neighbor from both the left and right side.</p>
@@ -126,7 +134,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Now, how do we count <code>&lt;1,3,1&gt;</code> expanding into <code>&lt;1,3,0&gt;</code>? Well, normally, <code>&lt;1,3,1&gt;</code> is a neighbor of <code>&lt;1,3,0&gt;</code> once. However, if we only keep the normalized z values, <code>&lt;1,3,1&gt;</code> is a neighbor of <code>&lt;1,3,0&gt;</code>…twice! To compute the total neighbor count of <code>&lt;1,3,0&gt;</code>, we have to count the contribution from <code>&lt;1,3,1&gt;</code> twice (once for <code>&lt;1,3,1&gt;</code> and once for <code>&lt;1,3,-1&gt;</code>, which was normalized away).</p>
 <p>That means we have to follow the rules in the previous demo <em>backwards</em>, like:</p>
 <div id="golSyms3DReverse">
+<div id="golSyms3DReverseCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>These are the “reverse neighbors”: how much times a given point counts as a neighbor for its surrounding points. Here, mousing over z=1 shows that it counts as a neighbor for z=0 twice, from both the left and the right. It also counts as a neighbor for z=2 once (from the left side).</p>
 <p>We can account for this by hard-coding the rules into our step algorithm: if our z goes from <code>1</code> to <code>0</code>, increment its value twice in the neighbor map. Otherwise, simply increment by 1 as normal.</p>
@@ -136,7 +146,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="four-dimensions">Four Dimensions</h2>
 <p>Let’s look at how the 4 dimensions works! We can visualize this by taking “z-w” slices at different x-y planes as well. The labels in these boxes are the <code>&lt;z,w&gt;</code> of each slice. The very center is <code>&lt;z,w&gt; = &lt;0,0&gt;</code> the row in the middle from the top is <code>w=0</code>, and the column in the very middle from the left is <code>z=0</code>. It’s basically taking the 3D visualization above and expanding it in an extra dimension. Press “Play” to run your initial conditions!</p>
 <div id="gol4D">
+<div id="gol4DCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>We get something interesting as well: most initial conditions will spread out from the center <code>&lt;z,w&gt; = &lt;0,0&gt;</code> point radially, spreading outwards into positive and negative z and w. Mouse-over or tap any individual tiny <code>&lt;x.y&gt;</code> cell and you’ll see each of its 80 (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5Ed-1" alt="3^d-1" title="3^d-1" />) <code>&lt;x,y,z,w&gt;</code> 4D neighbors highlighted in blue, forming a little 3x3x3 “tesseract” (4D cube, or hypercube). Like in the 3D case, you can use this little hypercube to track how the simulation progresses: if your mouse if hovering over a live cell with 2 or 3 live cells in its hypercube, it’ll stay alive in the next step, if it’s hovering over a dead cell with 3 live cells in its hypercube, it’ll come alive in the next step.</p>
 <h3 id="diagonal-reflection-symmetry">Diagonal Reflection Symmetry</h3>
@@ -152,7 +164,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Arbitrarily, let’s say we only simulate the north-by-northeast wedge, because it’s easy to normalize/compact all points onto that wedge: they’re the points <code>&lt;z,w&gt;</code> where both components are positive and in non-decreasing order. So, <code>&lt;4,-3&gt;</code> gets “normalized” to <code>&lt;3,4&gt;</code>.</p>
 <p>Okay, so we found a new symmetry…but we ran into the same issue as before. How do we propagate neighbors? To help us, see what’s going on, let’s look at the map of neighbors between different <code>&lt;z,w&gt;</code> squares, for the single zw wedge we are simulating.</p>
 <div id="golSyms4DForward">
+<div id="golSyms4DForwardCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>These are the “forward neighbors”; we can compute them by expanding a point to its neighbors, and then normalizing our points and seeing how they double (or quadruple) up.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">def</span> normalize(point):</span>
@@ -190,7 +204,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb4-14"><a href="#cb4-14"></a>    <span class="cf">return</span> weights</span></code></pre></div>
 <p>This seems pretty expensive and wasteful, so we’d like to maybe find a formula to be able to do this using mathematical operations. So, let’s explore!</p>
 <div id="golSyms4DReverse">
+<div id="golSyms4DReverseCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>After exploring this interactively, we can maybe think of some rules we can apply.</p>
 <ol type="1">
@@ -292,7 +308,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>First, let’s start visualizing how things look like in 5 dimensions, now that we know what our slice coset/representative structure looks like. Partially to help us gain an intuition for some of what’s going on, and also partially to show that intuition at the individual component level can only get so far.</p>
 <p>It’s a bit difficult to duplicate the same forward/reverse neighbor demos for 4D as we had for 4D, so here’s a different representation. Here is a demo of all of the <code>&lt;z,w,q&gt;</code> slice cosets (the wedge of normalized points we track for our implementation) and both their forward and reverse neighbor weights of each other (computable using the method we used for 4D). The <code>q</code> axis is represented as stacked zw sections from left to right.</p>
 <div id="golSyms5D">
+<div id="golSyms5DCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>As you mouse-over a slice coset representative (a single square), all of its neighbors will be highlighted, including reflections. The red dot on the left is the “forward” neighbor multiplicity (how many times that other slice is a neighbor of the hovered slice) and the blue dot on the left is the “reverse” neighbor multiplicity (how many times the hovered slice is a neighbor of the other slice). For example, if you hover over <code>&lt;z,w,q&gt;=&lt;1,3,4&gt;</code>, you can see that <code>&lt;0,3,4&gt;</code> is its neighbor twice, and <code>&lt;1,3,4&gt;</code> is <code>&lt;0,3,4&gt;</code>’s neighbor four times. These four times come from the non-normalized reflections of <code>&lt;1,3,4&gt;</code> at <code>&lt;1,3,4&gt;</code>, <code>&lt;1,4,3&gt;</code>, <code>&lt;-1,3,4&gt;</code>, and <code>&lt;-1,4,3&gt;</code>. Some squares are also neighbors to themselves (like <code>&lt;1,4,5&gt;</code>, which reflects off of the top edge at <code>&lt;1,5,4&gt;</code>) and some are not (like <code>&lt;1,3,5&gt;</code>). <a href="https://www.youtube.com/watch?v=rSfebOXSBOE">Mind bottling</a>!</p>
 <p>At least one pattern we can see clearly is that if you are at a point where each component is 4 or lower, the sum of all the red dots (the forward neighbors) is <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5E3-1" alt="3^3-1" title="3^3-1" /> = 26, just like how the sum of forward neighbors for interior points in 3D is <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5E2-1" alt="3^2-1" title="3^2-1" /> = 8, and for 2D is <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?3%5E2-1" alt="3^2-1" title="3^2-1" /> = 2.</p>
@@ -309,7 +327,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>One final note: we have to treat multiplicities for transitions from 0 to 1 slightly differently, because they can arise either a 0 to 1 transition or a 0 to -1 transition. This comes out to a multiplication of <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?2%5En" alt="2^n" title="2^n" /> at the end (n being the number of 0-to-1 flow). Because of this special care, it’s actually more convenient to fill in bin-by-bin “backwards”, from the 6 slot to the 5 slot to the 4 slot, etc., because your options at the 0 component are already pre-determined for you by the choices you have already made. It keeps the tree a more manageable shape.</p>
 <p>Alright, enough words, let’s look at this in action! Here is a <em>tree</em> describing all the ways you can flow from bin to bin! As an example, let’s look the 6D case of ways each point is a neighbor of <code>0,2,2,3</code> (<code>1-0-2-1</code>), which you can pick from the drop-down.</p>
 <div id="golTree">
+<div id="golTreeCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>As you can see, each “branch” in tree (reading from left to right) is a different way to fill in the bin. At each node, the upper vector is the “source” vector, and the lower vector is the “target” vector we build step-by-step. Bin-by-bin, we begin to move components from our source vector into our target vector. The branches in the tree reflects different ways we can commit a bin in our target vector. For example, at the very first split, we can either pick our final vector to be <code>?-?-?-?-0</code> (leaving that 3 bin alone) or <code>?-?-?-?-1</code> (swiping a component from that 3 bin in the source vector). The operation to the right of the node represents how we modify our weights according to the choices we make according to the logic above. And all other nodes on the far right are the end products: the actual neighbors, along with their multiplicities.</p>
 <p>If you mouse-over or tap a node, it’ll highlight the trace from the beginning to the node you are highlighting, so you can see all of the choices made, as well as all the modifications made to our running multiplicity counter at each step. It’ll also show the contributions from the left, center, and right of the current bin being picked (the <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?2%2B1%2B3" alt="2+1+3" title="2+1+3" /> in the example above), and also the “regular” representation. For example, <code>&lt;[2,2],2,4&gt;</code> means that that node has already committed to having <code>&lt;?,?,2,4&gt;</code> in the target vector, but still has two 2s in the source vector to pull in and distribute.</p>
@@ -369,7 +389,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb9-34"><a href="#cb9-34"></a>           }</span></code></pre></div>
 <p>And here is the final animation: we plot a single 2D grid, and each cell is colored according to the size of the coset stack under that point (how many points exist with that <code>&lt;x,y&gt;</code>). You can slide this one up all the way to 10D to simulate it in your browser!</p>
 <div id="golFlat">
+<div id="golFlatCont">
 <p>Please enable Javascript</p>
+</div>
 </div>
 <p>Play around with it! :D You can move all the way up to 10D; some computers might struggle, but on my lower-end cell phone it seems to run in less than a second. If you mouse-over a cell, the text box will show all of the slice cosets where that xy cell is alive in (the “coset stack”). If you click on a cell, your selection will “lock” on that <code>&lt;x,y&gt;</code> coordinate.</p>
 <p>Some interesting things you might notice:</p>

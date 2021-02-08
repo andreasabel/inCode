@@ -106,7 +106,9 @@ rest of this post. As you draw, the rest of the visualizations will update to
 use this as their initial conditions.
 
 ::: {#golDrawer}
+::: {#golDrawerCont}
 Please enable Javascript
+:::
 :::
 
 And for fun, here's a 2D vanilla game of life implementation (for six time
@@ -115,7 +117,9 @@ steps) to test out your creation. I recommend trying out some of the
 patterns](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life#Examples_of_patterns)!
 
 ::: {#gol2D}
+::: {#gol2DCont}
 Please enable Javascript
+:::
 :::
 
 Now that that's there, let's start at the beginning: what's the naive, baseline
@@ -236,7 +240,9 @@ different z level (ie, the z=0 square represents all squares
 Press "Play" to have the simulation cycle through 6 time steps!
 
 ::: {#gol3D}
+::: {#gol3DCont}
 Please enable Javascript
+:::
 :::
 
 In "reality", each of those 13 slices above are stacked on top of each other in
@@ -293,7 +299,9 @@ positive z's, it would have `z=1` as a neighbor *twice*.
 The following interactive demo lets you explore what this looks like:
 
 ::: {#golSyms3DForward}
+::: {#golSyms3DForwardCont}
 Please enable Javascript
+:::
 :::
 
 Each square represents an entire "slice" of z. When you mouse-over or tap a
@@ -334,7 +342,9 @@ normalized away).
 That means we have to follow the rules in the previous demo *backwards*, like:
 
 ::: {#golSyms3DReverse}
+::: {#golSyms3DReverseCont}
 Please enable Javascript
+:::
 :::
 
 These are the "reverse neighbors": how much times a given point counts as a
@@ -374,7 +384,9 @@ It's basically taking the 3D visualization above and expanding it in an extra
 dimension. Press "Play" to run your initial conditions!
 
 ::: {#gol4D}
+::: {#gol4DCont}
 Please enable Javascript
+:::
 :::
 
 We get something interesting as well: most initial conditions will spread out
@@ -438,7 +450,9 @@ map of neighbors between different `<z,w>` squares, for the single zw wedge we
 are simulating.
 
 ::: {#golSyms4DForward}
+::: {#golSyms4DForwardCont}
 Please enable Javascript
+:::
 :::
 
 These are the "forward neighbors"; we can compute them by expanding a point to
@@ -509,7 +523,9 @@ This seems pretty expensive and wasteful, so we'd like to maybe find a formula
 to be able to do this using mathematical operations. So, let's explore!
 
 ::: {#golSyms4DReverse}
+::: {#golSyms4DReverseCont}
 Please enable Javascript
+:::
 :::
 
 After exploring this interactively, we can maybe think of some rules we can
@@ -795,7 +811,9 @@ other (computable using the method we used for 4D). The `q` axis is represented
 as stacked zw sections from left to right.
 
 ::: {#golSyms5D}
+::: {#golSyms5DCont}
 Please enable Javascript
+:::
 :::
 
 As you mouse-over a slice coset representative (a single square), all of its
@@ -902,7 +920,9 @@ of ways each point is a neighbor of `0,2,2,3` (`1-0-2-1`), which you can pick
 from the drop-down.
 
 ::: {#golTree}
+::: {#golTreeCont}
 Please enable Javascript
+:::
 :::
 
 As you can see, each "branch" in tree (reading from left to right) is a
@@ -1072,7 +1092,9 @@ points exist with that `<x,y>`). You can slide this one up all the way to 10D to
 simulate it in your browser!
 
 ::: {#golFlat}
+::: {#golFlatCont}
 Please enable Javascript
+:::
 :::
 
 Play around with it! :D You can move all the way up to 10D; some computers might
