@@ -620,9 +620,10 @@ post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_par
 *(equations slightly modified)*
 
 And boy was this exciting to read. First of all, it gave a way to generalize the
-z=w symmetry: it's just \[permutation symmetry\]\[permutaiton\] for all
-higher-dimensional coordinates! But the big kicker here: See that last formula?
-Let's look at it more closely, using
+z=w symmetry: it's just [permutation
+symmetry](https://en.wikipedia.org/wiki/Permutation) for all higher-dimensional
+coordinates! But the big kicker here: See that last formula? Let's look at it
+more closely, using
 ![\\hat{d}](https://latex.codecogs.com/png.latex?%5Chat%7Bd%7D "\hat{d}") to
 represent ![d-2](https://latex.codecogs.com/png.latex?d-2 "d-2"), the number of
 higher dimensions:
