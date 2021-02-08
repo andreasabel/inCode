@@ -636,10 +636,10 @@ higher dimensions:
 
 That notation is the [binomial
 coefficient](https://en.wikipedia.org/wiki/Binomial_coefficient), if you aren't
-familiar with it. Note that the summation has a *fixed number of terms* (for any
-dimension)! That means we only ever have 6 terms to expand, no matter how high
-the dimensions are --- at 10D and even 100D! Furthermore, we can simplify the
-above using properties of the binomial distribution to get
+familiar with it. Note that the summation has a *fixed number of terms* (with
+respect to dimension)! That means we only ever have 6 terms to expand, no matter
+how high the dimensions are --- at 10D and even 100D! Furthermore, we can
+simplify the above using properties of the binomial distribution to get
 
 ![
 20\^2 \\times { {\\hat{d}+6}\\choose{6} }
