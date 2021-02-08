@@ -105,7 +105,7 @@ below, you can draw (with your mouse) the 8x8 grid you want to simulate for the
 rest of this post. As you draw, the rest of the visualizations will update to
 use this as their initial conditions.
 
-::: {#golDrawer}
+::: {#golDrawer .highlightbox}
 ::: {#golDrawerCont}
 Please enable Javascript
 :::
@@ -116,7 +116,7 @@ steps) to test out your creation. I recommend trying out some of the
 [interesting well-known
 patterns](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life#Examples_of_patterns)!
 
-::: {#gol2D}
+::: {#gol2D .highlightbox}
 ::: {#gol2DCont}
 Please enable Javascript
 :::
@@ -239,7 +239,7 @@ different z level (ie, the z=0 square represents all squares
 ![\<x,y,0\>](https://latex.codecogs.com/png.latex?%3Cx%2Cy%2C0%3E "<x,y,0>")).
 Press "Play" to have the simulation cycle through 6 time steps!
 
-::: {#gol3D}
+::: {#gol3D .highlightbox}
 ::: {#gol3DCont}
 Please enable Javascript
 :::
@@ -298,7 +298,7 @@ positive z's, it would have `z=1` as a neighbor *twice*.
 
 The following interactive demo lets you explore what this looks like:
 
-::: {#golSyms3DForward}
+::: {#golSyms3DForward .highlightbox}
 ::: {#golSyms3DForwardCont}
 Please enable Javascript
 :::
@@ -341,7 +341,7 @@ normalized away).
 
 That means we have to follow the rules in the previous demo *backwards*, like:
 
-::: {#golSyms3DReverse}
+::: {#golSyms3DReverse .highlightbox}
 ::: {#golSyms3DReverseCont}
 Please enable Javascript
 :::
@@ -383,7 +383,7 @@ from the top is `w=0`, and the column in the very middle from the left is `z=0`.
 It's basically taking the 3D visualization above and expanding it in an extra
 dimension. Press "Play" to run your initial conditions!
 
-::: {#gol4D}
+::: {#gol4D .highlightbox}
 ::: {#gol4DCont}
 Please enable Javascript
 :::
@@ -449,7 +449,7 @@ do we propagate neighbors? To help us, see what's going on, let's look at the
 map of neighbors between different `<z,w>` squares, for the single zw wedge we
 are simulating.
 
-::: {#golSyms4DForward}
+::: {#golSyms4DForward .highlightbox}
 ::: {#golSyms4DForwardCont}
 Please enable Javascript
 :::
@@ -522,7 +522,7 @@ def reverse_neighbs_table(t_max):
 This seems pretty expensive and wasteful, so we'd like to maybe find a formula
 to be able to do this using mathematical operations. So, let's explore!
 
-::: {#golSyms4DReverse}
+::: {#golSyms4DReverse .highlightbox}
 ::: {#golSyms4DReverseCont}
 Please enable Javascript
 :::
@@ -810,7 +810,7 @@ implementation) and both their forward and reverse neighbor weights of each
 other (computable using the method we used for 4D). The `q` axis is represented
 as stacked zw sections from left to right.
 
-::: {#golSyms5D}
+::: {#golSyms5D .highlightbox}
 ::: {#golSyms5DCont}
 Please enable Javascript
 :::
@@ -919,7 +919,7 @@ all the ways you can flow from bin to bin! As an example, let's look the 6D case
 of ways each point is a neighbor of `0,2,2,3` (`1-0-2-1`), which you can pick
 from the drop-down.
 
-::: {#golTree}
+::: {#golTree .highlightbox}
 ::: {#golTreeCont}
 Please enable Javascript
 :::
@@ -1091,7 +1091,7 @@ colored according to the size of the coset stack under that point (how many
 points exist with that `<x,y>`). You can slide this one up all the way to 10D to
 simulate it in your browser!
 
-::: {#golFlat}
+::: {#golFlat .highlightbox}
 ::: {#golFlatCont}
 Please enable Javascript
 :::
