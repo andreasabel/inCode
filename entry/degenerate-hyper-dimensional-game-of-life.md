@@ -961,28 +961,17 @@ out" and take higher-dimensional slices of our 4D visualization and repeat this
 ad nauseum, but that doesn't really add anything or give any insight as to
 what's really going on.
 
-And honestly, I believe that that's the reason we all collectively got "stuck"
-together around 20 dimensions. The rush of the revelations one after within a
-single week pushed us into trying many different things. I had a couple of
-dead-end forays into pre-cacheing and had a lot of code (that I was ecstatic to
-be able to delete) working with an sqlite3 database.
+I believe that this is what caused us to all collectively get "stuck" together
+around 20 dimensions. The rush of the revelations one after within a single week
+pushed us into trying many different things. I had a couple of dead-end forays
+into pre-cacheing and had a lot of code (that I was ecstatic to be able to
+delete) working with an sqlite3 database.[^5]
 
-One thing I did discover (that I won't spend too much time on here) is a way to
-[index into an
-enumeration](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/gim68l0/)
-of all of the slice cosets (that is, all the normalized higher-dimensional
-coordinates). I no longer store `<z,w,...>` points as vectors, but rather as a
-single integer representing their index in that enumeration, which is easier to
-access and store. I also found a way to do streaming decoding and encoding
-between that index and the components it represents, allowing me to stream
-neighbor weights in constant time. This dense index encoding was actually really
-useful in implementing the Javascript demos on this page :)
-
-Another factor contributing to the overall lull was that Advent of Code was
-still running, and we all definitely enjoyed doing new puzzles every day. But
-soon, Christmas passed, the daily rush of doing a new puzzle faded, and we
-started to return back to tinkering on this hyper-dimensional game of life. And
-it wasn't until January 1st (just over two weeks after the puzzle originally
+Another factor that probably contributed to the overall lull was that Advent of
+Code was still running, and we all definitely enjoyed doing new puzzles every
+day. But soon, Christmas passed, the daily rush of doing a new puzzle faded, and
+we started to return back to tinkering on this hyper-dimensional game of life.
+And it wasn't until January 1st (just over two weeks after the puzzle originally
 came out) that a new revelation arise that would pave the way shoot past 20D.
 
 It was [Michal Marsalek's coset counts
@@ -999,25 +988,27 @@ exactly for 7D and higher.
 My best guess as to why this was happening is that, at 7D and above, we enter a
 domain of points where, before t=6, *every* point is at some sort of reflective
 boundary. Remember that even for 4D, we had really odd behavior at the
-reflective boundaries/edge of the wedge. At 5D, there actually wasn't any point
-that wasn't at an edge in the interactive demo. There wasn't enough room in the
-tiny slice for any point to "stretch its wings" --- every single one is at one
-reflective boundary or another. Being a boundary point corresponds to having a
-"bins" encoding with any bin greater than one or anything in the 0 bin (ie,
-`1-0-0-0` and `0-2-0` are all points on a reflective boundary).
+reflective boundaries/edge of the wedge. There wasn't enough room in many points
+to "stretch their wings" --- every single one is at one reflective boundary or
+another. Being a boundary point corresponds to having a "bins" encoding with any
+bin greater than one or anything in the 0 bin (ie, `1-0-0-0` and `0-2-0` are all
+points on a reflective boundary).
 
 Unfortunately, having a closed-form way to compute coset counts doesn't actually
-give us a way to compute the final state, since it doesn't tell us *which*
-cosets are active. However, this prompted me to investigate a little bit more
-about what was causing this pattern, and how these cosets were distributed. To
-do this, I ended up thinking of a new way to visualize things!
+give us a way to compute the final state itself, since it doesn't tell us
+*which* cosets are active, just how many. However, this prompted me to
+investigate a little bit more about what was causing this pattern, and how these
+cosets were distributed. To do this, I ended up thinking of a new way to
+visualize things.
 
 In our simulation, x and y components are fundamentally different from the rest;
 we could really talk about each point as a tuple of `<x,y>, {higher dims}`.
-Also, things are "dense" in `<x,y>`, but "sparse" in higher dimensions. So
-actually, instead of keeping our active points as a set of cosets, we can treat
-it as a map of `<x,y>` points to the higher-dim cosets that live "under them".
-Instead of keeping one giant set as:
+Also, things are "dense" in `<x,y>` (a significant fraction of the xy space has
+at least one point), but "sparse" in higher dimensions (a very small fraction of
+the higher-dimensional space has a point in it). So actually, instead of keeping
+our active points as a set of cosets, we can treat it as a map of `<x,y>` points
+to the higher-dim cosets that live "under them". Instead of keeping one giant
+set as:
 
     {<1,2,1,1,3>, <3,1,1,1,4>, <1,2,0,0,5>, <4,2,3,4,4>, <3,1,2,2,2>}
 
@@ -1027,16 +1018,16 @@ we could instead a map of sets:
     <3,1>: { <1,1,4>, <2,2,2> }
     <4,2>: { <3,3,4> }
 
-and propagate that. I like to call those sets under each 2d point (ie, the
-`{<1,1,3>, <0,0,5>}`) a "coset stack".
+and propagate *that* in our simulation. I like to call those sets under each 2d
+point (ie, the `{<1,1,3>, <0,0,5>}`) a "coset stack".
 
 I did this initially to investigate the nature of the cosets that were showing
-up, but once I plotted it and animated things, I realized something major --- in
-doing this, we can reduce the entire hyper-dimensional problem **back to a 2D
-cellular automata**! This whole thing becomes reframed...instead of a
-mind-bottling hyper-dimensional deal, it's now simply *normal 2D cellular
-automata* with funky rules! It's like a normal 2D game of life, but with funky
-rules for 2D points spreading to each other.
+up, but once I plotted it and animated things, I realized that in doing this, we
+are reducing the entire hyper-dimensional problem **back to a 2D cellular
+automata**! This whole thing becomes reframed...instead of a mind-bottling
+hyper-dimensional deal, it's now simply *normal 2D cellular automata* with funky
+rules! It's like a normal 2D game of life, but with funky rules for 2D points
+spreading to each other.
 
 ``` {.python}
 def step_with_stacks(stacks):
@@ -1087,20 +1078,26 @@ Please enable Javascript
 Play around with it! :D You can move all the way up to 10D; some computers might
 struggle, but on my lower-end cell phone it seems to run in less than a second.
 If you mouse-over a cell, the text box will show all of the slice cosets where
-that xy cell is alive in (the "coset stack").
+that xy cell is alive in (the "coset stack"). If you click on a cell, your
+selection will "lock" on that `<x,y>` coordinate.
 
 Some interesting things you might notice:
 
 1.  At t=6, it looks like 7D, 8D, 9D, 10D all have the *same* exact 2D cells
     "on". They're identical except for slightly different stacks above each of
     those cells.
+
+    To see this clearly, set your time to t=6 and drag your dimension slider
+    back and forth to see all of the higher-dimensions look identical in shape.
+
 2.  At t=2, t=4, past 5D or so, the state is exactly the same! We could easily
     find t=4 for 100D or even 200D: they're identidal!
+
 3.  A lot of xy cells share identical stacks...more on that later!
 
 Not only is it kinda pretty (in my humble opinion), it also demonstrates that
 this whole ordeal is really "just a normal 2D cellular automata": it's like a
-"multi-valued" game of life, where instead of cells being on and off, they are
+"multi-valued" Game of Life, where instead of cells being on and off, they are
 one of a few choices of values. Instead of a "binary" game of life with a
 boolean at each cell, it's an "integer" game of life with a finite choice at
 each cell.
@@ -1110,7 +1107,7 @@ Because there are
 slice cosets for a given dimension and time, it means that our game is a
 ![2\^{ { \\hat{d} + t} \\choose t }](https://latex.codecogs.com/png.latex?2%5E%7B%20%7B%20%5Chat%7Bd%7D%20%2B%20t%7D%20%5Cchoose%20t%20%7D "2^{ { \hat{d} + t} \choose t }")-valued
 game of life, where each cell can be one of that many options (each slice coset
-and be present or not coset). That means at 2D
+and be present or not). That means at 2D
 (![\\hat{d} = 0](https://latex.codecogs.com/png.latex?%5Chat%7Bd%7D%20%3D%200 "\hat{d} = 0")),
 we have a normal 2-valued game of life
 (![2\^1](https://latex.codecogs.com/png.latex?2%5E1 "2^1")), at 3D we have
@@ -1136,15 +1133,13 @@ difference.
 
 You might have noticed in the final 10D simulation, if you mouse over an xy cell
 it'll also highlight over all of the other xy cells that share the same coset
-stack.
+stack. For most initial starting positions, you might notice something maybe
+even more curious --- a *lot* of those stacks are duplicated.
 
-For most initial starting positions, you might notice something maybe even more
-curious --- a *lot* of those stacks are duplicated.
-
-In my sample input, *most* of the stacks were duplicated many times across
-different xy cells. If you highlight any arbitrary starting condition through
-t=6, you'll see too that many (if not most) xy cells have multiple other xy
-cells that have identical stacks to them.
+In my personal puzzle input, *most* of the stacks were duplicated many times
+across different xy cells. If you highlight any arbitrary starting condition
+through t=6, you'll see too that many (if not most) xy cells have multiple other
+xy cells that have identical stacks to them.
 
 This final insight yields the final optimization we have discovered, as of time
 of writing. The optimization is that we can treat an *entire stack* as an
@@ -1194,7 +1189,7 @@ def step_with_stack_cache(stacks):
                 neighbs[ngb_2] = rev_neighbs_incl_self
 
     def validate(pt_2d, pt_nd, ncount):
-        if pt_nd in stacks[pt_2d]:
+        if pt_2d in stacks and pt_nd in stacks[pt_2d]:
             return ncount == 2 or ncount == 3
         else:
             return ncount == 3
@@ -1223,12 +1218,12 @@ point, we had no reason to believe something better would come around the
 corner, but we held on to a hope and faith that kept on rewarding us.
 
 One apparent pattern is that visualization and different perspectives drove
-pretty much every revelation --- from the visually striking symmetries of the 3D
-and 4D simulations, the explorations of how neighbor relationships work, from
-the insight that we could treat the entire problem as a fancy multivalued 2D
-game of life...all of it came about from being able to see the problem visually
-in different ways. At other times it was a simple change in perspective to find
-a better way of encoding variants.
+almost every revelation --- from the visually striking symmetries of the 3D and
+4D simulations, the explorations of how neighbor relationships work, from the
+insight that we could treat the entire problem as a fancy multivalued 2D game of
+life...all of it came about from being able to see the problem visually in
+different ways. At other times it was a simple change in perspective to find a
+better way of encoding variants.
 
 I know for myself, the next time I try to explore something like this, I will
 try to apply what I learned to always reach for visualization sooner. Even
@@ -1237,7 +1232,7 @@ appreciate later on.
 
 Another thing I hope was apparent was the power of community! I know I
 definitely would not have had as much fun doing this if it wasn't for the
-vibrant Advent of Code "Ante Pushing" community. What I've described is just one
+vibrant Advent of Code "Ante-Pushing" community. What I've described is just one
 story out of so many that Advent of Code community members routinely write
 together. Most of these discoveries were fun because we always had somebody to
 share them with, or a way to encourage each other and strive for a common goal.
@@ -1245,10 +1240,10 @@ I'm definitely lucky to be a part of a talented and passionately curious
 community that's excited to explore things like this. Thank you to so many
 people --- Michal Marsalek, Peter Tseng, sim64, leftylink , Cettbycett, bsterc,
 flwyd, and so many others that I probably missed. An especially deep thanks to
-\[Eric Wastl\]\[\] for hosting a wonderful event like Advent of Code every year.
-And a profoundly deep thanks to the late John Conway, who revealed to us how
-much joy can come from the exploration of all things mathematical, a genius who
-was taken away from this world way too soon.
+[Eric Wastl](https://twitter.com/ericwastl) for hosting a wonderful event like
+Advent of Code every year. And a profoundly deep thanks to the late John Conway,
+who revealed to us how much joy can come from the exploration of all things
+mathematical, a genius who was taken away from this world way too soon.
 
 And of course, in making this post, I'm inviting you, the reader, to join us
 along in this journey as well! It's hardly over :) Now that you're up to speed
@@ -1314,3 +1309,14 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     the relationships between the factorials of numbers of things moved at each
     node, and I tweaked with the code doing some random maths until I got the
     right answers. But hey, if it works, it works, right? :)
+
+[^5]: One thing I did discover (that I won't spend too much time on here) is a
+    way to [index into an
+    enumeration](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/gim68l0/)
+    of all of the slice cosets (that is, all the normalized higher-dimensional
+    coordinates). I no longer store `<z,w,...>` points as vectors, but rather as
+    a single integer representing their index in that enumeration, which is
+    easier to access and store. I also found a way to do streaming decoding and
+    encoding between that index and the components it represents, allowing me to
+    stream neighbor weights in constant time. This dense index encoding was
+    actually really useful in implementing the Javascript demos on this page :)
