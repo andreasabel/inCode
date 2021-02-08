@@ -947,7 +947,7 @@ original calculation reversed! The diagram shows how the multiplicities are
 accumulated; feel free to try to work out how this works as an exercise!
 
 That's it, for real! We have tackled the reverse neighbor weights problem with
-some branching bin flows and combinatorics!\[\^honesty\]
+some branching bin flows and combinatorics![^4]
 
 Stacks On Stacks: Visualizting Arbitrary Dimensions
 ---------------------------------------------------
@@ -1307,3 +1307,10 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     number. Although I don't really know a way to explicitly exploit that fact
     even now, it does mean that there's a qualitative difference between 9D and
     below and 10D and above: anything above 9D is...especially degenerate.
+
+[^4]: Okay, I'll be honest --- I didn't actually know how to do the
+    combinatorics all up-front. What I did first was built the trees, and try to
+    find patterns in the trees that I could explain with simple rules. I noticed
+    the relationships between the factorials of numbers of things moved at each
+    node, and I tweaked with the code doing some random maths until I got the
+    right answers. But hey, if it works, it works, right? :)
