@@ -1243,7 +1243,7 @@ flwyd, and so many others that I probably missed. An especially deep thanks to
 [Eric Wastl](https://twitter.com/ericwastl) for hosting a wonderful event like
 Advent of Code every year. And a profoundly deep thanks to the late John Conway,
 who revealed to us how much joy can come from the exploration of all things
-mathematical, a genius who was taken away from this world way too soon.
+mathematical, a genius who was taken away from this world much too soon.
 
 And of course, in making this post, I'm inviting you, the reader, to join us
 along in this journey as well! It's hardly over :) Now that you're up to speed
@@ -1261,7 +1261,7 @@ instead of fixing d and stepping t?
 
 Who can tell how far we can go?
 [Michal](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/gia880d/)
-has as a personal goal something I would be very happy with:
+has as a personal goal something I would also be very happy to reach:
 
 > I won't be satisfied until I implement a solution that runs in polynomial time
 > in both t and d.
