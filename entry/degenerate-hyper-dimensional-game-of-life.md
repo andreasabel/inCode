@@ -633,10 +633,12 @@ higher dimensions:
 20^2 \times \sum_{k=0}^{t} { {\hat{d}-1+k}\choose{k} }
 ")
 
-That sum has only the amount of terms fixed with the maximum timestamp! That
-means we only ever have 6 terms to expand, no matter how high the dimensions are
---- at 10D and even 100D! Furthermore, we can simplify the above using
-properties of the binomial distribution to get
+That notation is the [binomial
+coefficient](https://en.wikipedia.org/wiki/Binomial_coefficient), if you aren't
+familiar with it. Note that the summation has a *fixed number of terms* (for any
+dimension)! That means we only ever have 6 terms to expand, no matter how high
+the dimensions are --- at 10D and even 100D! Furthermore, we can simplify the
+above using properties of the binomial distribution to get
 
 ![
 20\^2 \\times { {\\hat{d}+6}\\choose{6} }
