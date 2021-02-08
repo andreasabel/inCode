@@ -810,8 +810,8 @@ neighbors to themselves (like `<1,4,5>`, which reflects off of the top edge at
 `<1,5,4>`) and some are not (like `<1,3,5>`). [Mind
 bottling](https://www.youtube.com/watch?v=rSfebOXSBOE)!
 
-At least one pattern we can see clearly is that if your points are 4 or lower,
-the sum of all the red dots (the forward neighbors) is
+At least one pattern we can see clearly is that if you are at a point where each
+component is 4 or lower, the sum of all the red dots (the forward neighbors) is
 ![3\^3-1](https://latex.codecogs.com/png.latex?3%5E3-1 "3^3-1") = 26, just like
 how the sum of forward neighbors for interior points in 3D is
 ![3\^2-1=8](https://latex.codecogs.com/png.latex?3%5E2-1%3D8 "3^2-1=8"), and for
