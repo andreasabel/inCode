@@ -858,9 +858,9 @@ And now, a "valid transition" becomes easy to enforce: it's an amount "flowing"
 from one of those bins to another. For example, turning a `1` into a `2` in
 `1-3-0-1-0-2-1` turns it into `1-2-1-1-0-2-1`. We took one of the three 1s and
 turned them into a single 2. This "flowing" operation automatically gives us a
-valid number without any renormalizing necessary! This gives us an algorithm to
-compute neighbors: we can walk bin-to-bin, "flowing" components from our origin
-vector to our new vector.
+valid coordinate without any renormalizing necessary! This gives us an algorithm
+to compute neighbors: we can walk bin-to-bin, "flowing" components from our
+origin vector to our new vector.
 
 This was our goal! A way to compute neighbors without requiring renormalization.
 We no longer have to try all
