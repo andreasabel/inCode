@@ -897,7 +897,7 @@ all the ways you can flow from bin to bin! As an example, let's look the 6D case
 of ways each point is a neighbor of `0,2,2,3` (`1-0-2-1`), which you can pick
 from the drop-down.
 
-::: {#golTreeReverse}
+::: {#golTree}
 Please enable Javascript
 :::
 
