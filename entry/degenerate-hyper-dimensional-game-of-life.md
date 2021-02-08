@@ -834,10 +834,10 @@ are limited until we can find this method.
 ### Go with the Flow
 
 What do all our valid normalized `<z,w,...>` coordinates look like? Well, they
-are always non-decreasing, and always are less than the current timestep.
-Keeping t=6 as our goal still, this means that valid coordinates in 10D are
-strings of eight numbers, like `0,1,1,1,3,5,5,6`, or `0,0,3,4,4,4,6,6`, or
-`1,1,2,3,3,4,5,5`.[^3]
+are always non-decreasing, and always are less than or equal to the current
+timestep. Keeping t=6 as our goal still, this means that valid coordinates in
+10D are strings of eight numbers, like `0,1,1,1,3,5,5,6`, or `0,0,3,4,4,4,6,6`,
+or `1,1,2,3,3,4,5,5`.[^3]
 
 But we run into problems working with this format. For example, if we're
 computing a neighbor of `0,1,1,1,3,5,5,6`, we can imagine that the very first
