@@ -799,15 +799,16 @@ Please enable Javascript
 
 As you mouse-over a slice coset representative (a single square), all of its
 neighbors will be highlighted, including reflections. The red dot on the left is
-the "forward" neighbor (how many times that other slice is a neighbor of the
-hovered slice) and the blue dot on the left is the "reverse" neighbor (how many
-times the hovered slice is a neighbor of the other slice). For example, if you
-hover over `<z,w,q>=<1,3,4>`, you can see that `<0,3,4>` is its neighbor twice,
-and `<1,3,4>` is `<0,3,4>`'s neighbor four times. These four times come from the
-non-normalized reflections of `<1,3,4>` at `<1,3,4>`, `<1,4,3>`, `<-1,3,4>`, and
-`<-1,4,3>`. Some squares are also neighbors to themselves (like `<1,4,5>`, which
-reflects off of the top edge at `<1,5,4>`) and some are not (like `<1,3,5>`).
-[Mind bottling](https://www.youtube.com/watch?v=rSfebOXSBOE)!
+the "forward" neighbor multiplicity (how many times that other slice is a
+neighbor of the hovered slice) and the blue dot on the left is the "reverse"
+neighbor multiplicity (how many times the hovered slice is a neighbor of the
+other slice). For example, if you hover over `<z,w,q>=<1,3,4>`, you can see that
+`<0,3,4>` is its neighbor twice, and `<1,3,4>` is `<0,3,4>`'s neighbor four
+times. These four times come from the non-normalized reflections of `<1,3,4>` at
+`<1,3,4>`, `<1,4,3>`, `<-1,3,4>`, and `<-1,4,3>`. Some squares are also
+neighbors to themselves (like `<1,4,5>`, which reflects off of the top edge at
+`<1,5,4>`) and some are not (like `<1,3,5>`). [Mind
+bottling](https://www.youtube.com/watch?v=rSfebOXSBOE)!
 
 At least one pattern we can see clearly is that if your points are 4 or lower,
 the sum of all the red dots (the forward neighbors) is
