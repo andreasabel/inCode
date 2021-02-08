@@ -841,8 +841,8 @@ or `1,1,2,3,3,4,5,5`.[^3]
 
 But we run into problems working with this format. For example, if we're
 computing a neighbor of `0,1,1,1,3,5,5,6`, we can imagine that the very first
-`1` moves to be a `2`, resulting in `0,2,1,1,3,5,5,6`. However, we're now in
-un-normalized territory...we have to re-sort it to turn it into
+`1` could move to be a `2`, resulting in `0,2,1,1,3,5,5,6`. However, we're now
+in un-normalized territory...we have to re-sort it to turn it into
 `0,1,1,2,3,5,5,6`. This encoding isn't something we can directly manipulate in a
 nice way.
 
