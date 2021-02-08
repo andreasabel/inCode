@@ -814,9 +814,8 @@ At least one pattern we can see clearly is that if you are at a point where each
 component is 4 or lower, the sum of all the red dots (the forward neighbors) is
 ![3\^3-1](https://latex.codecogs.com/png.latex?3%5E3-1 "3^3-1") = 26, just like
 how the sum of forward neighbors for interior points in 3D is
-![3\^2-1=8](https://latex.codecogs.com/png.latex?3%5E2-1%3D8 "3^2-1=8"), and for
-2D is
-![3\^2-1 = 2](https://latex.codecogs.com/png.latex?3%5E2-1%20%3D%202 "3^2-1 = 2").
+![3\^2-1](https://latex.codecogs.com/png.latex?3%5E2-1 "3^2-1") = 8, and for 2D
+is ![3\^2-1](https://latex.codecogs.com/png.latex?3%5E2-1 "3^2-1") = 2.
 
 Another very important pattern is that "is a neighbor" seems to be reversible:
 the set of all *forward* neighbors of a point is the same as all *reverse*
