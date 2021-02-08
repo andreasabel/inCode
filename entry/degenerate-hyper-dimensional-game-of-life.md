@@ -949,8 +949,8 @@ accumulated; feel free to try to work out how this works as an exercise!
 That's it, for real! We have tackled the reverse neighbor weights problem with
 some branching bin flows and combinatorics![^4]
 
-Stacks On Stacks: Visualizting Arbitrary Dimensions
----------------------------------------------------
+Stacks On Stacks: Visualizing Arbitrary Dimensions
+--------------------------------------------------
 
 You might have noticed that since our 4D record, we haven't had a new
 visualization of simulation, despite now having higher dimensions in our grasp.
