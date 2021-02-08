@@ -770,7 +770,7 @@ Well, I didn't really know what to do about the neighbor multiplicity problem. I
 was still brute-forcing by way of forward neighbors + normalizing (as in the
 sample 4D python code snippet earlier). The naive brute-force method requires
 computing *all*
-![3\^{ {\\hat{d}} } - 1](https://latex.codecogs.com/png.latex?3%5E%7B%20%7B%5Chat%7Bd%7D%7D%20%7D%20-%201 "3^{ {\hat{d}} } - 1")
+![3\^{ {\\hat{d}} }](https://latex.codecogs.com/png.latex?3%5E%7B%20%7B%5Chat%7Bd%7D%7D%20%7D "3^{ {\hat{d}} }")
 higher-dimensional neighbors...so even though the number of points I'd have to
 track grows polynomially, I still had that pesky exponential factor in building
 my neighbor map. And at high dimensions, that exponential factor dominates over
