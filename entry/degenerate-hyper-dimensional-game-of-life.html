@@ -38,12 +38,14 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="starting-off">Starting Off</h2>
 <p>First of all, let’s meet our friend for the rest of this journey. In the drawer below, you can draw (with your mouse) the 8x8 grid you want to simulate for the rest of this post. As you draw, the rest of the visualizations will update to use this as their initial conditions.</p>
 <div id="golDrawer" class="highlightbox">
+<p><strong>Element 1:</strong> Initial Condition Drawer</p>
 <div id="golDrawerCont">
 <p>Please enable Javascript</p>
 </div>
 </div>
 <p>And for fun, here’s a 2D vanilla game of life implementation (for six time steps) to test out your creation. I recommend trying out some of the <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life#Examples_of_patterns">interesting well-known patterns</a>!</p>
 <div id="gol2D" class="highlightbox">
+<p><strong>Element 2:</strong> 2D Game of Life</p>
 <div id="gol2DCont">
 <p>Please enable Javascript</p>
 </div>
@@ -105,6 +107,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="three-dimensions">Three Dimensions</h2>
 <p>Let’s see how this looks for the 3D case! To make things easier to see, we can render things in “slices” in 3D space: each grid represents a slice at a different z level (ie, the z=0 square represents all squares <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%3Cx%2Cy%2C0%3E" alt="&lt;x,y,0&gt;" title="&lt;x,y,0&gt;" />). Press “Play” to have the simulation cycle through 6 time steps!</p>
 <div id="gol3D" class="highlightbox">
+<p><strong>Element 3:</strong> 3D Game of Life</p>
 <div id="gol3DCont">
 <p>Please enable Javascript</p>
 </div>
@@ -121,8 +124,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>Only some extra work at the end to differentiate z=0 and z&gt;0 positions to know which to count twice And in part 2 I feel like you could also exploit the symmetry in w axis simultaneously</p>
 </blockquote>
 <p>Wow, let’s do this! Apparently the picture is slightly more complicated than simply halving the points. We also need to change how to distribute neighbors. That’s because, once we commit to only keeping the positive z’s, some cells need to be double-counted as neighbors. In particular, any <code>z=0</code> cell would previously had a neighbor at both <code>z=-1</code> and <code>z=1</code>…but now if we only keep the positive z’s, it would have <code>z=1</code> as a neighbor <em>twice</em>.</p>
-<p>The following interactive demo lets you explore what this looks like:</p>
+<p>The following interactive element lets you explore what this looks like:</p>
 <div id="golSyms3DForward" class="highlightbox">
+<p><strong>Element 4a:</strong> 3D Negation-Symmetry Forward Neighbor Multiplicities</p>
 <div id="golSyms3DForwardCont">
 <p>Please enable Javascript</p>
 </div>
@@ -132,8 +136,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>We can compute the above diagram by expanding z=0 to its neighbors (z=-1, and z=1), applying the absolute value function, and seeing how points double-up. This gives us the “forward neighbors”, and we can directly use it for the original “keep the full array” GoL implementation.</p>
 <p>However, for the “keep active points and expand their neighbors” GoL implementation…we have to find the opposite. Remember that to build our “neighbors map” (the map of points to how many active neighbors they have), we have each cell “pro-actively” add its contributions to all of its neighbors. <code>&lt;1,2,3&gt;</code> is a neighbor to <code>&lt;1,3,4&gt;</code> once, so when we expand <code>&lt;1,2,3&gt;</code> we would increment the value in the map at <code>&lt;1,3,4&gt;</code> by 1 because <code>&lt;1,2,3&gt;</code> is a neighbor of <code>&lt;1,3,4&gt;</code> once.</p>
 <p>Now, how do we count <code>&lt;1,3,1&gt;</code> expanding into <code>&lt;1,3,0&gt;</code>? Well, normally, <code>&lt;1,3,1&gt;</code> is a neighbor of <code>&lt;1,3,0&gt;</code> once. However, if we only keep the normalized z values, <code>&lt;1,3,1&gt;</code> is a neighbor of <code>&lt;1,3,0&gt;</code>…twice! To compute the total neighbor count of <code>&lt;1,3,0&gt;</code>, we have to count the contribution from <code>&lt;1,3,1&gt;</code> twice (once for <code>&lt;1,3,1&gt;</code> and once for <code>&lt;1,3,-1&gt;</code>, which was normalized away).</p>
-<p>That means we have to follow the rules in the previous demo <em>backwards</em>, like:</p>
+<p>That means we have to follow the rules in the previous interactive element <em>backwards</em>, like:</p>
 <div id="golSyms3DReverse" class="highlightbox">
+<p><strong>Element 4b:</strong> 3D Negation-Symmetry Reverse Neighbor Multiplicities</p>
 <div id="golSyms3DReverseCont">
 <p>Please enable Javascript</p>
 </div>
@@ -146,6 +151,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="four-dimensions">Four Dimensions</h2>
 <p>Let’s look at how the 4 dimensions works! We can visualize this by taking “z-w” slices at different x-y planes as well. The labels in these boxes are the <code>&lt;z,w&gt;</code> of each slice. The very center is <code>&lt;z,w&gt; = &lt;0,0&gt;</code> the row in the middle from the top is <code>w=0</code>, and the column in the very middle from the left is <code>z=0</code>. It’s basically taking the 3D visualization above and expanding it in an extra dimension. Press “Play” to run your initial conditions!</p>
 <div id="gol4D" class="highlightbox">
+<p><strong>Element 5:</strong> 4D Game of Life</p>
 <div id="gol4DCont">
 <p>Please enable Javascript</p>
 </div>
@@ -158,12 +164,13 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>I noticed that the expansion of active cubes for part 2 is symmetric with respect to two hyperplanes in 4d space: These hyperplanes can be described by w = 0 and w-z = 0.</p>
 <p>Using these symmetries could make the code nearly eight times as fast.I was wondering if anyone tried that.</p>
 </blockquote>
-<p>What <em>u/cetttbycettt</em> saw is what you can see now in the demo above: it’s all of the <em>light yellow</em> highlighted squares when you mouse-over. In addition to the z=0 and w=0 lines (the two lines down the middle, up-down and left-right), we also have another line of symmetry: z=w and w=z, the diagonal lines!</p>
+<p>What <em>u/cetttbycettt</em> saw is what you can see now in the interactive element above: it’s all of the <em>light yellow</em> highlighted squares when you mouse-over. In addition to the z=0 and w=0 lines (the two lines down the middle, up-down and left-right), we also have another line of symmetry: z=w and w=z, the diagonal lines!</p>
 <p>That’s right, a zw slice at <code>&lt;z,w&gt;=&lt;3,4&gt;</code> is <em>identical</em> to the one at <code>&lt;4,3&gt;</code>, and so also <code>&lt;-3,4&gt;</code>, <code>&lt;3,-4&gt;</code>, <code>&lt;-3,-4&gt;</code>, <code>&lt;-4,3&gt;</code>, <code>&lt;4,-3&gt;</code>, and <code>&lt;-4,-3&gt;</code>! Each slice is potentially repeated <em>eight</em> times! The exceptions are the points on the lines of symmetry themselves, which are each repeated four times, and also <code>&lt;z,w&gt;=&lt;0,0&gt;</code>, which is in its own class.</p>
 <p>So, our first breakthrough meant that we only have to simulate <em>positive</em> coordinates (a single quadrant)…our next breakthrough means that we only have to simulate coordinates on a single “wedge” half-quadrant…and then duplicate those eight times at the end.</p>
 <p>Arbitrarily, let’s say we only simulate the north-by-northeast wedge, because it’s easy to normalize/compact all points onto that wedge: they’re the points <code>&lt;z,w&gt;</code> where both components are positive and in non-decreasing order. So, <code>&lt;4,-3&gt;</code> gets “normalized” to <code>&lt;3,4&gt;</code>.</p>
 <p>Okay, so we found a new symmetry…but we ran into the same issue as before. How do we propagate neighbors? To help us, see what’s going on, let’s look at the map of neighbors between different <code>&lt;z,w&gt;</code> squares, for the single zw wedge we are simulating.</p>
 <div id="golSyms4DForward" class="highlightbox">
+<p><strong>Element 6a:</strong> 4D Diagonal-Reflection-Symmetry Forward Neighbor Multiplicities</p>
 <div id="golSyms4DForwardCont">
 <p>Please enable Javascript</p>
 </div>
@@ -204,6 +211,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb4-14"><a href="#cb4-14"></a>    <span class="cf">return</span> weights</span></code></pre></div>
 <p>This seems pretty expensive and wasteful, so we’d like to maybe find a formula to be able to do this using mathematical operations. So, let’s explore!</p>
 <div id="golSyms4DReverse" class="highlightbox">
+<p><strong>Element 6b:</strong> 4D Diagonal-Reflection-Symmetry Reverse Neighbor Multiplicities</p>
 <div id="golSyms4DReverseCont">
 <p>Please enable Javascript</p>
 </div>
@@ -298,7 +306,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <li><p>I’ve also been using <strong>cell</strong> to refer to an exact specific <code>&lt;x,y,z,w,..&gt;</code> spot — they are the tiny squares inside each grid in the simulations above.</p></li>
 <li><p>I’ll start using the word <strong><a href="https://www.youtube.com/watch?v=Dp8sYTlLQRY">coset</a></strong> to refer the set of all of the duplicates of an <code>&lt;x,y&gt;</code> across all permutations and negations of <code>&lt;z,w,q,..&gt;</code>, since they all behave the same (they are either all on or all off together). So <code>&lt;x,y,1,2&gt;</code>, <code>&lt;x,y,2,1&gt;</code>, <code>&lt;x,y,-1,2&gt;</code>, <code>&lt;x,y,1,-2&gt;</code>, <code>&lt;x,y,-1,-2&gt;</code>, <code>&lt;x,y,-2,1&gt;</code>, <code>&lt;x,y,2,-1&gt;</code>, and <code>&lt;x,y,-2,-1&gt;</code> are all a part of the same coset, represented by the normalized form <code>&lt;x,y,1,2&gt;</code>. Now, during our simulation, we only need to simulate one member from each coset, because every member is identically present or not present. For the sake of implementation, we simulate the arbitrary <em>normalized</em> (positive and sorted) member only. Because of this, we’ll sometimes refer to the normalized item and the coset it represents as the same thing.</p></li>
 <li><p>I’ll also start using <strong>slice coset</strong> to talk about the set of all <code>&lt;z,w,...&gt;</code> slices) across its permutations and negations. The slices at z-w coordinates of <code>&lt;1,2&gt;</code>, <code>&lt;2,1&gt;</code>, <code>&lt;-1,2&gt;</code>, <code>&lt;1,-2&gt;</code>, <code>&lt;-1,-2&gt;</code>, <code>&lt;-2,1&gt;</code>, <code>&lt;2,-1&gt;</code>, and <code>&lt;-2,-1&gt;</code> are all a part of the same coset, represented by the normalized form <code>&lt;1,2&gt;</code>. All of the slices at each of those zw coordinates will always be identical, so we can talk the state of a single slice at <code>&lt;1,2&gt;</code> as representing the state of its entire coset.</p>
-<p>Slice cosets are what are being highlighted on mouseovers for the 3D and 4D simulations. They are also what the big squares represent for the forward and backward neighbor demos of each: each slice stands in for their entire slice coset, and we show the amount of times each normalized slice coset element is a neighbor of the other.</p></li>
+<p>Slice cosets are what are being highlighted on mouseovers for the 3D and 4D simulations. They are also what the big squares represent for the forward and backward neighbor interactive elemenst: each slice stands in for their entire slice coset, and we show the amount of times each normalized slice coset element is a neighbor of the other.</p></li>
 </ul>
 <h2 id="tackling-the-neighbor-problem">Tackling the Neighbor Problem</h2>
 <p>My initial d=10 time clocked in at just under 10 minutes initially, but as early as next Wednesday we knew that a sub-5 second time was possible. So where was the gap?</p>
@@ -306,8 +314,9 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>So put on your hard hats and working boots … we’re going to dive deep into the world of hyper-dimensional symmetries!</p>
 <h3 id="five-dimensions">Five Dimensions</h3>
 <p>First, let’s start visualizing how things look like in 5 dimensions, now that we know what our slice coset/representative structure looks like. Partially to help us gain an intuition for some of what’s going on, and also partially to show that intuition at the individual component level can only get so far.</p>
-<p>It’s a bit difficult to duplicate the same forward/reverse neighbor demos for 4D as we had for 4D, so here’s a different representation. Here is a demo of all of the <code>&lt;z,w,q&gt;</code> slice cosets (the wedge of normalized points we track for our implementation) and both their forward and reverse neighbor weights of each other (computable using the method we used for 4D). The <code>q</code> axis is represented as stacked zw sections from left to right.</p>
+<p>It’s a bit difficult to duplicate the same forward/reverse neighbor interactive element for 4D as we had for 4D, so here’s a different representation. Here is an interactive element of all of the <code>&lt;z,w,q&gt;</code> slice cosets (the wedge of normalized points we track for our implementation) and both their forward and reverse neighbor weights of each other (computable using the method we used for 4D). The <code>q</code> axis is represented as stacked zw sections from left to right.</p>
 <div id="golSyms5D" class="highlightbox">
+<p><strong>Element 7:</strong> 5D Permutation-Symmetry Neighbor Multiplicities</p>
 <div id="golSyms5DCont">
 <p>Please enable Javascript</p>
 </div>
@@ -327,6 +336,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>One final note: we have to treat multiplicities for transitions from 0 to 1 slightly differently, because they can arise either a 0 to 1 transition or a 0 to -1 transition. This comes out to a multiplication of <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?2%5En" alt="2^n" title="2^n" /> at the end (n being the number of 0-to-1 flow). Because of this special care, it’s actually more convenient to fill in bin-by-bin “backwards”, from the 6 slot to the 5 slot to the 4 slot, etc., because your options at the 0 component are already pre-determined for you by the choices you have already made. It keeps the tree a more manageable shape.</p>
 <p>Alright, enough words, let’s look at this in action! Here is a <em>tree</em> describing all the ways you can flow from bin to bin! As an example, let’s look the 6D case of ways each point is a neighbor of <code>0,2,2,3</code> (<code>1-0-2-1</code>), which you can pick from the drop-down.</p>
 <div id="golTree" class="highlightbox">
+<p><strong>Element 8:</strong> Algorithm for Arbitrary-Dimension Neighbor Multiplicities</p>
 <div id="golTreeCont">
 <p>Please enable Javascript</p>
 </div>
@@ -334,8 +344,8 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>As you can see, each “branch” in tree (reading from left to right) is a different way to fill in the bin. At each node, the upper vector is the “source” vector, and the lower vector is the “target” vector we build step-by-step. Bin-by-bin, we begin to move components from our source vector into our target vector. The branches in the tree reflects different ways we can commit a bin in our target vector. For example, at the very first split, we can either pick our final vector to be <code>?-?-?-?-0</code> (leaving that 3 bin alone) or <code>?-?-?-?-1</code> (swiping a component from that 3 bin in the source vector). The operation to the right of the node represents how we modify our weights according to the choices we make according to the logic above. And all other nodes on the far right are the end products: the actual neighbors, along with their multiplicities.</p>
 <p>If you mouse-over or tap a node, it’ll highlight the trace from the beginning to the node you are highlighting, so you can see all of the choices made, as well as all the modifications made to our running multiplicity counter at each step. It’ll also show the contributions from the left, center, and right of the current bin being picked (the <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?2%2B1%2B3" alt="2+1+3" title="2+1+3" /> in the example above), and also the “regular” representation. For example, <code>&lt;[2,2],2,4&gt;</code> means that that node has already committed to having <code>&lt;?,?,2,4&gt;</code> in the target vector, but still has two 2s in the source vector to pull in and distribute.</p>
 <p>One final thing we need to keep track of is to not count a point transitioning to itself if it results from no actual internal changes. This can be done by checking if each of our bin choices involved exactly no inter-bin flows (they were all of the form <code>0+x+0</code>).</p>
-<p>Phew! That’s a bit of a mathematical doozy, huh? But trust me when I say it’s easier to understand if play around with the interactive demo and follow along the traces. After a few examples in different dimensions, it might start to make sense. Try looking at the lower dimensions too to see if they match up with what we figured out before.</p>
-<p>You can also flip the switch on the demo to compute reverse and forward neighbors. Luckily, as we noted before, if a point is a forward neighbor, it is also a reverse neighbor. This means that the branching structure for forward and reverse neighbor trees are exactly the same; the only difference is how the multiplicities are calculated. In this case, the forward direction is just the original calculation reversed! The diagram shows how the multiplicities are accumulated; feel free to try to work out how this works as an exercise!</p>
+<p>Phew! That’s a bit of a mathematical doozy, huh? But trust me when I say it’s easier to understand if play around with the interactive element and follow along the traces. After a few examples in different dimensions, it might start to make sense. Try looking at the lower dimensions too to see if they match up with what we figured out before.</p>
+<p>You can also flip the switch on the element to compute reverse and forward neighbors. Luckily, as we noted before, if a point is a forward neighbor, it is also a reverse neighbor. This means that the branching structure for forward and reverse neighbor trees are exactly the same; the only difference is how the multiplicities are calculated. In this case, the forward direction is just the original calculation reversed! The diagram shows how the multiplicities are accumulated; feel free to try to work out how this works as an exercise!</p>
 <p>That’s it, for real! We have tackled the reverse neighbor weights problem with some branching bin flows and combinatorics!<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
 <h2 id="stacks-on-stacks-visualizing-arbitrary-dimensions">Stacks On Stacks: Visualizing Arbitrary Dimensions</h2>
 <p>You might have noticed that since our 4D record, we haven’t had a new visualization of simulation, despite now having higher dimensions in our grasp. Why not?</p>
@@ -389,6 +399,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <span id="cb9-34"><a href="#cb9-34"></a>           }</span></code></pre></div>
 <p>And here is the final animation: we plot a single 2D grid, and each cell is colored according to the size of the coset stack under that point (how many points exist with that <code>&lt;x,y&gt;</code>). You can slide this one up all the way to 10D to simulate it in your browser!</p>
 <div id="golFlat" class="highlightbox">
+<p><strong>Element 9:</strong> Arbitrary-dimension Game of Life Simulation</p>
 <div id="golFlatCont">
 <p>Please enable Javascript</p>
 </div>

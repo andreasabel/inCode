@@ -106,6 +106,8 @@ rest of this post. As you draw, the rest of the visualizations will update to
 use this as their initial conditions.
 
 ::: {#golDrawer .highlightbox}
+**Element 1:** Initial Condition Drawer
+
 ::: {#golDrawerCont}
 Please enable Javascript
 :::
@@ -117,6 +119,8 @@ steps) to test out your creation. I recommend trying out some of the
 patterns](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life#Examples_of_patterns)!
 
 ::: {#gol2D .highlightbox}
+**Element 2:** 2D Game of Life
+
 ::: {#gol2DCont}
 Please enable Javascript
 :::
@@ -240,6 +244,8 @@ different z level (ie, the z=0 square represents all squares
 Press "Play" to have the simulation cycle through 6 time steps!
 
 ::: {#gol3D .highlightbox}
+**Element 3:** 3D Game of Life
+
 ::: {#gol3DCont}
 Please enable Javascript
 :::
@@ -296,9 +302,11 @@ to be double-counted as neighbors. In particular, any `z=0` cell would
 previously had a neighbor at both `z=-1` and `z=1`...but now if we only keep the
 positive z's, it would have `z=1` as a neighbor *twice*.
 
-The following interactive demo lets you explore what this looks like:
+The following interactive element lets you explore what this looks like:
 
 ::: {#golSyms3DForward .highlightbox}
+**Element 4a:** 3D Negation-Symmetry Forward Neighbor Multiplicities
+
 ::: {#golSyms3DForwardCont}
 Please enable Javascript
 :::
@@ -339,9 +347,12 @@ the total neighbor count of `<1,3,0>`, we have to count the contribution from
 `<1,3,1>` twice (once for `<1,3,1>` and once for `<1,3,-1>`, which was
 normalized away).
 
-That means we have to follow the rules in the previous demo *backwards*, like:
+That means we have to follow the rules in the previous interactive element
+*backwards*, like:
 
 ::: {#golSyms3DReverse .highlightbox}
+**Element 4b:** 3D Negation-Symmetry Reverse Neighbor Multiplicities
+
 ::: {#golSyms3DReverseCont}
 Please enable Javascript
 :::
@@ -384,6 +395,8 @@ It's basically taking the 3D visualization above and expanding it in an extra
 dimension. Press "Play" to run your initial conditions!
 
 ::: {#gol4D .highlightbox}
+**Element 5:** 4D Game of Life
+
 ::: {#gol4DCont}
 Please enable Javascript
 :::
@@ -423,10 +436,11 @@ late Thursday the 17th/early Friday the 18th...and everything changed *forever*.
 > Using these symmetries could make the code nearly eight times as fast.I was
 > wondering if anyone tried that.
 
-What *u/cetttbycettt* saw is what you can see now in the demo above: it's all of
-the *light yellow* highlighted squares when you mouse-over. In addition to the
-z=0 and w=0 lines (the two lines down the middle, up-down and left-right), we
-also have another line of symmetry: z=w and w=z, the diagonal lines!
+What *u/cetttbycettt* saw is what you can see now in the interactive element
+above: it's all of the *light yellow* highlighted squares when you mouse-over.
+In addition to the z=0 and w=0 lines (the two lines down the middle, up-down and
+left-right), we also have another line of symmetry: z=w and w=z, the diagonal
+lines!
 
 That's right, a zw slice at `<z,w>=<3,4>` is *identical* to the one at `<4,3>`,
 and so also `<-3,4>`, `<3,-4>`, `<-3,-4>`, `<-4,3>`, `<4,-3>`, and `<-4,-3>`!
@@ -450,6 +464,8 @@ map of neighbors between different `<z,w>` squares, for the single zw wedge we
 are simulating.
 
 ::: {#golSyms4DForward .highlightbox}
+**Element 6a:** 4D Diagonal-Reflection-Symmetry Forward Neighbor Multiplicities
+
 ::: {#golSyms4DForwardCont}
 Please enable Javascript
 :::
@@ -523,6 +539,8 @@ This seems pretty expensive and wasteful, so we'd like to maybe find a formula
 to be able to do this using mathematical operations. So, let's explore!
 
 ::: {#golSyms4DReverse .highlightbox}
+**Element 6b:** 4D Diagonal-Reflection-Symmetry Reverse Neighbor Multiplicities
+
 ::: {#golSyms4DReverseCont}
 Please enable Javascript
 :::
@@ -772,9 +790,9 @@ terminology we'll be using for the rest of this post.
 
     Slice cosets are what are being highlighted on mouseovers for the 3D and 4D
     simulations. They are also what the big squares represent for the forward
-    and backward neighbor demos of each: each slice stands in for their entire
-    slice coset, and we show the amount of times each normalized slice coset
-    element is a neighbor of the other.
+    and backward neighbor interactive elemenst: each slice stands in for their
+    entire slice coset, and we show the amount of times each normalized slice
+    coset element is a neighbor of the other.
 
 Tackling the Neighbor Problem
 -----------------------------
@@ -803,14 +821,16 @@ know what our slice coset/representative structure looks like. Partially to help
 us gain an intuition for some of what's going on, and also partially to show
 that intuition at the individual component level can only get so far.
 
-It's a bit difficult to duplicate the same forward/reverse neighbor demos for 4D
-as we had for 4D, so here's a different representation. Here is a demo of all of
-the `<z,w,q>` slice cosets (the wedge of normalized points we track for our
-implementation) and both their forward and reverse neighbor weights of each
-other (computable using the method we used for 4D). The `q` axis is represented
-as stacked zw sections from left to right.
+It's a bit difficult to duplicate the same forward/reverse neighbor interactive
+element for 4D as we had for 4D, so here's a different representation. Here is
+an interactive element of all of the `<z,w,q>` slice cosets (the wedge of
+normalized points we track for our implementation) and both their forward and
+reverse neighbor weights of each other (computable using the method we used for
+4D). The `q` axis is represented as stacked zw sections from left to right.
 
 ::: {#golSyms5D .highlightbox}
+**Element 7:** 5D Permutation-Symmetry Neighbor Multiplicities
+
 ::: {#golSyms5DCont}
 Please enable Javascript
 :::
@@ -920,6 +940,8 @@ of ways each point is a neighbor of `0,2,2,3` (`1-0-2-1`), which you can pick
 from the drop-down.
 
 ::: {#golTree .highlightbox}
+**Element 8:** Algorithm for Arbitrary-Dimension Neighbor Multiplicities
+
 ::: {#golTreeCont}
 Please enable Javascript
 :::
@@ -953,12 +975,12 @@ checking if each of our bin choices involved exactly no inter-bin flows (they
 were all of the form `0+x+0`).
 
 Phew! That's a bit of a mathematical doozy, huh? But trust me when I say it's
-easier to understand if play around with the interactive demo and follow along
-the traces. After a few examples in different dimensions, it might start to make
-sense. Try looking at the lower dimensions too to see if they match up with what
-we figured out before.
+easier to understand if play around with the interactive element and follow
+along the traces. After a few examples in different dimensions, it might start
+to make sense. Try looking at the lower dimensions too to see if they match up
+with what we figured out before.
 
-You can also flip the switch on the demo to compute reverse and forward
+You can also flip the switch on the element to compute reverse and forward
 neighbors. Luckily, as we noted before, if a point is a forward neighbor, it is
 also a reverse neighbor. This means that the branching structure for forward and
 reverse neighbor trees are exactly the same; the only difference is how the
@@ -1092,6 +1114,8 @@ points exist with that `<x,y>`). You can slide this one up all the way to 10D to
 simulate it in your browser!
 
 ::: {#golFlat .highlightbox}
+**Element 9:** Arbitrary-dimension Game of Life Simulation
+
 ::: {#golFlatCont}
 Please enable Javascript
 :::
