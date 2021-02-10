@@ -1019,7 +1019,7 @@ If we start at `0-2-1-3` (`1,1,2,3,3,3`) and "flow" to, say, `0-0-5-0`
 (`2,2,2,2,2`) and dump all our bins into 2. How many ways could this flow
 happen? The answer happens to be the [multinomial
 coefficient](https://en.wikipedia.org/wiki/Multinomial_theorem)
-![5 \\choose {2 1 3}](https://latex.codecogs.com/png.latex?5%20%5Cchoose%20%7B2%201%203%7D "5 \choose {2 1 3}")
+![5 \\choose {2,1,3}](https://latex.codecogs.com/png.latex?5%20%5Cchoose%20%7B2%2C1%2C3%7D "5 \choose {2,1,3}")
 (or
 ![5! / (2!\\,1!\\,3!)](https://latex.codecogs.com/png.latex?5%21%20%2F%20%282%21%5C%2C1%21%5C%2C3%21%29 "5! / (2!\,1!\,3!)")):
 there are ![5!](https://latex.codecogs.com/png.latex?5%21 "5!") ways to end up
