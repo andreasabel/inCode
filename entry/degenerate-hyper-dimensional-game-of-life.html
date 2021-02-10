@@ -32,15 +32,15 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="table-of-figures">Table of Figures</h2>
 <p>For reference, the interactive elements in this post are:</p>
 <ol type="1">
-<li>[Initial condition drawer][#golDrawer]</li>
-<li>[2D Game of Life][#gol2D]</li>
-<li>[3D Game of Life][#gol3D]</li>
-<li>[3D Forward Neighbor Multiplicities][#golSyms3DForward] / [3D Reverse Neighbor Multiplicities][#golSyms3DReverse]</li>
-<li>[5D Game of Life][#gol5D]</li>
-<li>[4D Forward Neighbor Multiplicities][#golSyms4DForward] / [4D Reverse Neighbor Multiplicities][#golSyms4DReverse]</li>
-<li>[5D Neighbor Multiplicities][#golSyms5D]</li>
-<li>[General Neighbor Multiplicity Algorithm][#golTree]</li>
-<li>[N-D Game of Life][#golFlat]</li>
+<li><a href="#golDrawer">Initial condition drawer</a></li>
+<li><a href="#gol2D">2D Game of Life</a></li>
+<li><a href="#gol3D">3D Game of Life</a></li>
+<li><a href="#golSyms3DForward">3D Forward Neighbor Multiplicities</a> / <a href="#golSyms3DReverse">3D Reverse Neighbor Multiplicities</a></li>
+<li><a href="#gol5D">5D Game of Life</a></li>
+<li><a href="#golSyms4DForward">4D Forward Neighbor Multiplicities</a> / <a href="#golSyms4DReverse">4D Reverse Neighbor Multiplicities</a></li>
+<li><a href="#golSyms5D">5D Neighbor Multiplicities</a></li>
+<li><a href="#golTree">General Neighbor Multiplicity Algorithm</a></li>
+<li><a href="#golFlat">N-D Game of Life</a></li>
 </ol>
 <h2 id="starting-off">Starting Off</h2>
 <p>First of all, let’s meet our friend for the rest of this journey. In the drawer below, you can <em>draw</em> (with your mouse) the 8x8 grid you want to simulate for the rest of this post. As you draw, the rest of the visualizations will update to use this as their initial conditions, so feel free to jump back and forth as you’re reading to customize and change what you want to simulate.</p>
@@ -354,11 +354,11 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h3 id="diving-deeper-terminology">Diving Deeper: Terminology</h3>
 <p>Before we go any further, let’s take a break to clarify and introduce some terminology we’ll be using for the rest of this post.</p>
 <ul>
-<li><p>I’ve been using the word <strong>slice</strong> to talk about a 2D grid representing a single higher-dimensional <code>&lt;z,w...&gt;</code> coordinate — they’re the 13 grids in [the 3D simulation][#gol3D] and the 169 grids in [the 4D simulation][#gol4D].</p></li>
+<li><p>I’ve been using the word <strong>slice</strong> to talk about a 2D grid representing a single higher-dimensional <code>&lt;z,w...&gt;</code> coordinate — they’re the 13 grids in <a href="#gol3D">the 3D simulation</a> and the 169 grids in <a href="#gol4D">the 4D simulation</a>.</p></li>
 <li><p>I’ve also been using <strong>cell</strong> to refer to an exact specific <code>&lt;x,y,z,w,..&gt;</code> spot — they are the tiny squares inside each grid in the simulations above.</p></li>
 <li><p>I’ll start using the word <strong><a href="https://www.youtube.com/watch?v=Dp8sYTlLQRY">coset</a></strong> to refer the set of all of the duplicates of an <code>&lt;x,y&gt;</code> across all permutations and negations of <code>&lt;z,w,q,..&gt;</code>, since they all behave the same (they are either all on or all off together). So <code>&lt;x,y,1,2&gt;</code>, <code>&lt;x,y,2,1&gt;</code>, <code>&lt;x,y,-1,2&gt;</code>, <code>&lt;x,y,1,-2&gt;</code>, <code>&lt;x,y,-1,-2&gt;</code>, <code>&lt;x,y,-2,1&gt;</code>, <code>&lt;x,y,2,-1&gt;</code>, and <code>&lt;x,y,-2,-1&gt;</code> are all a part of the same coset, represented by the normalized form <code>&lt;x,y,1,2&gt;</code>. Now, during our simulation, we only need to simulate one member from each coset, because every member is identically present or not present. For the sake of implementation, we simulate the arbitrary <em>normalized</em> (positive and sorted) member only. Because of this, we’ll sometimes refer to the normalized item and the coset it represents as the same thing.</p></li>
 <li><p>I’ll also start using <strong>slice coset</strong> to talk about the set of all <code>&lt;z,w,...&gt;</code> slices) across its permutations and negations. The slices at z-w coordinates of <code>&lt;1,2&gt;</code>, <code>&lt;2,1&gt;</code>, <code>&lt;-1,2&gt;</code>, <code>&lt;1,-2&gt;</code>, <code>&lt;-1,-2&gt;</code>, <code>&lt;-2,1&gt;</code>, <code>&lt;2,-1&gt;</code>, and <code>&lt;-2,-1&gt;</code> are all a part of the same coset, represented by the normalized form <code>&lt;1,2&gt;</code>. All of the slices at each of those zw coordinates will always be identical, so we can talk the state of a single slice at <code>&lt;1,2&gt;</code> as representing the state of its entire coset.</p>
-<p>Slice cosets are what are being highlighted on mouseovers for the 3D and 4D simulations. They are also what the big squares represent for the [3D Forward Neighbors][#golSyms3DForward], the [3D Reverse Neighbors][#golSyms3DReverse], the [4D Reverse Neighbors][#golSyms4DForward], and the [4D Reverse neighbors][#golSyms4DReverse] elements: each slice stands in for their entire slice coset, and we show the amount of times each normalized slice coset element is a neighbor of the other.</p></li>
+<p>Slice cosets are what are being highlighted on mouseovers for the 3D and 4D simulations. They are also what the big squares represent for the <a href="#golSyms3DForward">3D Forward Neighbors</a>, the <a href="#golSyms3DReverse">3D Reverse Neighbors</a>, the <a href="#golSyms4DForward">4D Reverse Neighbors</a>, and the <a href="#golSyms4DReverse">4D Reverse neighbors</a> elements: each slice stands in for their entire slice coset, and we show the amount of times each normalized slice coset element is a neighbor of the other.</p></li>
 </ul>
 <h2 id="tackling-the-neighbor-problem">Tackling the Neighbor Problem</h2>
 <p>My initial d=10 time clocked in at just under 10 minutes initially, but as early as next Wednesday we knew that a sub-5 second time was possible. So where was the gap?</p>
@@ -366,7 +366,7 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <p>So put on your hard hats and working boots … we’re going to dive deep into the world of hyper-dimensional symmetries!</p>
 <h3 id="five-dimensions">Five Dimensions</h3>
 <p>First, let’s start visualizing how things look like in 5 dimensions, now that we know what our slice coset/representative structure looks like. Partially to help us gain an intuition for some of what’s going on, and also partially to show that intuition at the individual component level can only get so far.</p>
-<p>It’s a bit difficult to duplicate the same [forward neighbor][#golSyms4DForward]/[reverse neighbor][#golSyms4DReverse] interactive elements as we had for 4D, so here’s a different representation. Here is an interactive element of all of the <code>&lt;z,w,q&gt;</code> slice cosets (the wedge of normalized points we track for our implementation) and both their forward and reverse neighbor weights of each other (computable using the method we used for 4D). The <code>q</code> axis is represented as stacked zw sections from left to right.</p>
+<p>It’s a bit difficult to duplicate the same <a href="#golSyms4DForward">forward neighbor</a>/<a href="#golSyms4DReverse">reverse neighbor</a> interactive elements as we had for 4D, so here’s a different representation. Here is an interactive element of all of the <code>&lt;z,w,q&gt;</code> slice cosets (the wedge of normalized points we track for our implementation) and both their forward and reverse neighbor weights of each other (computable using the method we used for 4D). The <code>q</code> axis is represented as stacked zw sections from left to right.</p>
 <div id="golSyms5D" class="highlightbox">
 <p><strong>Element 7:</strong> 5D Neighbor Multiplicities</p>
 <div id="golSyms5DCont">

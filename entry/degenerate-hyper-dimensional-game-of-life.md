@@ -89,17 +89,17 @@ Table of Figures
 
 For reference, the interactive elements in this post are:
 
-1.  \[Initial condition drawer\]\[\#golDrawer\]
-2.  \[2D Game of Life\]\[\#gol2D\]
-3.  \[3D Game of Life\]\[\#gol3D\]
-4.  \[3D Forward Neighbor Multiplicities\]\[\#golSyms3DForward\] / \[3D Reverse
-    Neighbor Multiplicities\]\[\#golSyms3DReverse\]
-5.  \[5D Game of Life\]\[\#gol5D\]
-6.  \[4D Forward Neighbor Multiplicities\]\[\#golSyms4DForward\] / \[4D Reverse
-    Neighbor Multiplicities\]\[\#golSyms4DReverse\]
-7.  \[5D Neighbor Multiplicities\]\[\#golSyms5D\]
-8.  \[General Neighbor Multiplicity Algorithm\]\[\#golTree\]
-9.  \[N-D Game of Life\]\[\#golFlat\]
+1.  [Initial condition drawer](#golDrawer)
+2.  [2D Game of Life](#gol2D)
+3.  [3D Game of Life](#gol3D)
+4.  [3D Forward Neighbor Multiplicities](#golSyms3DForward) / [3D Reverse
+    Neighbor Multiplicities](#golSyms3DReverse)
+5.  [5D Game of Life](#gol5D)
+6.  [4D Forward Neighbor Multiplicities](#golSyms4DForward) / [4D Reverse
+    Neighbor Multiplicities](#golSyms4DReverse)
+7.  [5D Neighbor Multiplicities](#golSyms5D)
+8.  [General Neighbor Multiplicity Algorithm](#golTree)
+9.  [N-D Game of Life](#golFlat)
 
 Starting Off
 ------------
@@ -849,8 +849,8 @@ terminology we'll be using for the rest of this post.
 
 -   I've been using the word **slice** to talk about a 2D grid representing a
     single higher-dimensional `<z,w...>` coordinate --- they're the 13 grids in
-    \[the 3D simulation\]\[\#gol3D\] and the 169 grids in \[the 4D
-    simulation\]\[\#gol4D\].
+    [the 3D simulation](#gol3D) and the 169 grids in [the 4D
+    simulation](#gol4D).
 
 -   I've also been using **cell** to refer to an exact specific `<x,y,z,w,..>`
     spot --- they are the tiny squares inside each grid in the simulations
@@ -878,11 +878,11 @@ terminology we'll be using for the rest of this post.
     `<1,2>` as representing the state of its entire coset.
 
     Slice cosets are what are being highlighted on mouseovers for the 3D and 4D
-    simulations. They are also what the big squares represent for the \[3D
-    Forward Neighbors\]\[\#golSyms3DForward\], the \[3D Reverse
-    Neighbors\]\[\#golSyms3DReverse\], the \[4D Reverse
-    Neighbors\]\[\#golSyms4DForward\], and the \[4D Reverse
-    neighbors\]\[\#golSyms4DReverse\] elements: each slice stands in for their
+    simulations. They are also what the big squares represent for the [3D
+    Forward Neighbors](#golSyms3DForward), the [3D Reverse
+    Neighbors](#golSyms3DReverse), the [4D Reverse
+    Neighbors](#golSyms4DForward), and the [4D Reverse
+    neighbors](#golSyms4DReverse) elements: each slice stands in for their
     entire slice coset, and we show the amount of times each normalized slice
     coset element is a neighbor of the other.
 
@@ -913,11 +913,11 @@ know what our slice coset/representative structure looks like. Partially to help
 us gain an intuition for some of what's going on, and also partially to show
 that intuition at the individual component level can only get so far.
 
-It's a bit difficult to duplicate the same \[forward
-neighbor\]\[\#golSyms4DForward\]/\[reverse neighbor\]\[\#golSyms4DReverse\]
-interactive elements as we had for 4D, so here's a different representation.
-Here is an interactive element of all of the `<z,w,q>` slice cosets (the wedge
-of normalized points we track for our implementation) and both their forward and
+It's a bit difficult to duplicate the same [forward
+neighbor](#golSyms4DForward)/[reverse neighbor](#golSyms4DReverse) interactive
+elements as we had for 4D, so here's a different representation. Here is an
+interactive element of all of the `<z,w,q>` slice cosets (the wedge of
+normalized points we track for our implementation) and both their forward and
 reverse neighbor weights of each other (computable using the method we used for
 4D). The `q` axis is represented as stacked zw sections from left to right.
 
