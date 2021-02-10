@@ -430,7 +430,9 @@ def axis_weight(source,target):
     # ignore x,y
     higher_source = source[2:]
     higher_target = target[2:]
-    return 2**sum(*[1 for i,j in zip(higher_source, higher_target) if i == 1 and j == 0])
+    return 2**sum([1 for i,j in zip(higher_source, higher_target)
+                      if i == 1 and j == 0
+                  ])
 
 def mk_positive_neighbs(point):
     """mk_neighbs, but only with positive higher dimensional points
@@ -444,7 +446,9 @@ def step_axis(pts):
     """
     neighbs = Counter()
     for point in pts:
-        neighbs += Counter({ ngb: axis_weight(point,ngb) for ngb in mk_positive_neighbs(point)[1:]})
+        neighbs += Counter({ ngb: axis_weight(point,ngb)
+                               for ngb in mk_positive_neighbs(point)[1:]
+                           })
 
     def validate(point, ncount):
         if point in pts:
