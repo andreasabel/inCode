@@ -1021,7 +1021,7 @@ happen? The answer happens to be the [multinomial
 coefficient](https://en.wikipedia.org/wiki/Multinomial_theorem)
 ![5 \\choose {2 1 3}](https://latex.codecogs.com/png.latex?5%20%5Cchoose%20%7B2%201%203%7D "5 \choose {2 1 3}")
 (or
-![5! / (2! 1! 3!)](https://latex.codecogs.com/png.latex?5%21%20%2F%20%282%21%201%21%203%21%29 "5! / (2! 1! 3!)")):
+![5! / (2!\\,1!\\,3!)](https://latex.codecogs.com/png.latex?5%21%20%2F%20%282%21%5C%2C1%21%5C%2C3%21%29 "5! / (2!\,1!\,3!)")):
 there are ![5!](https://latex.codecogs.com/png.latex?5%21 "5!") ways to end up
 with 5 in the bin, but that `5` came from contributions of `2+1+3` from either
 side, and so we divide by the ways we could pick from those contributing bins
