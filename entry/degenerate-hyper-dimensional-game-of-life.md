@@ -68,10 +68,10 @@ negative points are identical). This saves down the number of points by a factor
 of two for each extra dimension
 (![O(2\^{d-2})](https://latex.codecogs.com/png.latex?O%282%5E%7Bd-2%7D%29 "O(2^{d-2})")).
 
-It didn't quite get us to 1010, but this discovery completely changed how we saw
+It didn't quite get us to 10D, but this discovery completely changed how we saw
 this puzzle. With one breakthrough down, we began to believe that there would be
 more just around the corner, made possible by our problem's special degeneracy
-(that is, that we start on a 2d slice).
+(that is, that we start on a 2D slice).
 
 Such a dream (as posed in [this reddit thread I
 started](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/))
