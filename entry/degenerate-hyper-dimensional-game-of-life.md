@@ -463,7 +463,7 @@ This discovery late in the Tuesday night of the 16th was what inspired us to
 believe and dream that more breakthroughs might be possible to bring things down
 even further.
 
-And those breakthroughs soon came!
+Those breakthroughs soon came!
 
 Four Dimensions
 ---------------
@@ -493,7 +493,7 @@ galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html
 and single-reflection symmetries like [broken bar
 code](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.▄▗▖▄.▀▝▘▀.████){.loadpoints}).
 
-Most initial conditions will spread out from the center `<z,w> = <0,0>` point
+Most initial conditions will spread out from the center `<z,w> = <0,0>` slice
 radially, spreading outwards into positive and negative z and w. Mouse-over or
 tap any individual tiny `<x.y>` cell and you'll see each of its 80
 (![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1")) `<x,y,z,w>` 4D
@@ -1213,10 +1213,10 @@ def step_with_stacks(stacks):
            }
 ```
 
-And here is the final animation: we plot a single 2D grid, and each cell is
-colored according to the size of the coset stack under that point (how many
-points exist with that `<x,y>`). You can slide this one up all the way to 10D to
-simulate it in your browser!
+Here is the final animation: we plot a single 2D grid, and each cell is colored
+according to the size of the coset stack under that point (how many points exist
+with that `<x,y>`). You can slide this one up all the way to 10D to simulate it
+in your browser!
 
 ::: {#golFlat .highlightbox}
 **Element 9:** N-D Game of Life
