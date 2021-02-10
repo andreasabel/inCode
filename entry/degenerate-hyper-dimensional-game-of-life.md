@@ -324,7 +324,7 @@ Freenode IRC user sim642 noticed something late into the night of December 16th:
 > know which to count twice And in part 2 I feel like you could also exploit the
 > symmetry in w axis simultaneously
 >
-> -   sim642
+> --- sim642
 
 You might have seen this too: the entire thing has reflection symmetry across
 z=0! z=1 is always the same as z=-1, z=2 is always the same as z=-2, etc.
@@ -525,7 +525,7 @@ late Thursday the 17th/early Friday the 18th...and everything changed forever.
 > Using these symmetries could make the code nearly eight times as fast.I was
 > wondering if anyone tried that.
 >
-> -   u/cetttbycettt
+> --- u/cetttbycettt
 
 What *u/cetttbycettt* saw is what you can see now in the simulation above: it's
 all of the *light yellow* highlighted squares when you mouse-over (highlighting
@@ -721,11 +721,11 @@ to arbitrary dimensions. Along the way we'd also like to get rid of our hacky 4D
 neighbor multiplicity rules and get something a little cleaner.
 
 I struggled with for a while without making too much headway...but on the
-morning of Friday, December 18th, arguably one of the biggest revelations of the
-entire journey was dropped by Michal Marsalek on u/cetttbycettt's reddit thread.
-It was a big deal, because not only did it allow us to generalize our symmetries
-to higher dimensions, but it also *proved* a specific degeneracy that allowed
-10D simulation to be definitely 100% *solvable*.
+morning of Friday, December 18th, arguably the biggest revelation of the entire
+journey was dropped by Michal Marsalek on u/cetttbycettt's reddit thread. It was
+a big deal, because not only did it allow us to generalize our symmetries to
+higher dimensions, but it also *proved* a specific degeneracy that allowed 10D
+simulation to be definitely 100% *solvable*.
 
 ### Permutation Symmetry
 
@@ -746,7 +746,7 @@ post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_par
 > ![20\^2 \\times \\sum\_{k=0}\^{t} { {d-3+k} \\choose {k} }](https://latex.codecogs.com/png.latex?20%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt%7D%20%7B%20%7Bd-3%2Bk%7D%20%5Cchoose%20%7Bk%7D%20%7D "20^2 \times \sum_{k=0}^{t} { {d-3+k} \choose {k} }")
 > such cells.
 >
-> -   Michal Marsalek
+> --- Michal Marsalek
 
 *(equations slightly modified)*
 
@@ -1434,7 +1434,7 @@ has as a personal goal something I would also be very happy to reach:
 > I won't be satisfied until I implement a solution that runs in polynomial time
 > in both t and d.
 >
-> -   Michal Marsalek
+> --- Michal Marsalek
 
 Will you, dear reader, be the one to take us there? :)
 
