@@ -112,10 +112,31 @@ Please enable Javascript
 :::
 :::
 
-And for fun, here's a 2D vanilla game of life implementation (for six time
-steps) to test out your creation. I recommend trying out some of the
-[interesting well-known
+Here are some sample fun ones you can try out (click to load):
+
+-   The [classic
+    glider](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=____%7C_▝▖_%7C_▀▘_%7C____),
+    a default if only for how iconic it is.
+-   The
+    [tub](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=____%7C_▞▖_%7C_▝__%7C____),
+    which explodes into a twinkling frenzy during the 4D animation.
+-   The [full
+    block](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████%7C████%7C████%7C████),
+    which dies out in 2D but produces very appealing patterns in 3D and 4D.
+-   The [spiral
+    galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█%7C▜███%7C███▙%7C█▛██),
+    which produces rich spiral galaxy patterns up until 6D, but then all of a
+    sudden becomes blocky and bland at 7D and above.
+-   My [own personal puzzle
+    input](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▜▙▐%7C▜▚▗_%7C█▟▄▘%7C▟▌▟█),
+    to see what the typical input looks like.
+
+I recommend trying out some of the [other interesting well-known
 patterns](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life#Examples_of_patterns)!
+Also, if you find any interesting ones, I would be excited to hear about them!
+
+And for fun, here's a 2D vanilla game of life implementation (for six time
+steps) to test out your creation.
 
 ::: {#gol2D .highlightbox}
 **Element 2:** 2D Game of Life
