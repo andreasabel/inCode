@@ -17,10 +17,11 @@ interactive exploratory visualizations and math!
 T'was the night before Thursday, December 17, 2020, the release of ["Conway
 Cubes"](https://adventofcode.com/2020/day/17) (Day 17 of [Advent of Code
 2020](https://adventofcode.com/2020)). Advent of Code is a sequence of fun
-little themed coding puzzles building up to Christmas. I always loved these
-puzzles because are so self-contained and tidy, they are often *open-ended* in
-the interesting ways you can solve them or expand them (which I've written [many
-blog posts on](https://blog.jle.im/entries/series/+advent-of-code.html)).
+little themed coding puzzles building up to Christmas. I always enjoyed these
+puzzles because they are so self-contained and tidy that they are often
+*open-ended* in the interesting ways you can solve them or expand them (which
+I've written [many blog posts
+on](https://blog.jle.im/entries/series/+advent-of-code.html)).
 
 On the surface, Day 17 seemed to be a straightforward extension of [Conway's
 Game Of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) ("GoL").
@@ -82,6 +83,23 @@ and all of the solving logic embedded in this post was written in Purescript
 ([online
 here](https://github.com/mstksg/inCode/blob/master/app-purescript/Gol.purs)) and
 compiled to Javascript.
+
+Table of Figures
+----------------
+
+For reference, the interactive elements in this post are:
+
+1.  \[Initial condition drawer\]\[\#golDrawer\]
+2.  \[2D Game of Life\]\[\#gol2D\]
+3.  \[3D Game of Life\]\[\#gol3D\]
+4.  \[3D Forward Neighbor Multiplicities\]\[\#golSyms3DForward\] / \[3D Reverse
+    Neighbor Multiplicities\]\[\#golSyms3DReverse\]
+5.  \[5D Game of Life\]\[\#gol5D\]
+6.  \[4D Forward Neighbor Multiplicities\]\[\#golSyms4DForward\] / \[4D Reverse
+    Neighbor Multiplicities\]\[\#golSyms4DReverse\]
+7.  \[5D Neighbor Multiplicities\]\[\#golSyms5D\]
+8.  \[General Neighbor Multiplicity Algorithm\]\[\#golTree\]
+9.  \[N-D Game of Life\]\[\#golFlat\]
 
 Starting Off
 ------------
