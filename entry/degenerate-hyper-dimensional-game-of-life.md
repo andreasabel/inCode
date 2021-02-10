@@ -381,8 +381,8 @@ the total neighbor count of `<1,3,0>`, we have to count the contribution from
 `<1,3,1>` twice (once for `<1,3,1>` and once for `<1,3,-1>`, which was
 normalized away).
 
-That means we have to follow the rules in the previous interactive element
-*backwards*, like:
+That means we have to follow the rules in the \[forward neighbors interactive
+element\]\[\#golSyms3DForward\] *backwards*, like:
 
 ::: {#golSyms3DReverse .highlightbox}
 **Element 4b:** 3D Reverse Neighbor Multiplicities
@@ -480,11 +480,11 @@ late Thursday the 17th/early Friday the 18th...and everything changed *forever*.
 > Using these symmetries could make the code nearly eight times as fast.I was
 > wondering if anyone tried that.
 
-What *u/cetttbycettt* saw is what you can see now in the interactive element
-above: it's all of the *light yellow* highlighted squares when you mouse-over.
-In addition to the z=0 and w=0 lines (the two lines down the middle, up-down and
-left-right), we also have another line of symmetry: z=w and w=z, the diagonal
-lines!
+What *u/cetttbycettt* saw is what you can see now in the \[4D Game of Life
+Simulation\]\[\#gol4D\]: it's all of the *light yellow* highlighted squares when
+you mouse-over. In addition to the z=0 and w=0 lines (the two lines down the
+middle, up-down and left-right), we also have another line of symmetry: z=w and
+w=z, the diagonal lines!
 
 That's right, a zw slice at `<z,w>=<3,4>` is *identical* to the one at `<4,3>`,
 and so also `<-3,4>`, `<3,-4>`, `<-3,-4>`, `<-4,3>`, `<4,-3>`, and `<-4,-3>`!
@@ -805,7 +805,8 @@ terminology we'll be using for the rest of this post.
 
 -   I've been using the word **slice** to talk about a 2D grid representing a
     single higher-dimensional `<z,w...>` coordinate --- they're the 13 grids in
-    the 3D simulation and the 169 grids in the 4D simulation.
+    \[the 3D simulation\]\[\#gol3D\] and the 169 grids in \[the 4D
+    simulation\]\[\#gol4D\].
 
 -   I've also been using **cell** to refer to an exact specific `<x,y,z,w,..>`
     spot --- they are the tiny squares inside each grid in the simulations
@@ -833,10 +834,13 @@ terminology we'll be using for the rest of this post.
     `<1,2>` as representing the state of its entire coset.
 
     Slice cosets are what are being highlighted on mouseovers for the 3D and 4D
-    simulations. They are also what the big squares represent for the forward
-    and backward neighbor interactive elemenst: each slice stands in for their
-    entire slice coset, and we show the amount of times each normalized slice
-    coset element is a neighbor of the other.
+    simulations. They are also what the big squares represent for \[3D Forward
+    Neighbors\]\[\#golSyms3DForward\], the \[3D Reverse
+    Neighbors\]\[\#golSyms3DReverse\], the \[4D Reverse
+    Neighbors\]\[\#golSyms4DForward\], and the \[4D Reverse
+    neighbors\]\[\#golSyms4DReverse\]: each slice stands in for their entire
+    slice coset, and we show the amount of times each normalized slice coset
+    element is a neighbor of the other.
 
 Tackling the Neighbor Problem
 -----------------------------
@@ -865,10 +869,11 @@ know what our slice coset/representative structure looks like. Partially to help
 us gain an intuition for some of what's going on, and also partially to show
 that intuition at the individual component level can only get so far.
 
-It's a bit difficult to duplicate the same forward/reverse neighbor interactive
-element for 4D as we had for 4D, so here's a different representation. Here is
-an interactive element of all of the `<z,w,q>` slice cosets (the wedge of
-normalized points we track for our implementation) and both their forward and
+It's a bit difficult to duplicate the same \[forward
+neighbor\]\[\#golSyms4DForward\]/\[reverse neighbor\]\[\#golSyms4DReverse\]
+interactive elements as we had for 4D, so here's a different representation.
+Here is an interactive element of all of the `<z,w,q>` slice cosets (the wedge
+of normalized points we track for our implementation) and both their forward and
 reverse neighbor weights of each other (computable using the method we used for
 4D). The `q` axis is represented as stacked zw sections from left to right.
 
