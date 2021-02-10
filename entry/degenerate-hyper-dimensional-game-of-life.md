@@ -26,7 +26,7 @@ on](https://blog.jle.im/entries/series/+advent-of-code.html)).
 On the surface, Day 17 seemed to be a straightforward extension of [Conway's
 Game Of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) ("GoL").
 GoL is a simulation played out on a 2D grid, where cells are "on" and "off", and
-at each step of the simulation, the states spread and propagate in interesting
+at each step of the simulation the states spread and propagate in interesting
 ways based on the state of their neighbors (a 2D cellular automata). The twist
 of the Advent of Code puzzle is it asks what would happen if we played out the
 rules of GoL in 3D instead, and then 4D!
