@@ -564,6 +564,24 @@ These are the *forward neighbors*; we can compute them by expanding a point to
 its neighbors, and then normalizing our points and seeing how they double (or
 quadruple) up.
 
+For example, mouse over `<z,w>=<3,3>` and see it has eight total
+higher-dimensional neighbors (like all points should, though this visualization
+leaves out points at w\>6). It's *supposed* to have a neighbor at `<4,3>`, but
+that gets reflected back onto `<3,4>` during our normalization process, so you
+see that the point `<3,3>` has a neighbor at `<3,4>` "double-counted". The green
+squares (in the north and west positions) at `<3,4>` when you hover over `<3,3>`
+show that `<3,4>` is a neighbor of `<3,3>` both to its north and to its west.
+
+Also, we have something really odd show up for the first time. Mouse over a
+point like `<z,w>=<2,3>` and see that it has a neighbor in...itself? What's
+going on here? Well, it is *supposed* to have a neighbor at `<3,2>` but that
+gets normalized/reflected back onto `<2,3>` --- it reflects onto itself! The
+green square in the Southeast means that `<2,3>`'s southeast neighbor
+is...itself!
+
+Here is a sample python implementation of the computation of forward neighbor
+multiplicities for any dimension by propagating-then-normalizing:
+
 ``` {.python}
 def normalize(point):
     """Normalize a point by sorting the absolute values
@@ -581,21 +599,6 @@ def forward_neighbs(point):
     """
     return Counter([normalize(neighb) for neighb in mk_neighbs(point)[1:]])
 ```
-
-For example, mouse over `<z,w>=<3,3>` and see it has eight total
-higher-dimensional neighbors (like all points should, though this visualization
-leaves out points at w\>6). It's *supposed* to have a neighbor at `<4,3>`, but
-that gets reflected back onto `<3,4>` during our normalization process, so you
-see that the point `<3,3>` has a neighbor at `<3,4>` "double-counted". The green
-squares (in the north and west positions) at `<3,4>` when you hover over `<3,3>`
-show that `<3,4>` is a neighbor of `<3,3>` both to its north and to its west.
-
-Also, we have something really odd show up for the first time. Mouse over a
-point like `<z,w>=<2,3>` and see that it has a neighbor in...itself? What's
-going on here? Well, it is *supposed* to have a neighbor at `<3,2>` but that
-gets normalized/reflected back onto `<2,3>` --- it reflects onto itself! The
-green square in the Southeast means that `<2,3>`'s southeast neighbor
-is...itself!
 
 The forward neighbors are useful for understanding what's going on, but to
 actually run our simulation we again need to find the *reverse neighbors*: from

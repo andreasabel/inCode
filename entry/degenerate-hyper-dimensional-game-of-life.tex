@@ -761,26 +761,6 @@ These are the \emph{forward neighbors}; we can compute them by expanding a point
 to its neighbors, and then normalizing our points and seeing how they double (or
 quadruple) up.
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{def}\NormalTok{ normalize(point):}
-    \CommentTok{"""Normalize a point by sorting the absolute values}
-
-\CommentTok{    (2, {-}1)}
-\CommentTok{    => (1, 2)}
-\CommentTok{    """}
-    \ControlFlowTok{return} \BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{sorted}\NormalTok{([}\BuiltInTok{abs}\NormalTok{(x) }\ControlFlowTok{for}\NormalTok{ x }\KeywordTok{in}\NormalTok{ point]))}
-
-\KeywordTok{def}\NormalTok{ forward\_neighbs(point):}
-    \CommentTok{"""Generate the higher{-}dimensional forward neighbors of a point}
-
-\CommentTok{    (0, 1)}
-\CommentTok{    => \{(0, 1): 2, (1, 2): 2, (1, 1): 2, (0, 0): 1, (0, 2): 1\}}
-\CommentTok{    """}
-    \ControlFlowTok{return}\NormalTok{ Counter([normalize(neighb) }\ControlFlowTok{for}\NormalTok{ neighb }\KeywordTok{in}\NormalTok{ mk\_neighbs(point)[}\DecValTok{1}\NormalTok{:]])}
-\end{Highlighting}
-\end{Shaded}
-
 For example, mouse over
 \texttt{\textless{}z,w\textgreater{}=\textless{}3,3\textgreater{}} and see it
 has eight total higher-dimensional neighbors (like all points should, though
@@ -803,6 +783,29 @@ but that gets normalized/reflected back onto
 \texttt{\textless{}2,3\textgreater{}} --- it reflects onto itself! The green
 square in the Southeast means that \texttt{\textless{}2,3\textgreater{}}'s
 southeast neighbor is\ldots itself!
+
+Here is a sample python implementation of the computation of forward neighbor
+multiplicities for any dimension by propagating-then-normalizing:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{def}\NormalTok{ normalize(point):}
+    \CommentTok{"""Normalize a point by sorting the absolute values}
+
+\CommentTok{    (2, {-}1)}
+\CommentTok{    => (1, 2)}
+\CommentTok{    """}
+    \ControlFlowTok{return} \BuiltInTok{tuple}\NormalTok{(}\BuiltInTok{sorted}\NormalTok{([}\BuiltInTok{abs}\NormalTok{(x) }\ControlFlowTok{for}\NormalTok{ x }\KeywordTok{in}\NormalTok{ point]))}
+
+\KeywordTok{def}\NormalTok{ forward\_neighbs(point):}
+    \CommentTok{"""Generate the higher{-}dimensional forward neighbors of a point}
+
+\CommentTok{    (0, 1)}
+\CommentTok{    => \{(0, 1): 2, (1, 2): 2, (1, 1): 2, (0, 0): 1, (0, 2): 1\}}
+\CommentTok{    """}
+    \ControlFlowTok{return}\NormalTok{ Counter([normalize(neighb) }\ControlFlowTok{for}\NormalTok{ neighb }\KeywordTok{in}\NormalTok{ mk\_neighbs(point)[}\DecValTok{1}\NormalTok{:]])}
+\end{Highlighting}
+\end{Shaded}
 
 The forward neighbors are useful for understanding what's going on, but to
 actually run our simulation we again need to find the \emph{reverse neighbors}:
