@@ -1092,7 +1092,8 @@ also a reverse neighbor. This means that the branching structure for forward and
 reverse neighbor trees are exactly the same; the only difference is how the
 multiplicities are calculated. In this case, the forward direction is just the
 original calculation reversed! The diagram shows how the multiplicities are
-accumulated; feel free to try to work out exactly how this works as an exercise!
+accumulated; feel free to try to work out exactly how this works as a fun
+exercise :)
 
 And with that, we have tackled the reverse neighbor weights problem with some
 branching bin flows and combinatorics!
@@ -1474,8 +1475,8 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     even now, it does mean that there's a qualitative difference between 9D and
     below and 10D and above: anything above 9D is...especially degenerate.
 
-[^4]: One thing I did discover (that I won't spend too much time on here) is a
-    way to [index into an
+[^4]: One lasting thing I did find (that I won't spend too much time on here) is
+    a way to [index into an
     enumeration](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/gim68l0/)
     of all of the slice cosets (that is, all the normalized higher-dimensional
     coordinates). I no longer store `<z,w,...>` points as vectors, but rather as
