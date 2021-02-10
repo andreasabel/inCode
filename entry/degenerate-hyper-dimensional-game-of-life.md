@@ -122,7 +122,9 @@ Here are some sample fun ones you can try out (click to load):
     which explodes into a twinkling frenzy during the 4D animation.
 -   The [full
     block](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.████.████.████){.loadpoints},
-    which dies out in 2D but produces very appealing patterns in 3D and 4D.
+    which dies out in 2D but produces very appealing patterns in 3D and 4D. A
+    [bulls-eye](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▀▀▜.▌▛▜▐.▌▙▟▐.▙▄▄▟){.loadpoints}
+    also yields interesting "geometric" patterns at higher dimensions.
 -   The [spiral
     galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█.▜███.███▙.█▛██){.loadpoints},
     which produces rich spiral galaxy patterns up until 6D, but then all of a
