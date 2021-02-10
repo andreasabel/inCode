@@ -363,7 +363,7 @@ highlighted with the values "1" because they are neighbors of 3, on the left and
 right side (respectively). Note that one neat property for all squares (except
 for z=6, which goes off the scale) is that the "total" higher-dimensional
 neighbors is always 2
-(![3\^(d-2)-1](https://latex.codecogs.com/png.latex?3%5E%28d-2%29-1 "3^(d-2)-1"));
+(![3\^{d-2}-1](https://latex.codecogs.com/png.latex?3%5E%7Bd-2%7D-1 "3^{d-2}-1"));
 *where* those neighbors fall is just re-arranged slightly.
 
 The tricky square is now z=0: if you mouse-over it, you'll see that it has a
