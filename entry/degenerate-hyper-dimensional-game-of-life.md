@@ -528,10 +528,10 @@ late Thursday the 17th/early Friday the 18th...and everything changed forever.
 > -   u/cetttbycettt
 
 What *u/cetttbycettt* saw is what you can see now in the simulation above: it's
-all of the *light yellow* highlighted squares when you mouse-over showing even
-*more* identical slices. In addition to the z=0 and w=0 lines (the two lines
-down the middle, up-down and left-right), we also have another line of symmetry:
-z=w and w=z, the diagonal lines!
+all of the *light yellow* highlighted squares when you mouse-over (highlighting
+even *more* identical slices to the one you are hovering over). In addition to
+the z=0 and w=0 lines (the two lines down the middle, up-down and left-right),
+we also have another line of symmetry: z=w and w=z, the diagonal lines!
 
 That's right, a zw slice at `<z,w>=<3,4>` is *identical* to the one at `<4,3>`,
 and so also `<-3,4>`, `<3,-4>`, `<-3,-4>`, `<-4,3>`, `<4,-3>`, and `<-4,-3>`!
