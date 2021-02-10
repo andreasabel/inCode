@@ -513,11 +513,10 @@ reflection symmetry is still preserved, as expected, but four ways (the slice at
 above when you mouse over a zw square. (Ignore the lighter yellow highlights for
 now!)
 
-And now, for the next big breakthrough: I think this situation shows the power
-of visualization well, because this exact visualization was what reddit user
-*u/cetttbycett* was looking at when [they made this
+And now, for the next big breakthrough: this exact visualization was what reddit
+user *u/cetttbycett* was looking at when [they made this
 post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_part_2_using_symmetry_in_4d_space/)
-late Thursday the 17th/early Friday the 18th...and everything changed *forever*.
+late Thursday the 17th/early Friday the 18th...and everything changed forever.
 
 > I noticed that the expansion of active cubes for part 2 is symmetric with
 > respect to two hyperplanes in 4d space: These hyperplanes can be described by
