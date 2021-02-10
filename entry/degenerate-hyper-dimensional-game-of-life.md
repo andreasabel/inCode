@@ -119,16 +119,20 @@ Here are some sample fun ones you can try out (click to load):
     a default if only for how iconic it is.
 -   The
     [tub](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=____._▞▖_._▝__.____){.loadpoints},
-    which explodes into a twinkling frenzy during the 4D animation.
+    which is a "still-life" in 2D, but explodes into a twinkling frenzy during
+    the 4D animation.
 -   The [full
     block](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.████.████.████){.loadpoints},
     which dies out in 2D but produces very appealing patterns in 3D and 4D. A
     [bulls-eye](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▀▀▜.▌▛▜▐.▌▙▟▐.▙▄▄▟){.loadpoints}
-    also yields interesting "geometric" patterns at higher dimensions.
+    also yields interesting "geometric" patterns at higher dimensions. A [broken
+    bar
+    code](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.▄▗▖▄.▀▝▘▀.████){.loadpoints}
+    also yields explosively intricate alternating behavior at higher dimensions.
 -   The [spiral
-    galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█.▜███.███▙.█▛██){.loadpoints},
-    which produces rich spiral galaxy patterns up until 6D, but then all of a
-    sudden becomes blocky and bland at 7D and above.
+    galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█.▜███.███▙.█▛██){.loadpoints}
+    with rotational symmetry, which produces rich spiral galaxy patterns up
+    until 6D, but then all of a sudden becomes blocky and bland at 7D and above.
 -   My [own personal puzzle
     input](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▜▙▐.▜▚▗_.█▟▄▘.▟▌▟█){.loadpoints},
     to see what the typical input looks like.
@@ -272,6 +276,14 @@ Press "Play" to have the simulation cycle through 6 time steps!
 Please enable Javascript
 :::
 :::
+
+(Some ones I suggest trying out are the flowery [spiral
+galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█.▜███.███▙.█▛██){.loadpoints}
+pattern and patterns with a single reflection symmetry, like the [broken bar
+code](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.▄▗▖▄.▀▝▘▀.████){.loadpoints};
+double symmetry like
+[bulls-eye](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▀▀▜.▌▛▜▐.▌▙▟▐.▙▄▄▟){.loadpoints}
+look nice too!)
 
 In "reality", each of those 13 slices above are stacked on top of each other in
 3D space. You'll see that most initial conditions will spread out from the
@@ -423,6 +435,16 @@ dimension. Press "Play" to run your initial conditions!
 Please enable Javascript
 :::
 :::
+
+(Some patterns I recommend trying are the patterns with double reflection
+symmetry like
+[bulls-eye](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▀▀▜.▌▛▜▐.▌▙▟▐.▙▄▄▟){.loadpoints}
+and [full
+block](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.████.████.████){.loadpoints},
+rotational symmetry like [spiral
+galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█.▜███.███▙.█▛██){.loadpoints},
+and single-reflection symmetries like [broken bar
+code](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.▄▗▖▄.▀▝▘▀.████){.loadpoints}).
 
 We get something interesting as well: most initial conditions will spread out
 from the center `<z,w> = <0,0>` point radially, spreading outwards into positive
@@ -1142,6 +1164,18 @@ simulate it in your browser!
 Please enable Javascript
 :::
 :::
+
+(A lot of examples with symmetries look nice, such as [spiral
+galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█.▜███.███▙.█▛██){.loadpoints}
+and
+[bulls-eye](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▀▀▜.▌▛▜▐.▌▙▟▐.▙▄▄▟){.loadpoints};
+the alternating symmetries of [broken bar
+code](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.▄▗▖▄.▀▝▘▀.████){.loadpoints}
+look nice too! But honestly, at higher-dimensions, most patterns have appealing
+gradients, like
+[glider](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=____._▝▖_._▀▘_.____){.loadpoints}
+and [my own
+input](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▜▙▐.▜▚▗_.█▟▄▘.▟▌▟█){.loadpoints})
 
 Play around with it! :D You can move all the way up to 10D; some computers might
 struggle, but on my lower-end cell phone it seems to run in less than a second.
