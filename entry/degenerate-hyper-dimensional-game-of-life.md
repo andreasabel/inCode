@@ -1073,9 +1073,12 @@ means that that node has already committed to having `<?,?,2,4>` in the target
 vector, but still has two 2s in the source vector to pull in and distribute.
 
 One final thing we need to keep track of is to not count a point transitioning
-to itself if it results from no actual internal changes. This can be done by
-checking if each of our bin choices involved exactly no inter-bin flows (they
-were all of the form `0+x+0`).
+to itself if it results from no actual internal changes (this is the "minus one"
+in ![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1"): we should
+not include the single original point itself, but we *should* count extra
+occurrences of the original point if it arose from a reflection). This can be
+done by checking if each of our bin choices involved exactly no inter-bin flows
+(they were all of the form `0+x+0`).
 
 Phew! That's a bit of a mathematical doozy, huh? But trust me when I say it's
 easier to understand if play around with the interactive element and follow
