@@ -1404,14 +1404,18 @@ routinely explore together (through 25 puzzles each year for five years). Most
 of these discoveries were fun because we always had somebody to share them with,
 or a way to encourage each other and strive for a common goal. I'm definitely
 lucky to be standing on giants as a part of a talented and passionately curious
-community that's excited to explore things like this. Thank you to so many
-people --- Michal Marsalek, Peter Tseng, sim64, leftylink , /u/cetttbycettt,
-/u/bsterc, /u/flwyd, and so many others that I probably missed. An especially
-deep thanks to [Eric Wastl](https://twitter.com/ericwastl) for hosting a
-wonderful event like Advent of Code every year. Finally, a profoundly deep
-thanks to the late John Conway, who revealed to us how much joy can come from
-the exploration of all things mathematical, a genius who was taken away from
-this world much too soon.
+community that's excited to explore things like this. Michal Marsalek [has their
+own writeup of the discoveres mentioned
+here](https://github.com/MichalMarsalek/Advent-of-code/blob/master/2020/misc/day17-highdims/ND_gol_with_low_dimensional_initial_state.pdf),
+that you should check out too if you have the time!
+
+Thank you to so many people --- Michal Marsalek, Peter Tseng, sim64, leftylink ,
+/u/cetttbycettt, /u/bsterc, /u/flwyd, and so many others that I probably missed.
+An especially deep thanks to [Eric Wastl](https://twitter.com/ericwastl) for
+hosting a wonderful event like Advent of Code every year. Finally, a profoundly
+deep thanks to the late John Conway, who revealed to us how much joy can come
+from the exploration of all things mathematical, a genius who was taken away
+from this world much too soon.
 
 And of course, in making this post, I'm inviting you, the reader, to join us
 along in this journey as well! It's hardly over :) Now that you're up to speed
