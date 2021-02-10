@@ -836,7 +836,7 @@ Pure joy! :D
 [Peter
 Tseng](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ggaaqsy/)
 made a post on *Thursday* night with times, but I can't remember if it
-incorporated all the symmetries or originally included 10D, [Michal
+incorporated all the symmetries or originally included 10D. [Michal
 Marsalek](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ggsx9e9/)
 was able to implement the idea that they originally proposed by the following
 Wednesday (December 23rd) in Nim to blow everyone's time out of the water: 3
@@ -882,15 +882,15 @@ terminology we'll be using for the rest of this post.
 -   I'll also start using **slice coset** to talk about the set of all
     `<z,w,...>` slices) across its permutations and negations. The slices at z-w
     coordinates of `<1,2>`, `<2,1>`, `<-1,2>`, `<1,-2>`, `<-1,-2>`, `<-2,1>`,
-    `<2,-1>`, and `<-2,-1>` are all a part of the same coset, represented by the
-    normalized form `<1,2>`. All of the slices at each of those zw coordinates
-    will always be identical, so we can talk the state of a single slice at
-    `<1,2>` as representing the state of its entire coset.
+    `<2,-1>`, and `<-2,-1>` are all a part of the same slice coset, represented
+    by the normalized form `<1,2>`. All of the slices at each of those zw
+    coordinates will always be identical, so we can talk the state of a single
+    slice at `<1,2>` as representing the state of its entire coset.
 
-    Slice cosets are what are being highlighted on mouseovers for the 3D and 4D
-    simulations. They are also what the big squares represent for the [3D
-    Forward Neighbors](#golSyms3DForward), the [3D Reverse
-    Neighbors](#golSyms3DReverse), the [4D Reverse
+    Slice cosets are what are being highlighted on mouseovers for the
+    [3D](#gol3D) and [4D simulations](#gol4D). They are also what the big
+    squares represent for the [3D Forward Neighbors](#golSyms3DForward), the [3D
+    Reverse Neighbors](#golSyms3DReverse), the [4D Reverse
     Neighbors](#golSyms4DForward), and the [4D Reverse
     neighbors](#golSyms4DReverse) elements: each slice stands in for their
     entire slice coset, and we show the amount of times each normalized slice
@@ -910,7 +910,7 @@ computing *all*
 ![3\^{ {\\hat{d}} } - 1](https://latex.codecogs.com/png.latex?3%5E%7B%20%7B%5Chat%7Bd%7D%7D%20%7D%20-%201 "3^{ {\hat{d}} } - 1")
 higher-dimensional neighbors. So, even though the number of points I'd have to
 track grows polynomially, I still had that pesky exponential factor in building
-my neighbor map. And at high dimensions, that exponential factor dominates over
+my neighbor cache. At high dimensions, that exponential factor dominates over
 everything.
 
 So put on your hard hats and working boots ... we're going to dive deep into the
@@ -989,24 +989,23 @@ in *un-normalized* territory...we have to re-sort it to turn it into
 `0,1,1,2,3,5,5,6`. This encoding isn't something we can directly manipulate in a
 nice way.
 
-Because of how everything is always non-decreasing, what if we instead encoded
-each higher-dimensional coordinate as "count of each value seen?" For example,
-we can encode `0,1,1,1,3,5,5,6` as `1-3-0-1-0-2-1`: the first slot represents
-how many 0s we have, the second how many 1s, the next how many 2s, the next how
-many 3s, etc. We can encode `0,0,3,4,4,4,6,6` as `2-0-0-1-3-0-2` and
-`1,1,2,3,3,4,5,5` as `0-2-1-2-1-2-0`. The *sum* of the components gives you the
-total number of higher dimensions (ie, 10D vectors sum to 8)
+Because we don't care about order, what if we instead encoded each
+higher-dimensional coordinate as "count of each value seen?" For example, we can
+encode `0,1,1,1,3,5,5,6` as `1-3-0-1-0-2-1`: the first slot represents how many
+0s we have, the second how many 1s, the next how many 2s, the next how many 3s,
+etc. We can encode `0,0,3,4,4,4,6,6` as `2-0-0-1-3-0-2` and `1,1,2,3,3,4,5,5` as
+`0-2-1-2-1-2-0`. The *sum* of the components gives you the total number of
+higher dimensions (ie, 10D vectors sum to 8)
 
 And now, a "valid transition" becomes easy to enforce: it's an amount "flowing"
 from one of those bins to another. For example, turning a `1` into a `2` in
 `1-3-0-1-0-2-1` turns it into `1-2-1-1-0-2-1`. We took one of the three 1s and
 turned them into a single 2. This "flowing" operation automatically gives us a
-valid coordinate without any renormalizing necessary! This gives us an algorithm
-to compute neighbors: we can walk bin-to-bin, "flowing" components from our
-origin vector to our new vector.
+valid coordinate without any renormalizing necessary!
 
-We now have a way to compute neighbors without requiring renormalization! We no
-longer have to try all
+In this light, we now have an algorithm to compute neighbors without requiring
+renormalization: we can walk bin-to-bin, "flowing" components from our origin
+vector to our new vector. We no longer have to try all
 ![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1") (exponential)
 candidates and re-normalize: we can now only iterate through the ones we care
 about.
