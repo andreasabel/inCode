@@ -542,12 +542,10 @@ also `<z,w>=<0,0>`, which is in its own class.
 So, our first breakthrough meant that we only have to simulate *positive*
 coordinates (a single quadrant)...our next breakthrough means that we only have
 to simulate coordinates on a single "wedge" half-quadrant...and then duplicate
-those eight times at the end.
-
-Arbitrarily, let's say we only simulate the north-by-northeast wedge, because
-it's easy to normalize/compact all points onto that wedge: you just need to
-absolute-value all the components and sort them. So, `<4,-3>` gets "normalized"
-to `<3,4>`.
+those eight times at the end. (Arbitrarily, let's say we only simulate the
+north-by-northeast wedge, because it's easy to normalize/compact all points onto
+that wedge --- you just need to absolute-value all the components and sort them,
+and a point like `<4,-3>` gets "normalized" to `<3,4>`))
 
 We found a new symmetry now, but we run into the same issue as before: How do we
 propagate neighbors? To help us see what's going on, let's look at the map of
