@@ -497,7 +497,7 @@ Most initial conditions will spread out from the center `<z,w> = <0,0>` slice
 radially, spreading outwards into positive and negative z and w. Mouse-over or
 tap any individual tiny `<x.y>` cell and you'll see each of its 80
 (![3\^4-1](https://latex.codecogs.com/png.latex?3%5E4-1 "3^4-1")) `<x,y,z,w>` 4D
-neighbors highlighted in blue, forming a little 3x3x3 "tesseract" (4D cube, or
+neighbors highlighted in blue, forming a little 3x3x3x3 "tesseract" (4D cube, or
 hypercube). Like in the 3D case, you can use this little hypercube to track how
 the simulation progresses: if your mouse if hovering over a live cell with 2 or
 3 live cells in its hypercube, it'll stay alive in the next step, if it's
