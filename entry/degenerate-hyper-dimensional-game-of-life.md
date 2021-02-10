@@ -514,7 +514,7 @@ above when you mouse over a zw square. (Ignore the lighter yellow highlights for
 now!)
 
 And now, for the next big breakthrough: this exact visualization was what reddit
-user *u/cetttbycett* was looking at when [they made this
+user u/cetttbycett was looking at when [they made this
 post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_part_2_using_symmetry_in_4d_space/)
 late Thursday the 17th/early Friday the 18th...and everything changed forever.
 
@@ -527,7 +527,7 @@ late Thursday the 17th/early Friday the 18th...and everything changed forever.
 >
 > --- u/cetttbycettt
 
-What *u/cetttbycettt* saw is what you can see now in the simulation above: it's
+What u/cetttbycettt saw is what you can see now in the simulation above: it's
 all of the *light yellow* highlighted squares when you mouse-over (highlighting
 even *more* identical slices to the one you are hovering over). In addition to
 the z=0 and w=0 lines (the two lines down the middle, up-down and left-right),
@@ -1110,19 +1110,19 @@ out" and take higher-dimensional slices of our 4D visualization and repeat this
 ad nauseum, but that doesn't really add anything or give any insight as to
 what's really going on.
 
-I believe that this is what caused us to all collectively get "stuck" together
-around 20 dimensions. The rush of the revelations one after within a single week
-pushed us into trying many different things. I had a couple of dead-end forays
-into pre-cacheing and had a lot of code (that I was ecstatic to be able to later
-delete) working with an sqlite3 database.[^4]
+I believe that this is one of the things that caused us to all collectively get
+"stuck" together around 20 dimensions. The rush of the revelations one after
+within a single week pushed us into trying many different things. I had a couple
+of dead-end forays into pre-cacheing and had a lot of code (that I was ecstatic
+to be able to later delete) working with an sqlite3 database.[^4]
 
 Another factor that probably contributed to the overall lull was that Advent of
-Code was still running, and we all still enjoyed doing new puzzles every day.
-But soon, Christmas passed, the daily rush of doing new puzzles faded, and we
-started to return back to tinkering on this hyper-dimensional game of life. It
-wouldn't be until January 1st (just over two weeks after the puzzle originally
-came out) that a new revelation arose that would pave the way shoot far past
-20D.
+Code was still running, and we all still enjoyed doing the new puzzles every
+day. But soon, Christmas passed, the daily rush of doing new puzzles faded, and
+we started to return back to tinkering on this hyper-dimensional game of life
+puzzle. It wouldn't be until January 1st (just over two weeks after the puzzle
+originally came out) that a new revelation arose that would pave the way shoot
+far past 20D.
 
 It was [Michal Marsalek's coset counts
 post](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ghre3ce/)
@@ -1138,17 +1138,17 @@ exactly for 7D and higher.
 My best guess as to why this was happening is that, at 7D and above, we enter a
 domain of points where, before t=6, *every* point is at some sort of reflective
 boundary. Remember that even for 4D, we had really odd behavior at the
-reflective boundaries/edge of the wedge. There wasn't enough room in many points
-to "stretch their wings" --- every single one is at one reflective boundary or
-another. Being a boundary point corresponds to having a "bins" encoding with any
-bin greater than one or anything in the 0 bin (ie, `1-0-0-0` and `0-2-0` are all
-points on a reflective boundary).
+reflective boundaries/edge of the wedge. There wasn't enough room for many
+points to "stretch their wings" --- every single one is at one reflective
+boundary or another. Being a boundary point corresponds to having a "bins"
+encoding with any bin greater than one or anything in the 0 bin (ie, `1-0-0-0`
+and `0-2-0` are all points on a reflective boundary).
 
 Unfortunately, having a closed-form way to compute coset counts doesn't actually
 give us a way to compute the final state itself, since it doesn't tell us
 *which* cosets are active, just how many. However, this prompted me to
-investigate a little bit more about what was causing this pattern, and how these
-cosets were distributed. To do this, tried a new way to visualize things.
+investigate a little bit more about what was causing this pattern and how these
+cosets were distributed. To do this, I tried a new way to visualize things.
 
 In our simulation, x and y components are fundamentally different from the
 others; we could actually talk about each point as a tuple
@@ -1156,12 +1156,13 @@ others; we could actually talk about each point as a tuple
 significant fraction of the xy space has at least one point), but "sparse" in
 higher dimensions (a very small fraction of the higher-dimensional space
 actually has a point in it). So actually, instead of keeping our active points
-as a set of cosets, we can treat it as a map of `<x,y>` points to the higher-dim
-cosets that live "under them". Instead of keeping one giant set as:
+as a set of cosets, we can treat it as a map of `<x,y>` points to the
+higher-dimension slice cosets that live "under them". Instead of keeping one
+giant set as:
 
     {<1,2,1,1,3>, <3,1,1,1,4>, <1,2,0,0,5>, <4,2,3,4,4>, <3,1,2,2,2>}
 
-we could instead a map of sets:
+we could instead keep a map of sets:
 
     <1,2>: { <1,1,3>, <0,0,5> }
     <3,1>: { <1,1,4>, <2,2,2> }
@@ -1193,9 +1194,8 @@ def step_with_stacks(stacks):
                 neighbs[pt_2d] += rev_neighbs
             else:
                 neighbs[pt_2d] = rev_neighbs
-            # 2. add to nieghboring stacks
+            # 2. add to nieghboring stacks; include self
             for ngb_2 in mk_neighbs(pt_2d)[1:]:
-                # add to neighboring stacks; include self
                 if ngb_2 in neighbs:
                     neighbs[ngb_2] += rev_neighbs_incl_self
                 else:
@@ -1234,24 +1234,24 @@ and
 [bulls-eye](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▀▀▜.▌▛▜▐.▌▙▟▐.▙▄▄▟){.loadpoints};
 the alternating symmetries of [broken bar
 code](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.▄▗▖▄.▀▝▘▀.████){.loadpoints}
-look nice too! But honestly, at higher-dimensions, most patterns have appealing
-gradients, like
+look nice too! But honestly, at higher-dimensions, almost any input ends up
+generating appealing gradients, like
 [glider](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=____._▝▖_._▀▘_.____){.loadpoints}
 and [my own
 input](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▜▙▐.▜▚▗_.█▟▄▘.▟▌▟█){.loadpoints})
 
-Play around with it! :D You can move all the way up to 10D; some computers might
-struggle, but on my lower-end cell phone it seems to run in less than a second.
-If you mouse-over a cell, the text box will show all of the slice cosets where
-that xy cell is alive in (the "coset stack"). If you click on a cell, your
-selection will "lock" on that `<x,y>` coordinate as you change dimensions and
-time.
+Play around with it, it's the big finale! :D You can move all the way up to 10D;
+some computers might struggle, but on my lower-end cell phone it seems to run in
+less than a second. If you mouse-over a cell, the text box will show all of the
+slice cosets where that xy cell is alive in (the "coset stack"). If you click on
+a cell, your selection will "lock" on that `<x,y>` coordinate as you change
+dimensions and time.
 
 Some interesting things you might notice:
 
-1.  At t=6, it looks like 7D, 8D, 9D, 10D all have the *same* exact 2D cells
-    "on". They're identical except for slightly different stacks above each of
-    those cells.
+1.  At t=6, it looks like 8D, 9D, 10D (and sometimes 6D,7D) all have the *same*
+    exact 2D cells "on". They're identical except for slightly different stacks
+    above each of those cells.
 
     To see this clearly, set your time to t=6 and drag your dimension slider
     back and forth to see all of the higher-dimensions look identical in shape.
@@ -1306,11 +1306,11 @@ maybe even more curious --- a *lot* of those stacks are duplicated over many xy
 cells.
 
 In my [personal puzzle
-input](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▜▙▐.▜▚▗_.█▟▄▘.▟▌▟█){.loadpoints},
-*most* of the stacks were duplicated many times across different xy cells. If
-you highlight any arbitrary starting condition through t=6, you'll see too that
-many (if not most) xy cells have multiple other xy cells that have identical
-stacks to them.
+input](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▜▙▐.▜▚▗_.█▟▄▘.▟▌▟█){.loadpoints}
+(click to load into the simulation), *most* of the stacks were duplicated many
+times across different xy cells. If you highlight the cells in any arbitrary
+starting condition through t=6, you'll see too that many (if not most) xy cells
+have multiple other xy cells that have identical stacks to them.
 
 This final insight yields the final optimization we have discovered, as of time
 of writing. The optimization is that we can treat an *entire stack* as an
@@ -1320,11 +1320,9 @@ that excludes the original stack itself). That means if you have a stack, you
 can compute the "single neighbor" contribution (expensive) it has *one time*,
 and then *repeat that same contribution* to every occurrence of a stack. So if a
 stack is repeated ten times over ten different xy stacks, you only need to
-compute it once and propagate it to all
-![9 \\times 10](https://latex.codecogs.com/png.latex?9%20%5Ctimes%2010 "9 \times 10")
-neighbors of those stacks (nine neighbors, including self, times each of the 10
-repetitions), for a savings of x90! This can be done by storing map of stacks to
-contributions as a cache.
+compute it once and propagate it to all 9x10 neighbors of those stacks (nine
+neighbors, including self, times each of the 10 repetitions), for a savings of
+x90! This can be done by storing map of stacks to contributions as a cache.
 
 ``` {.python}
 def step_with_stack_cache(stacks):
@@ -1351,9 +1349,8 @@ def step_with_stack_cache(stacks):
             neighbs[pt_2d] += rev_neighbs
         else:
             neighbs[pt_2d] = rev_neighbs
-        # 2. add to nieghboring stacks
+        # 2. add to nieghboring stacks; include self
         for ngb_2 in mk_neighbs(pt_2d)[1:]:
-            # add to neighboring stacks; include self
             if ngb_2 in neighbs:
                 neighbs[ngb_2] += rev_neighbs_incl_self
             else:
@@ -1403,17 +1400,18 @@ Another thing I hope was apparent was the power of community! I know I
 definitely would not have had as much fun doing this if it wasn't for the
 vibrant Advent of Code "Ante-Pushing" community. What I've described is just
 *one story* (Day 17, 2020) out of so many that Advent of Code community members
-routinely explore together (through 25 puzzles a year over five years). Most of
-these discoveries were fun because we always had somebody to share them with, or
-a way to encourage each other and strive for a common goal. I'm definitely lucky
-to be standing on giants as a part of a talented and passionately curious
+routinely explore together (through 25 puzzles each year for five years). Most
+of these discoveries were fun because we always had somebody to share them with,
+or a way to encourage each other and strive for a common goal. I'm definitely
+lucky to be standing on giants as a part of a talented and passionately curious
 community that's excited to explore things like this. Thank you to so many
-people --- Michal Marsalek, Peter Tseng, sim64, leftylink , Cettbycett, bsterc,
-flwyd, and so many others that I probably missed. An especially deep thanks to
-[Eric Wastl](https://twitter.com/ericwastl) for hosting a wonderful event like
-Advent of Code every year. Finally, a profoundly deep thanks to the late John
-Conway, who revealed to us how much joy can come from the exploration of all
-things mathematical, a genius who was taken away from this world much too soon.
+people --- Michal Marsalek, Peter Tseng, sim64, leftylink , /u/cetttbycettt,
+/u/bsterc, /u/flwyd, and so many others that I probably missed. An especially
+deep thanks to [Eric Wastl](https://twitter.com/ericwastl) for hosting a
+wonderful event like Advent of Code every year. Finally, a profoundly deep
+thanks to the late John Conway, who revealed to us how much joy can come from
+the exploration of all things mathematical, a genius who was taken away from
+this world much too soon.
 
 And of course, in making this post, I'm inviting you, the reader, to join us
 along in this journey as well! It's hardly over :) Now that you're up to speed
@@ -1431,7 +1429,7 @@ and stepping t?
 
 Who can tell how far we can go?
 [Michal](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/gia880d/)
-has as a personal goal something I would also be very happy to reach:
+has a personal goal that I would also be very happy to reach:
 
 > I won't be satisfied until I implement a solution that runs in polynomial time
 > in both t and d.
@@ -1475,8 +1473,8 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     even now, it does mean that there's a qualitative difference between 9D and
     below and 10D and above: anything above 9D is...especially degenerate.
 
-[^4]: One lasting thing I did find (that I won't spend too much time on here) is
-    a way to [index into an
+[^4]: One useful lasting thing I did find (that I won't spend too much time on
+    here) was a way to [index into an
     enumeration](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/gim68l0/)
     of all of the slice cosets (that is, all the normalized higher-dimensional
     coordinates). I no longer store `<z,w,...>` points as vectors, but rather as
