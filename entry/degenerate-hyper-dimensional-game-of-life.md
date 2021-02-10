@@ -1,5 +1,5 @@
-Degenerate Hyper-Dimensional Game of Life
-=========================================
+Breaking a Degenerate Hyper-Dimensional Game of Life
+====================================================
 
 > Originally posted by [Justin Le](https://blog.jle.im/).
 > [Read online!](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html)
