@@ -734,7 +734,7 @@ post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_par
 > goes to infinity).
 >
 > ...we can use symmetries coming from permutations, to only track cells where
-> $6,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t$. There's
+> $0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t$. There's
 > $20^2 \times \sum_{k=0}^{t} { {d-3+k} \choose {k} }$ such cells.
 >
 > --- Michal Marsalek
@@ -1218,6 +1218,11 @@ Some interesting things you might notice:
 
     To see this clearly, set your time to t=6 and drag your dimension slider
     back and forth to see all of the higher-dimensions look identical in shape.
+
+    This probably has something to do with the saturation theory I mentioned
+    earlier, and is also why [spiral
+    galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█.▜███.███▙.█▛██){.loadpoints}
+    *suddenly* turns from rich and beautiful at 6D to blocky and ugly at 7D.
 
 2.  At t=2, t=4, past 5D or so, the state is exactly the same for all dimensions
     for any initial condition I have tried! We could easily find t=4 for 100D or
