@@ -196,7 +196,7 @@ of our points will be "off", there's another approach:
         number of live neighbors it has.
 
     b.  For each step, iterate over each of your "on" points, expand all of
-        their neighbors $n_i$ ($(O(3^d))$), and increment the value associated
+        their neighbors $n_i$ ($O(3^d)$), and increment the value associated
         with $n_i$ in your dynamic map.
 
         For example, if the point `<2,3>` is in your set of live points, you
