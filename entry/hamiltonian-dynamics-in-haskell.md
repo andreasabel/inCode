@@ -398,7 +398,7 @@ $\hat{K}^{-1}$. We can simplify that even more by realizing that for any
 invertible matrix $A$,
 $\frac{\partial}{\partial q} A^{-1} = - A^{-1} \left[ \frac{\partial}{\partial q} A \right] A^{-1}$,
 so now we just need to find the partial derivatives of $\hat{K}$, or
-$\hat{J}_f^T \hat{M} \hat{J}_f}$. $\hat{M}$ is a constant term, so, using the
+$\hat{J}_f^T \hat{M} \hat{J}_f$. $\hat{M}$ is a constant term, so, using the
 good ol' product rule over $\hat{J}_f^T$ and $\hat{J}_f$, we see that, after
 some simplification:
 
