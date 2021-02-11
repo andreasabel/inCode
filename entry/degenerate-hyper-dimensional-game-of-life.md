@@ -1,7 +1,7 @@
 Breaking a Degenerate Hyper-Dimensional Game of Life
 ====================================================
 
-> Originally posted by [Justin Le](https://blog.jle.im/).
+> Originally posted by [Justin Le](https://blog.jle.im/) on February 11, 2021.
 > [Read online!](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html)
 
 tldr: Demonstrated with interactive visualizations and simulations --- over the
@@ -1136,11 +1136,11 @@ point (ie, the `{<1,1,3>, <0,0,5>}`) a "coset stack".
 
 I did this initially to investigate the nature of the cosets that were showing
 up, but once I plotted it and animated things, I realized that in doing this, we
-are reducing the entire hyper-dimensional problem *back to a type of 2D cellular
-automaton*! This whole thing becomes reframed...instead of a mind-bending
-hyper-dimensional deal, it's now simply *multivalued 2D cellular automaton* with
-funky rules! It's like a normal 2D game of life, but with funky rules for 2D
-points spreading to each other.
+are reducing the entire hyper-dimensional problem *back to a variant of 2D
+cellular automaton*! This whole thing becomes reframed...instead of a
+mind-bending hyper-dimensional deal, it's now simply *multivalued 2D cellular
+automaton* with funky rules! It's like a normal 2D game of life, but with funky
+rules for 2D points spreading to each other.
 
 ``` {.python}
 def step_with_stacks(stacks):
@@ -1403,6 +1403,14 @@ has a personal goal that I would also be very happy to reach:
 > --- Michal Marsalek
 
 Will you, dear reader, be the one to take us there? :)
+
+Special Thanks
+--------------
+
+I am very humbled to be supported by an amazing community, who make it possible
+for me to devote time to researching and writing these posts. Very special
+thanks to my supporter at the "Amazing" level on
+[patreon](https://www.patreon.com/justinle/overview), Josh Vera! :)
 
 --------------------------------------------------------------------------------
 
