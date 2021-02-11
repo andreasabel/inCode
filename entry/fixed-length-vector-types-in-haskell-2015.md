@@ -585,13 +585,11 @@ of type `v a` ever has an index at `n`, a `Nat`. (By the way, we need
 *MultiParamTypeClasses* to be able to make a type class with two parameters)
 
 So, `n ~ S Z` and `v ~ Vec (S (S Z)) a` has an instance, because you can get the
-![n = 1](https://latex.codecogs.com/png.latex?n%20%3D%201 "n = 1") element (the
-second element) from *any* value of type `Vec (S (S Z)) a` (a length-two
-vector).
+$n = 1$ element (the second element) from *any* value of type `Vec (S (S Z)) a`
+(a length-two vector).
 
 But `n ~ S Z` and `v ~ Vec (S Z) a` does *not*. There are actually *no* length-1
-vectors that have a ![1](https://latex.codecogs.com/png.latex?1 "1") index
-(second element).
+vectors that have a $1$ index (second element).
 
 Note that we use the `Proxy` trick we discussed, so that we can indicate somehow
 what index we really want. It is a trick that basically allows us to pass a
@@ -803,10 +801,8 @@ ghci> headV (Nil :: Vec 0 ())
 
 Neat! The error, remember, is at *compile time*, and not at runtime. If we ever
 tried to do an unsafe head, our code wouldn't even *compile*! The error message
-comes from the fact that we need
-![n \> 0](https://latex.codecogs.com/png.latex?n%20%3E%200 "n > 0"), but we have
-![n = 0](https://latex.codecogs.com/png.latex?n%20%3D%200 "n = 0") instead. We
-have `EQ`, but we need `GT`.
+comes from the fact that we need $n > 0$, but we have $n = 0$ instead. We have
+`EQ`, but we need `GT`.
 
 There is one problem here, though --- GHC gives us a warning for not pattern
 matching on `Nil`. But, if we do try to pattern match on `Nil`, we get a type
@@ -851,10 +847,8 @@ instance (Unfoldable (Vec (n - 1)), n > 0) => Unfoldable (Vec n) where
 ```
 
 The translation is pretty mechanical, but I think that this new formulation
-looks...really nice, and really powerful. \"If you can build a list from
-![n - 1](https://latex.codecogs.com/png.latex?n%20-%201 "n - 1") and
-![n \> 0](https://latex.codecogs.com/png.latex?n%20%3E%200 "n > 0"), then you
-can build a list for ![n](https://latex.codecogs.com/png.latex?n "n")!
+looks...really nice, and really powerful. \"If you can build a list from $n - 1$
+and $n > 0$, then you can build a list for $n$!
 
 Note that because our definitions of `replicateU`, `iterateU`, and
 `fromListMaybes` was polymorphic over all `Unfoldable`, we can actually re-use
@@ -944,10 +938,10 @@ ghci> [1,3..] :: Vec 5 Int
 ```
 
 I think, overall, this formulation gives a much nicer interface. Being able to
-just write ![10](https://latex.codecogs.com/png.latex?10 "10") is pretty
-powerful. The usage with *OverloadedLists* is pretty clean, too, especially when
-you can do things like `[1,3..] :: Vec 10 Int` and take full advantage of list
-syntax and succinct vector types. (Minding your runtime errors, of course)
+just write $10$ is pretty powerful. The usage with *OverloadedLists* is pretty
+clean, too, especially when you can do things like `[1,3..] :: Vec 10 Int` and
+take full advantage of list syntax and succinct vector types. (Minding your
+runtime errors, of course)
 
 However, you do again get the problem that GHC is not able to do real
 completeness checking and asks for the `Nil` cases still of everything...but
@@ -960,10 +954,8 @@ Alternative Underlying Representations
 
 Recall that our `Vec` was basically identically the normal list type, with an
 extra field in the type. Due to type erasure, the two are represented exactly
-the same in memory. So we have
-![O(n)](https://latex.codecogs.com/png.latex?O%28n%29 "O(n)") appends,
-![O(n)](https://latex.codecogs.com/png.latex?O%28n%29 "O(n)") indexing, etc. Our
-type is essentially equal to
+the same in memory. So we have $O(n)$ appends, $O(n)$ indexing, etc. Our type is
+essentially equal to
 
 ``` {.haskell}
 newtype Vec :: Nat -> * -> * where
@@ -983,8 +975,7 @@ newtype Vec :: Nat -> * -> * where
 ```
 
 And, if you made sure to wrap everything with smart constructors, you now have
-*type safe* ![O(1)](https://latex.codecogs.com/png.latex?O%281%29 "O(1)") random
-indexing!
+*type safe* $O(1)$ random indexing!
 
 (This is representation is similar to the one used by the
 *[linear](http://hackage.haskell.org/package/linear-1.18.0.1/docs/Linear-V.html)*

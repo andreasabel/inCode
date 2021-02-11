@@ -37,12 +37,11 @@ ghci> do x <- "abc"
 "abc","acb","bac","bca","cab","cba"]
 ```
 
-This is a little bit awkward...and it definitely gets a lot worse
-(![O(n\^2)](https://latex.codecogs.com/png.latex?O%28n%5E2%29 "O(n^2)")) when
-you have more items. Also, it relies on an `Eq` constraint --- what if our thing
-doesn't have an `Eq` instance? And this also falls apart when our list contains
-duplicate items. If we had used `"aabc"` instead of `"abc"`, the result would be
-the same --- despite having more `'a'`s to pick from!
+This is a little bit awkward...and it definitely gets a lot worse ($O(n^2)$)
+when you have more items. Also, it relies on an `Eq` constraint --- what if our
+thing doesn't have an `Eq` instance? And this also falls apart when our list
+contains duplicate items. If we had used `"aabc"` instead of `"abc"`, the result
+would be the same --- despite having more `'a'`s to pick from!
 
 **Important note:** After writing this article, I found out that Douglas Auclair
 in [11th issue of the Monad

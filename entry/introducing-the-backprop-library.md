@@ -77,11 +77,9 @@ makeLenses ''Net
 
 We're using the matrix types from
 [`Numeric.LinearAlgebra.Static`](https://hackage.haskell.org/package/hmatrix/docs/Numeric-LinearAlgebra-Static.html).
-An `L 250 784` is a
-![250 \\times 784](https://latex.codecogs.com/png.latex?250%20%5Ctimes%20784 "250 \times 784")
-matrix -- or, as we are using it, a linear transformation
-![\\mathbb{R}\^{784} \\rightarrow \\mathbb{R}\^{250}](https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5E%7B784%7D%20%5Crightarrow%20%5Cmathbb%7BR%7D%5E%7B250%7D "\mathbb{R}^{784} \rightarrow \mathbb{R}^{250}").
-An `R 250` is a 250-vector, etc.
+An `L 250 784` is a $250 \times 784$ matrix -- or, as we are using it, a linear
+transformation $\mathbb{R}^{784} \rightarrow \mathbb{R}^{250}$. An `R 250` is a
+250-vector, etc.
 
 Via the *lens* library, four lenses are generated:
 

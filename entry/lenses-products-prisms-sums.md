@@ -29,16 +29,11 @@ An Algebraic Recap
 In Haskell, "products and sums" can roughly be said to correspond to "tuples and
 `Either`". If I have two types `A` and `B`, `(A, B)` is their "product" type.
 It's often called an "anonymous product", because we can make one without having
-to give it a fancy name. It's called a product type because if `A` has
-![n](https://latex.codecogs.com/png.latex?n "n") possible values and `B` has
-![m](https://latex.codecogs.com/png.latex?m "m") possible values, then `(A, B)`
-has
-![n \\times m](https://latex.codecogs.com/png.latex?n%20%5Ctimes%20m "n \times m")
+to give it a fancy name. It's called a product type because if `A` has $n$
+possible values and `B` has $m$ possible values, then `(A, B)` has $n \times m$
 possible values[^1]. And, `Either A B` is their (anonymous) "sum" type. It's
-called a sum type because `Either A B` has
-![n + m](https://latex.codecogs.com/png.latex?n%20%2B%20m "n + m") possible
-values. I won't go much deeper into this, but there are [many useful summaries
-already
+called a sum type because `Either A B` has $n + m$ possible values. I won't go
+much deeper into this, but there are [many useful summaries already
 online](https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types)
 on this topic!
 
@@ -106,9 +101,7 @@ This is witnessed by functions `split :: NonEmpty a -> (a, [a])` and
 
 Another curious product is the fact that every type `a` is a product between
 *itself* and unit, `()`. Every type `a` is isomorphic to `(a, ())` (which
-follows from the algebraic property
-![x \* 1 = x](https://latex.codecogs.com/png.latex?x%20%2A%201%20%3D%20x "x * 1 = x")).
-Freaky, right?
+follows from the algebraic property $x * 1 = x$). Freaky, right?
 
 ``` {.haskell}
 -- a <~> (a, ())
@@ -525,8 +518,7 @@ absurd = \case -- empty case statement because we have
 
 then we have an interesting sum: every type `a` is a sum between *itself* and
 `Void`. In other words, `a` is isomorphic to `Either a Void` (which follows from
-the algebraic property
-![x + 0 = x](https://latex.codecogs.com/png.latex?x%20%2B%200%20%3D%20x "x + 0 = x")):
+the algebraic property $x + 0 = x$):
 
 ``` {.haskell}
 -- a <~> Either a Void
@@ -544,21 +536,14 @@ Again, if you don't believe me, verify that `inject . match = id` and
 
 One final example: earlier, we said that every type can be decomposed as a
 *product* involving `()`. Algebraically, finding that mystery type is easy ---
-we solve
-![x = 1 \* y](https://latex.codecogs.com/png.latex?x%20%3D%201%20%2A%20y "x = 1 * y")
-for ![y](https://latex.codecogs.com/png.latex?y "y") (since `()` is 1), and we
-see ![y = x](https://latex.codecogs.com/png.latex?y%20%3D%20x "y = x"). This
-tells us that every type is a product between `()` and itself (`a <~> ((), a)`).
+we solve $x = 1 * y$ for $y$ (since `()` is 1), and we see $y = x$. This tells
+us that every type is a product between `()` and itself (`a <~> ((), a)`).
 
 However, can every type be decomposed as a *sum* involving `()`?
 
-Algebraically, we need to find this mystery type by solving
-![x = 1 + y](https://latex.codecogs.com/png.latex?x%20%3D%201%20%2B%20y "x = 1 + y")
-for ![y](https://latex.codecogs.com/png.latex?y "y"), and the result is
-![y = x - 1](https://latex.codecogs.com/png.latex?y%20%3D%20x%20-%201 "y = x - 1").
-We can interpret
-![x - 1](https://latex.codecogs.com/png.latex?x%20-%201 "x - 1") as "`a`, minus
-one potential element".
+Algebraically, we need to find this mystery type by solving $x = 1 + y$ for $y$,
+and the result is $y = x - 1$. We can interpret $x - 1$ as "`a`, minus one
+potential element".
 
 This type isn't expressible in general in Haskell, so *no*, not *every* type can
 be decomposed as a sum involving `()`. The necessary and sufficient condition is
@@ -569,8 +554,7 @@ Oh, hey! Remember our `[a] <~> Either () (NonEmpty a)` decomposition? That's
 exactly this! Here, `NonEmpty a` is our mystery type: it's exactly a list `[a]`
 minus one potential element (the empty list).
 
-There's another way to go about this: we can talk about
-![x - 1](https://latex.codecogs.com/png.latex?x%20-%201 "x - 1") by specifying
+There's another way to go about this: we can talk about $x - 1$ by specifying
 one single "forbidden element". This isn't explicitly possible in Haskell, but
 we can simulate this by using an abstract type. We have this ability using
 "refinement types". For example, using the

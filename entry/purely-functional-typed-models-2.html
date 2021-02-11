@@ -10,7 +10,7 @@ m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 ga('create', 'UA-443711-8', 'jle.im');
 ga('send', 'pageview');
-</script><script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5234d67a6b68dcd4"></script><script type="text/javascript" src="https://blog.jle.im/js/page/entry_toc.js"></script><script type="text/javascript" src="https://blog.jle.im/js/disqus_count.js"></script><script type="text/javascript" src="https://blog.jle.im/js/social.js"></script><script type="text/javascript" src="https://blog.jle.im/js/jquery/jquery.toc.js"></script><script type="text/javascript" src="https://blog.jle.im/purescript/entry.js"></script></head><body><div id="fb-root"><script>(function(d, s, id) {
+</script><script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script type="text/javascript" src="//cdn.jsdelivr.net/npm/mathjax@3.1.2"></script><script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5234d67a6b68dcd4"></script><script type="text/javascript" src="https://blog.jle.im/js/page/entry_toc.js"></script><script type="text/javascript" src="https://blog.jle.im/js/disqus_count.js"></script><script type="text/javascript" src="https://blog.jle.im/js/social.js"></script><script type="text/javascript" src="https://blog.jle.im/js/jquery/jquery.toc.js"></script><script type="text/javascript" src="https://blog.jle.im/purescript/entry.js"></script></head><body><div id="fb-root"><script>(function(d, s, id) {
  var js, fjs = d.getElementsByTagName(s)[0];
  if (d.getElementById(id)) return;
  js = d.createElement(s); js.id = id;
@@ -20,90 +20,60 @@ ga('send', 'pageview');
 </script></div><div id="header-container"><div id="navbar-container" class="tile"><nav id="navbar-content"><div class="nav-info"><h1 class="site-title"><a href="https://blog.jle.im/" class="nav-title">in Code</a></h1><span class="nav-author">Justin Le</span></div><ul class="nav-links"><li><a href="https://blog.jle.im/">home</a></li><li><a href="https://blog.jle.im/entries.html">archives</a></li><li><a href="https://cv.jle.im">cv</a></li><div class="clear"></div></ul></nav></div><div id="header-content"></div></div><div id="body-container" class="container"><div id="main-container" class="grid"><div class="entry-section unit span-grid" role="main"><article class="tile article"><header><h1 id="title">A Purely Functional Typed Approach to Trainable Models (Part 2)</h1><p class="entry-info">by <a class="author" href="https://blog.jle.im/">Justin Le</a><span class="info-separator"> &diams; </span><time datetime="2018-05-14T12:16:18Z" pubdate="" class="pubdate">Monday May 14, 2018</time></p><p><span class="source-info"><a class="source-link" href="https://github.com/mstksg/inCode/tree/master/copy/entries/functional-models-2.md">Source</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://github.com/mstksg/inCode/tree/gh-pages/entry/purely-functional-typed-models-2.md">Markdown</a><span class="info-separator"> &diams; </span><a class="source-link" href="https://blog.jle.im/entry/purely-functional-typed-models-2.tex">LaTeX</a><span class="info-separator"> &diams; </span></span>Posted in <a href="https://blog.jle.im/entries/category/@haskell.html" class="tag-a-category" title="Functional, pure, non-strict, statically and strongly typed, natively
 compiled...really just the king of great languages.">Haskell</a><span class="info-separator"> &diams; </span><a class="comment-link" href="#disqus_thread">Comments</a></p></header><hr><aside class="contents-container"><h5 id="contents-header">Contents</h5><div id="toc"></div></aside><div class="main-content copy-content"><p>Welcome back! We’re going to be jumping right back into describing a vision of a purely functional typed approach to writing trainable models using differentiable programming. If you’re just joining us, be sure to check out <a href="https://blog.jle.im/entry/purely-functional-typed-models-1.html">Part 1</a> first!</p>
 <p>In the last post, we looked at models as “question and answer” systems. We described them as essentially being functions of type</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af%20%3A%20P%20%5Crightarrow%20%28A%20%5Crightarrow%20B%29%0A" alt="
+<p><span class="math display">\[
 f : P \rightarrow (A \rightarrow B)
-" title="
-f : P \rightarrow (A \rightarrow B)
-" /><br /></p>
-<p>Where, for <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_p%28x%29%20%3D%20y" alt="f_p(x) = y" title="f_p(x) = y" />, you have a “question” <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x%20%3A%20A" alt="x : A" title="x : A" /> and are looking for an “answer” <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y%20%3A%20B" alt="y : B" title="y : B" />. Picking a <em>different</em> <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p%20%3A%20P" alt="p : P" title="p : P" /> will give a <em>different</em> <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?A%20%5Crightarrow%20B" alt="A \rightarrow B" title="A \rightarrow B" /> function. We claimed that training a model was finding just the right <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> to use with the model to yield the right <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?A%20%5Crightarrow%20B" alt="A \rightarrow B" title="A \rightarrow B" /> function that models your situation.</p>
+\]</span></p>
+<p>Where, for <span class="math inline">\(f_p(x) = y\)</span>, you have a “question” <span class="math inline">\(x : A\)</span> and are looking for an “answer” <span class="math inline">\(y : B\)</span>. Picking a <em>different</em> <span class="math inline">\(p : P\)</span> will give a <em>different</em> <span class="math inline">\(A \rightarrow B\)</span> function. We claimed that training a model was finding just the right <span class="math inline">\(p\)</span> to use with the model to yield the right <span class="math inline">\(A \rightarrow B\)</span> function that models your situation.</p>
 <p>We then noted that if you have a set of <code>(a, b)</code> observations, and your function is differentiable, you can find the <em>gradient</em> of <code>p</code> with respect to the error of your model on each observation, which tells you how to nudge a given <code>p</code> in order to reduce how wrong your model is for that observation. By repeatedly making observations and taking those nudges, you can arrive at a suitable <code>p</code> to model any situation.</p>
 <p>This is great if we consider a model as “question and answer”, but sometimes things don’t fit so cleanly. Today, we’re going to be looking at a whole different type of model (“time series” models) and see how they are different, but also how they are really the same.</p>
 <p>For following along, the source code for the written code in this module is all available <a href="https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs">on github</a>.</p>
 <h2 id="time-series-models">Time Series Models</h2>
 <p>In the wild, many models are not simple “question and answer”, but rather represent a “time series”. As a generalization, we can talk about time series models as:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af_p%28x%2Ct%29%20%3D%20y%0A" alt="
+<p><span class="math display">\[
 f_p(x,t) = y
-" title="
-f_p(x,t) = y
-" /><br /></p>
+\]</span></p>
 <p>Which says, given an input and a time, return an output based on both. The point of this is to let us have recurrent relationships, like for <a href="https://en.wikipedia.org/wiki/Autoregressive_model">autoregressive models</a> found in statistics:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%5Ctext%7BAR%7D_%7B%5Cphi_1%2C%20%5Cphi_2%2C%20%5Cldots%7D%28x%2Ct%29%0A%20%20%3D%20%5Cepsilon_t%20%2B%20%5Cphi_1%20%5Ctext%7BAR%7D_%7B%5Cphi_1%2C%20%5Cphi_2%2C%20%5Cldots%7D%28x%2C%20t-1%29%0A%20%20%2B%20%5Cphi_2%20%5Ctext%7BAR%7D_%7B%5Cphi_1%2C%20%5Cphi_2%2C%20%5Cldots%7D%28x%2C%20t-2%29%0A%20%20%2B%20%5Cldots%0A" alt="
+<p><span class="math display">\[
 \text{AR}_{\phi_1, \phi_2, \ldots}(x,t)
   = \epsilon_t + \phi_1 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-1)
   + \phi_2 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-2)
   + \ldots
-" title="
-\text{AR}_{\phi_1, \phi_2, \ldots}(x,t)
-  = \epsilon_t + \phi_1 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-1)
-  + \phi_2 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-2)
-  + \ldots
-" /><br /></p>
-<p>However, this is a bad way of <em>implementing</em> models on time series, because nothing is stopping the result of a model from depending on a future value (the value at time <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?t%20%3D%203" alt="t = 3" title="t = 3" />, for instance, might depend explicitly only the value at time <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?t%20%3D%205" alt="t = 5" title="t = 5" />). Instead, we can imagine time series models as explicitly “stateful” models:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af_p%28x%2C%20s_%7B%5Ctext%7Bold%7D%7D%29%20%3D%20%28y%2C%20s_%7B%5Ctext%7Bnew%7D%7D%29%0A" alt="
+\]</span></p>
+<p>However, this is a bad way of <em>implementing</em> models on time series, because nothing is stopping the result of a model from depending on a future value (the value at time <span class="math inline">\(t = 3\)</span>, for instance, might depend explicitly only the value at time <span class="math inline">\(t = 5\)</span>). Instead, we can imagine time series models as explicitly “stateful” models:</p>
+<p><span class="math display">\[
 f_p(x, s_{\text{old}}) = (y, s_{\text{new}})
-" title="
-f_p(x, s_{\text{old}}) = (y, s_{\text{new}})
-" /><br /></p>
+\]</span></p>
 <p>These have type:<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af%20%3A%20%28P%20%5Ctimes%20A%20%5Ctimes%20S%29%20%5Crightarrow%20%28B%20%5Ctimes%20S%29%0A" alt="
+<p><span class="math display">\[
 f : (P \times A \times S) \rightarrow (B \times S)
-" title="
-f : (P \times A \times S) \rightarrow (B \times S)
-" /><br /></p>
+\]</span></p>
 <p>This makes it clear that the output of our model can only depend on current and <em>previously occurring</em> information, preserving causality.</p>
 <h3 id="examples">Examples</h3>
 <p>We can use this to represent an AR(2) model (<a href="https://en.wikipedia.org/wiki/Autoregressive_model">autoregressive model with degree 2</a>), which is a model whose output forecast is a linear regression on the <em>last two</em> most recent observed values. We can do this by setting the “input” to be the last observed value, and the “state” to be the second-to-last observed value:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0As_t%20%26%20%3D%20x_t%20%5C%5C%0Ay_t%20%26%20%3D%20c%20%2B%20%5Cphi_1%20s_t%20%2B%20%5Cphi_2%20s_%7Bt%20-%201%7D%0A%5Cend%7Baligned%7D%0A" alt="
+<p><span class="math display">\[
 \begin{aligned}
 s_t &amp; = x_t \\
 y_t &amp; = c + \phi_1 s_t + \phi_2 s_{t - 1}
 \end{aligned}
-" title="
-\begin{aligned}
-s_t &amp; = x_t \\
-y_t &amp; = c + \phi_1 s_t + \phi_2 s_{t - 1}
-\end{aligned}
-" /><br /></p>
+\]</span></p>
 <p>Or, in our function form:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af_%7Bc%2C%20%5Cphi_1%2C%20%5Cphi_2%7D%28x%2C%20s%29%20%3D%20%28c%20%2B%20%5Cphi_1%20x%20%2B%20%5Cphi_2%20s%2C%20x%29%0A" alt="
+<p><span class="math display">\[
 f_{c, \phi_1, \phi_2}(x, s) = (c + \phi_1 x + \phi_2 s, x)
-" title="
-f_{c, \phi_1, \phi_2}(x, s) = (c + \phi_1 x + \phi_2 s, x)
-" /><br /></p>
+\]</span></p>
 <p>There’s also the classic <a href="http://karpathy.github.io/2015/05/21/rnn-effectiveness/">fully-connected recurrent neural network layer</a>, whose output is a linear combination of the (logistic’d) previous output and the current input, plus a bias:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0As_t%20%26%20%3D%20%5Csigma%28y_t%29%20%5C%5C%0Ay_t%20%26%20%3D%20W_x%20%5Cmathbf%7Bx%7D_t%20%2B%20W_s%20%5Cmathbf%7Bs%7D_%7Bt-1%7D%20%2B%20%5Cmathbf%7Bb%7D%0A%5Cend%7Baligned%7D%0A" alt="
+<p><span class="math display">\[
 \begin{aligned}
 s_t &amp; = \sigma(y_t) \\
 y_t &amp; = W_x \mathbf{x}_t + W_s \mathbf{s}_{t-1} + \mathbf{b}
 \end{aligned}
-" title="
-\begin{aligned}
-s_t &amp; = \sigma(y_t) \\
-y_t &amp; = W_x \mathbf{x}_t + W_s \mathbf{s}_{t-1} + \mathbf{b}
-\end{aligned}
-" /><br /></p>
+\]</span></p>
 <p>Or, in our function form:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af_%7BW_x%2C%20W_s%2C%20%5Cmathbf%7Bb%7D%7D%28%5Cmathbf%7Bx%7D%2C%20%5Cmathbf%7Bs%7D%29%20%3D%0A%20%20%28%20W_x%20%5Cmathbf%7Bx%7D%20%2B%20W_s%20%5Cmathbf%7Bs%7D%20%2B%20%5Cmathbf%7Bb%7D%0A%20%20%2C%20%5Csigma%28W_x%20%5Cmathbf%7Bx%7D%20%2B%20W_s%20%5Cmathbf%7Bs%7D%20%2B%20%5Cmathbf%7Bb%7D%29%0A%20%20%29%0A" alt="
+<p><span class="math display">\[
 f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
   ( W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b}
   , \sigma(W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b})
   )
-" title="
-f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
-  ( W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b}
-  , \sigma(W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b})
-  )
-" /><br /></p>
+\]</span></p>
 <h3 id="the-connection">The connection</h3>
 <p>This is nice and all, but these stateful models seem to be at odds with our previous picture of models.</p>
 <ol type="1">
@@ -120,7 +90,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <span id="cb1-4"><a href="#cb1-4"></a>                <span class="ot">=&gt;</span> <span class="dt">BVar</span> z p</span>
 <span id="cb1-5"><a href="#cb1-5"></a>                <span class="ot">-&gt;</span> <span class="dt">BVar</span> z a</span>
 <span id="cb1-6"><a href="#cb1-6"></a>                <span class="ot">-&gt;</span> <span class="dt">BVar</span> z b</span></code></pre></div>
-<p>which represented a differentiable <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%20%3A%20%28P%20%5Ctimes%20A%29%20%5Crightarrow%20B" alt="f : (P \times A) \rightarrow B" title="f : (P \times A) \rightarrow B" />. We can directly translate this to a new <code>ModelS</code> type:</p>
+<p>which represented a differentiable <span class="math inline">\(f : (P \times A) \rightarrow B\)</span>. We can directly translate this to a new <code>ModelS</code> type:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L157-L161</span></span>
 <span id="cb2-2"><a href="#cb2-2"></a></span>
 <span id="cb2-3"><a href="#cb2-3"></a><span class="kw">type</span> <span class="dt">ModelS</span> p s a b <span class="ot">=</span> <span class="kw">forall</span> z<span class="op">.</span> <span class="dt">Reifies</span> z <span class="dt">W</span></span>
@@ -128,7 +98,7 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <span id="cb2-5"><a href="#cb2-5"></a>                   <span class="ot">-&gt;</span> <span class="dt">BVar</span> z a</span>
 <span id="cb2-6"><a href="#cb2-6"></a>                   <span class="ot">-&gt;</span> <span class="dt">BVar</span> z s</span>
 <span id="cb2-7"><a href="#cb2-7"></a>                   <span class="ot">-&gt;</span> (<span class="dt">BVar</span> z b, <span class="dt">BVar</span> z s)</span></code></pre></div>
-<p>which represents a differentiable <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%20%3A%20%28P%20%5Ctimes%20A%20%5Ctimes%20S%29%20%5Crightarrow%20%28B%20%5Ctimes%20S%29" alt="f : (P \times A \times S) \rightarrow (B \times S)" title="f : (P \times A \times S) \rightarrow (B \times S)" />.</p>
+<p>which represents a differentiable <span class="math inline">\(f : (P \times A \times S) \rightarrow (B \times S)\)</span>.</p>
 <p>We can implement AR(2) as mentioned before by translating the math formula directly:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L163-L165</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a></span>
@@ -382,11 +352,9 @@ f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
 <span id="cb29-3"><a href="#cb29-3"></a><span class="co">-- approximately</span></span>
 <span id="cb29-4"><a href="#cb29-4"></a><span class="fl">0.0000</span> <span class="op">:&amp;</span> (<span class="fl">1.9372</span> <span class="op">:&amp;</span> <span class="op">-</span><span class="fl">1.0000</span>)</span></code></pre></div>
 <p>Meaning that the gradient descent has concluded that our AR(2) model is:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Ay_t%20%3D%200%20%2B%201.9372%20y_%7Bt%20-%201%7D%20-%20y_%7Bt%20-%202%7D%0A" alt="
+<p><span class="math display">\[
 y_t = 0 + 1.9372 y_{t - 1} - y_{t - 2}
-" title="
-y_t = 0 + 1.9372 y_{t - 1} - y_{t - 2}
-" /><br /></p>
+\]</span></p>
 <p>The power of math!</p>
 <p>In this toy situation, the AR(2) appears to do much better than our RNN model, but we have to give the RNN a break — all of the information has to be “squished” into essentially 30 bits, which might impact the model’s accuracy.</p>
 <h2 id="functions-all-the-way-down">Functions all the way down</h2>

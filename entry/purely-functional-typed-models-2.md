@@ -12,25 +12,14 @@ differentiable programming. If you're just joining us, be sure to check out
 In the last post, we looked at models as "question and answer" systems. We
 described them as essentially being functions of type
 
-![
-f : P \\rightarrow (A \\rightarrow B)
-](https://latex.codecogs.com/png.latex?%0Af%20%3A%20P%20%5Crightarrow%20%28A%20%5Crightarrow%20B%29%0A "
+$$
 f : P \rightarrow (A \rightarrow B)
-")
+$$
 
-Where, for
-![f\_p(x) = y](https://latex.codecogs.com/png.latex?f_p%28x%29%20%3D%20y "f_p(x) = y"),
-you have a "question"
-![x : A](https://latex.codecogs.com/png.latex?x%20%3A%20A "x : A") and are
-looking for an "answer"
-![y : B](https://latex.codecogs.com/png.latex?y%20%3A%20B "y : B"). Picking a
-*different* ![p : P](https://latex.codecogs.com/png.latex?p%20%3A%20P "p : P")
-will give a *different*
-![A \\rightarrow B](https://latex.codecogs.com/png.latex?A%20%5Crightarrow%20B "A \rightarrow B")
-function. We claimed that training a model was finding just the right
-![p](https://latex.codecogs.com/png.latex?p "p") to use with the model to yield
-the right
-![A \\rightarrow B](https://latex.codecogs.com/png.latex?A%20%5Crightarrow%20B "A \rightarrow B")
+Where, for $f_p(x) = y$, you have a "question" $x : A$ and are looking for an
+"answer" $y : B$. Picking a *different* $p : P$ will give a *different*
+$A \rightarrow B$ function. We claimed that training a model was finding just
+the right $p$ to use with the model to yield the right $A \rightarrow B$
 function that models your situation.
 
 We then noted that if you have a set of `(a, b)` observations, and your function
@@ -56,49 +45,36 @@ In the wild, many models are not simple "question and answer", but rather
 represent a "time series". As a generalization, we can talk about time series
 models as:
 
-![
-f\_p(x,t) = y
-](https://latex.codecogs.com/png.latex?%0Af_p%28x%2Ct%29%20%3D%20y%0A "
+$$
 f_p(x,t) = y
-")
+$$
 
 Which says, given an input and a time, return an output based on both. The point
 of this is to let us have recurrent relationships, like for [autoregressive
 models](https://en.wikipedia.org/wiki/Autoregressive_model) found in statistics:
 
-![
-\\text{AR}\_{\\phi\_1, \\phi\_2, \\ldots}(x,t)
-  = \\epsilon\_t + \\phi\_1 \\text{AR}\_{\\phi\_1, \\phi\_2, \\ldots}(x, t-1)
-  + \\phi\_2 \\text{AR}\_{\\phi\_1, \\phi\_2, \\ldots}(x, t-2)
-  + \\ldots
-](https://latex.codecogs.com/png.latex?%0A%5Ctext%7BAR%7D_%7B%5Cphi_1%2C%20%5Cphi_2%2C%20%5Cldots%7D%28x%2Ct%29%0A%20%20%3D%20%5Cepsilon_t%20%2B%20%5Cphi_1%20%5Ctext%7BAR%7D_%7B%5Cphi_1%2C%20%5Cphi_2%2C%20%5Cldots%7D%28x%2C%20t-1%29%0A%20%20%2B%20%5Cphi_2%20%5Ctext%7BAR%7D_%7B%5Cphi_1%2C%20%5Cphi_2%2C%20%5Cldots%7D%28x%2C%20t-2%29%0A%20%20%2B%20%5Cldots%0A "
+$$
 \text{AR}_{\phi_1, \phi_2, \ldots}(x,t)
   = \epsilon_t + \phi_1 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-1)
   + \phi_2 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-2)
   + \ldots
-")
+$$
 
 However, this is a bad way of *implementing* models on time series, because
 nothing is stopping the result of a model from depending on a future value (the
-value at time
-![t = 3](https://latex.codecogs.com/png.latex?t%20%3D%203 "t = 3"), for
-instance, might depend explicitly only the value at time
-![t = 5](https://latex.codecogs.com/png.latex?t%20%3D%205 "t = 5")). Instead, we
-can imagine time series models as explicitly "stateful" models:
+value at time $t = 3$, for instance, might depend explicitly only the value at
+time $t = 5$). Instead, we can imagine time series models as explicitly
+"stateful" models:
 
-![
-f\_p(x, s\_{\\text{old}}) = (y, s\_{\\text{new}})
-](https://latex.codecogs.com/png.latex?%0Af_p%28x%2C%20s_%7B%5Ctext%7Bold%7D%7D%29%20%3D%20%28y%2C%20s_%7B%5Ctext%7Bnew%7D%7D%29%0A "
+$$
 f_p(x, s_{\text{old}}) = (y, s_{\text{new}})
-")
+$$
 
 These have type:[^1]
 
-![
-f : (P \\times A \\times S) \\rightarrow (B \\times S)
-](https://latex.codecogs.com/png.latex?%0Af%20%3A%20%28P%20%5Ctimes%20A%20%5Ctimes%20S%29%20%5Crightarrow%20%28B%20%5Ctimes%20S%29%0A "
+$$
 f : (P \times A \times S) \rightarrow (B \times S)
-")
+$$
 
 This makes it clear that the output of our model can only depend on current and
 *previously occurring* information, preserving causality.
@@ -111,56 +87,39 @@ output forecast is a linear regression on the *last two* most recent observed
 values. We can do this by setting the "input" to be the last observed value, and
 the "state" to be the second-to-last observed value:
 
-![
-\\begin{aligned}
-s\_t & = x\_t \\\\
-y\_t & = c + \\phi\_1 s\_t + \\phi\_2 s\_{t - 1}
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0As_t%20%26%20%3D%20x_t%20%5C%5C%0Ay_t%20%26%20%3D%20c%20%2B%20%5Cphi_1%20s_t%20%2B%20%5Cphi_2%20s_%7Bt%20-%201%7D%0A%5Cend%7Baligned%7D%0A "
+$$
 \begin{aligned}
 s_t & = x_t \\
 y_t & = c + \phi_1 s_t + \phi_2 s_{t - 1}
 \end{aligned}
-")
+$$
 
 Or, in our function form:
 
-![
-f\_{c, \\phi\_1, \\phi\_2}(x, s) = (c + \\phi\_1 x + \\phi\_2 s, x)
-](https://latex.codecogs.com/png.latex?%0Af_%7Bc%2C%20%5Cphi_1%2C%20%5Cphi_2%7D%28x%2C%20s%29%20%3D%20%28c%20%2B%20%5Cphi_1%20x%20%2B%20%5Cphi_2%20s%2C%20x%29%0A "
+$$
 f_{c, \phi_1, \phi_2}(x, s) = (c + \phi_1 x + \phi_2 s, x)
-")
+$$
 
 There's also the classic [fully-connected recurrent neural network
 layer](http://karpathy.github.io/2015/05/21/rnn-effectiveness/), whose output is
 a linear combination of the (logistic'd) previous output and the current input,
 plus a bias:
 
-![
-\\begin{aligned}
-s\_t & = \\sigma(y\_t) \\\\
-y\_t & = W\_x \\mathbf{x}\_t + W\_s \\mathbf{s}\_{t-1} + \\mathbf{b}
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0As_t%20%26%20%3D%20%5Csigma%28y_t%29%20%5C%5C%0Ay_t%20%26%20%3D%20W_x%20%5Cmathbf%7Bx%7D_t%20%2B%20W_s%20%5Cmathbf%7Bs%7D_%7Bt-1%7D%20%2B%20%5Cmathbf%7Bb%7D%0A%5Cend%7Baligned%7D%0A "
+$$
 \begin{aligned}
 s_t & = \sigma(y_t) \\
 y_t & = W_x \mathbf{x}_t + W_s \mathbf{s}_{t-1} + \mathbf{b}
 \end{aligned}
-")
+$$
 
 Or, in our function form:
 
-![
-f\_{W\_x, W\_s, \\mathbf{b}}(\\mathbf{x}, \\mathbf{s}) =
-  ( W\_x \\mathbf{x} + W\_s \\mathbf{s} + \\mathbf{b}
-  , \\sigma(W\_x \\mathbf{x} + W\_s \\mathbf{s} + \\mathbf{b})
-  )
-](https://latex.codecogs.com/png.latex?%0Af_%7BW_x%2C%20W_s%2C%20%5Cmathbf%7Bb%7D%7D%28%5Cmathbf%7Bx%7D%2C%20%5Cmathbf%7Bs%7D%29%20%3D%0A%20%20%28%20W_x%20%5Cmathbf%7Bx%7D%20%2B%20W_s%20%5Cmathbf%7Bs%7D%20%2B%20%5Cmathbf%7Bb%7D%0A%20%20%2C%20%5Csigma%28W_x%20%5Cmathbf%7Bx%7D%20%2B%20W_s%20%5Cmathbf%7Bs%7D%20%2B%20%5Cmathbf%7Bb%7D%29%0A%20%20%29%0A "
+$$
 f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
   ( W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b}
   , \sigma(W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b})
   )
-")
+$$
 
 ### The connection
 
@@ -192,9 +151,8 @@ type Model p a b = forall z. Reifies z W
                 -> BVar z b
 ```
 
-which represented a differentiable
-![f : (P \\times A) \\rightarrow B](https://latex.codecogs.com/png.latex?f%20%3A%20%28P%20%5Ctimes%20A%29%20%5Crightarrow%20B "f : (P \times A) \rightarrow B").
-We can directly translate this to a new `ModelS` type:
+which represented a differentiable $f : (P \times A) \rightarrow B$. We can
+directly translate this to a new `ModelS` type:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L157-L161
@@ -207,7 +165,7 @@ type ModelS p s a b = forall z. Reifies z W
 ```
 
 which represents a differentiable
-![f : (P \\times A \\times S) \\rightarrow (B \\times S)](https://latex.codecogs.com/png.latex?f%20%3A%20%28P%20%5Ctimes%20A%20%5Ctimes%20S%29%20%5Crightarrow%20%28B%20%5Ctimes%20S%29 "f : (P \times A \times S) \rightarrow (B \times S)").
+$f : (P \times A \times S) \rightarrow (B \times S)$.
 
 We can implement AR(2) as mentioned before by translating the math formula
 directly:
@@ -671,11 +629,9 @@ ghci> trained
 
 Meaning that the gradient descent has concluded that our AR(2) model is:
 
-![
-y\_t = 0 + 1.9372 y\_{t - 1} - y\_{t - 2}
-](https://latex.codecogs.com/png.latex?%0Ay_t%20%3D%200%20%2B%201.9372%20y_%7Bt%20-%201%7D%20-%20y_%7Bt%20-%202%7D%0A "
+$$
 y_t = 0 + 1.9372 y_{t - 1} - y_{t - 2}
-")
+$$
 
 The power of math!
 

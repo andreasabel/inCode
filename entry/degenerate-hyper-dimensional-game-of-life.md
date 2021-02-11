@@ -168,15 +168,11 @@ A reasonable initial thought would be:
 
 1.  Keep a 2D (or 3D, or 4D, etc.) array of booleans.
 2.  At each step:
-    a.  Make a fresh copy of the entire space
-        (![O(n\^d)](https://latex.codecogs.com/png.latex?O%28n%5Ed%29 "O(n^d)")).
-    b.  Loop over each item in your array
-        (![O(n\^d)](https://latex.codecogs.com/png.latex?O%28n%5Ed%29 "O(n^d)")).
-        Count all of the neighbors
-        (![O(3\^d)](https://latex.codecogs.com/png.latex?O%283%5Ed%29 "O(3^d)"))
-        that are `true` ("alive"), and write to the new array based on the rules
-        table of GoL (2 or 3 neighbors for a live cell stays alive, 3 neighbors
-        for a dead cell turns alive).
+    a.  Make a fresh copy of the entire space ($O(n^d)$).
+    b.  Loop over each item in your array ($O(n^d)$). Count all of the neighbors
+        ($O(3^d)$) that are `true` ("alive"), and write to the new array based
+        on the rules table of GoL (2 or 3 neighbors for a live cell stays alive,
+        3 neighbors for a dead cell turns alive).
 3.  You have a new array! Loop again six times.
 
 Sounds reasonable enough! This does work for the 2D case pretty well (like in
@@ -200,11 +196,8 @@ of our points will be "off", there's another approach:
         number of live neighbors it has.
 
     b.  For each step, iterate over each of your "on" points, expand all of
-        their neighbors ![n\_i](https://latex.codecogs.com/png.latex?n_i "n_i")
-        (![(O(3\^d))](https://latex.codecogs.com/png.latex?%28O%283%5Ed%29%29 "(O(3^d))")),
-        and increment the value associated with
-        ![n\_i](https://latex.codecogs.com/png.latex?n_i "n_i") in your dynamic
-        map.
+        their neighbors $n_i$ ($(O(3^d))$), and increment the value associated
+        with $n_i$ in your dynamic map.
 
         For example, if the point `<2,3>` is in your set of live points, you
         would add increment the map's values at keys `<1,2>`, `<2,2>`, `<3,2>`,
@@ -230,10 +223,9 @@ dimensionality.[^1]
 Note that both methods can be straightforwardly generalized to any dimension; in
 this second method, this just means a different sized tuple/vector in your set
 of alive points (`[x,y]` vs. `[x,y,z]`). One extra concern, though, is that you
-need to think through generating all
-![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1") neighbors:
-that's going to come down to a d-ary [cartesian
-product](https://observablehq.com/@d3/d3-cross) of `[-1,0,1]` to itself.
+need to think through generating all $3^d-1$ neighbors: that's going to come
+down to a d-ary [cartesian product](https://observablehq.com/@d3/d3-cross) of
+`[-1,0,1]` to itself.
 
 Here's a python implementation of the set-based method, using a nice trick I
 learned from [phaazon](https://twitter.com/phaazon_) and
@@ -300,14 +292,13 @@ space. You'll see that your live cells spread out from the center z=0 slice,
 which means they are actually spreading "up and down" the z axis.
 
 If you mouse over (or tap) any individual tiny `<x,y>` cell, you'll see the all
-of the 26 (![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1"))
-`<x,y,z>` 3D neighbors of the point you're hovering over highlighted in blue ---
-these 26 points form a 3D cube around your mouse through the stacked slices. You
-can use this cube to help see how the simulation progresses. If your mouse is
-hovering over a live cell, and there are 2 or 3 live cells highlighted in your
-cube, it'll stay alive in the next time step. If your mouse is hovering over a
-dead cell and there are exactly 3 live cells highlighted in your cube, it will
-come alive in the next step.
+of the 26 ($3^d-1$) `<x,y,z>` 3D neighbors of the point you're hovering over
+highlighted in blue --- these 26 points form a 3D cube around your mouse through
+the stacked slices. You can use this cube to help see how the simulation
+progresses. If your mouse is hovering over a live cell, and there are 2 or 3
+live cells highlighted in your cube, it'll stay alive in the next time step. If
+your mouse is hovering over a dead cell and there are exactly 3 live cells
+highlighted in your cube, it will come alive in the next step.
 
 ### Axis Reflection Symmetry
 
@@ -362,9 +353,8 @@ arose from. For example, mousing over z=3, you will see z=2 and z=4 get
 highlighted with the values "1" because they are neighbors of 3, on the left and
 right side (respectively). Note that one neat property for all squares (except
 for z=6, which goes off the scale) is that the "total" higher-dimensional
-neighbors is always 2
-(![3\^{d-2}-1](https://latex.codecogs.com/png.latex?3%5E%7Bd-2%7D-1 "3^{d-2}-1"));
-*where* those neighbors fall is just re-arranged slightly.
+neighbors is always 2 ($3^{d-2}-1$); *where* those neighbors fall is just
+re-arranged slightly.
 
 The tricky square is now z=0: if you mouse-over it, you'll see that it has a
 single neighbor z=1 that is counted *twice*, as a neighbor from both the left
@@ -415,10 +405,7 @@ a nice way to generalize to arbitrary dimensions: for every `1 -> 0` transition
 in a higher dimension, multiply by two. That means we reduce the number of 4D
 points we need to track by a factor of four, the number of 5D points by a factor
 of eight, the number of 6D points by a factor of 16... now our total points to
-check only grows as
-![O(n\^d / 2\^{d-2})](https://latex.codecogs.com/png.latex?O%28n%5Ed%20%2F%202%5E%7Bd-2%7D%29 "O(n^d / 2^{d-2})")
-instead of
-![O(n\^d)](https://latex.codecogs.com/png.latex?O%28n%5Ed%29 "O(n^d)")!
+check only grows as $O(n^d / 2^{d-2})$ instead of $O(n^d)$!
 
 Here is a python implementation of this generalization:
 
@@ -495,14 +482,13 @@ code](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?p
 
 Most initial conditions will spread out from the center `<z,w> = <0,0>` slice
 radially, spreading outwards into positive and negative z and w. Mouse-over or
-tap any individual tiny `<x.y>` cell and you'll see each of its 80
-(![3\^4-1](https://latex.codecogs.com/png.latex?3%5E4-1 "3^4-1")) `<x,y,z,w>` 4D
-neighbors highlighted in blue, forming a little 3x3x3x3 "tesseract" (4D cube, or
-hypercube). Like in the 3D case, you can use this little hypercube to track how
-the simulation progresses: if your mouse if hovering over a live cell with 2 or
-3 live cells in its hypercube, it'll stay alive in the next step, if it's
-hovering over a dead cell with 3 live cells in its hypercube, it'll come alive
-in the next step.
+tap any individual tiny `<x.y>` cell and you'll see each of its 80 ($3^4-1$)
+`<x,y,z,w>` 4D neighbors highlighted in blue, forming a little 3x3x3x3
+"tesseract" (4D cube, or hypercube). Like in the 3D case, you can use this
+little hypercube to track how the simulation progresses: if your mouse if
+hovering over a live cell with 2 or 3 live cells in its hypercube, it'll stay
+alive in the next step, if it's hovering over a dead cell with 3 live cells in
+its hypercube, it'll come alive in the next step.
 
 ### Diagonal Reflection Symmetry
 
@@ -605,10 +591,8 @@ actually run our simulation we again need to find the *reverse neighbors*: from
 a given point A, how many times is that point a neighbor of another point B?
 
 We can compute this in brute-force using a cache: iterate over each point,
-expand all its neighbors
-![a\_i](https://latex.codecogs.com/png.latex?a_i "a_i"), normalize that
-neighbor, and then set ![a\_i](https://latex.codecogs.com/png.latex?a_i "a_i")
-in the cache to the multiplicity after normalization.
+expand all its neighbors $a_i$, normalize that neighbor, and then set $a_i$ in
+the cache to the multiplicity after normalization.
 
 ``` {.python}
 def reverse_neighbs_table(t_max):
@@ -736,15 +720,12 @@ post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_par
 > distinquishes them. That is, if there's an active cell at position (x,y,
 > a,b,c,d,e,f,g) then, there's also one at (x,y, c,d,g,e,f,a) and at all other
 > permutations, of coordinates a-g). That is the number of cells that one need
-> to track can be reduced by factor of
-> ![(d-2)! \\times 2\^{d-2}](https://latex.codecogs.com/png.latex?%28d-2%29%21%20%5Ctimes%202%5E%7Bd-2%7D "(d-2)! \times 2^{d-2}")
-> (at least if time goes to infinity).
+> to track can be reduced by factor of $(d-2)! \times 2^{d-2}$ (at least if time
+> goes to infinity).
 >
 > ...we can use symmetries coming from permutations, to only track cells where
-> ![\|x\_0\| \< 13,\\, \|x\_1\| \< 13,\\, 0 \\leq x\_2 \\leq x\_3 \\leq\\,\\ldots\\, \\leq x\_{d-1} \\leq t](https://latex.codecogs.com/png.latex?%7Cx_0%7C%20%3C%2013%2C%5C%2C%20%7Cx_1%7C%20%3C%2013%2C%5C%2C%200%20%5Cleq%20x_2%20%5Cleq%20x_3%20%5Cleq%5C%2C%5Cldots%5C%2C%20%5Cleq%20x_%7Bd-1%7D%20%5Cleq%20t "|x_0| < 13,\, |x_1| < 13,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t").
-> There's
-> ![20\^2 \\times \\sum\_{k=0}\^{t} { {d-3+k} \\choose {k} }](https://latex.codecogs.com/png.latex?20%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt%7D%20%7B%20%7Bd-3%2Bk%7D%20%5Cchoose%20%7Bk%7D%20%7D "20^2 \times \sum_{k=0}^{t} { {d-3+k} \choose {k} }")
-> such cells.
+> $|x_0| < 13,\, |x_1| < 13,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t$.
+> There's $20^2 \times \sum_{k=0}^{t} { {d-3+k} \choose {k} }$ such cells.
 >
 > --- Michal Marsalek
 
@@ -754,16 +735,12 @@ And boy was this exciting to read. First of all, it gave a way to generalize the
 z=w symmetry: it's just [permutation
 symmetry](https://en.wikipedia.org/wiki/Permutation) for all higher-dimensional
 coordinates! But the big kicker here: See that last formula? Let's look at it
-more closely, using
-![\\hat{d}](https://latex.codecogs.com/png.latex?%5Chat%7Bd%7D "\hat{d}") to
-represent ![d-2](https://latex.codecogs.com/png.latex?d-2 "d-2"), the number of
-higher dimensions:
+more closely, using $\hat{d}$ to represent $d-2$, the number of higher
+dimensions:
 
-![
-20\^2 \\times \\sum\_{k=0}\^{t} { {\\hat{d}-1+k}\\choose{k} }
-](https://latex.codecogs.com/png.latex?%0A20%5E2%20%5Ctimes%20%5Csum_%7Bk%3D0%7D%5E%7Bt%7D%20%7B%20%7B%5Chat%7Bd%7D-1%2Bk%7D%5Cchoose%7Bk%7D%20%7D%0A "
+$$
 20^2 \times \sum_{k=0}^{t} { {\hat{d}-1+k}\choose{k} }
-")
+$$
 
 (That notation is the [binomial
 coefficient](https://en.wikipedia.org/wiki/Binomial_coefficient), if you aren't
@@ -772,41 +749,28 @@ respect to dimension)! That means we only ever have 6 terms to expand, no matter
 how high the dimensions are --- at 10D and even 100D! Furthermore, we can
 simplify the above using properties of binomial coefficients to get
 
-![
-20\^2 \\times { {\\hat{d}+6}\\choose{6} }
-](https://latex.codecogs.com/png.latex?%0A20%5E2%20%5Ctimes%20%7B%20%7B%5Chat%7Bd%7D%2B6%7D%5Cchoose%7B6%7D%20%7D%0A "
+$$
 20^2 \times { {\hat{d}+6}\choose{6} }
-")
+$$
 
-This binomial coefficient is actually polynomial on
-![\\hat{d}](https://latex.codecogs.com/png.latex?%5Chat%7Bd%7D "\hat{d}") ---
-it's
-![\\frac{1}{6!} \\prod\_{k=1}\^6 (\\hat{d}+k)](https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B6%21%7D%20%5Cprod_%7Bk%3D1%7D%5E6%20%28%5Chat%7Bd%7D%2Bk%29 "\frac{1}{6!} \prod_{k=1}^6 (\hat{d}+k)")
---- a sixth degree polynomial (leading term
-![\\frac{1}{6!} \\hat{d}\^6](https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B6%21%7D%20%5Chat%7Bd%7D%5E6 "\frac{1}{6!} \hat{d}^6")),
-in fact. This means that we have turned the number of points we potentially need
-to track from exponential
-(![O(13\^{\\hat{d}})](https://latex.codecogs.com/png.latex?O%2813%5E%7B%5Chat%7Bd%7D%7D%29 "O(13^{\hat{d}})"))
-to slightly smaller exponential
-(![O(6\^{\\hat{d}})](https://latex.codecogs.com/png.latex?O%286%5E%7B%5Chat%7Bd%7D%7D%29 "O(6^{\hat{d}})"))
-to now *polynomial*
-![O(\\hat{d}\^6)](https://latex.codecogs.com/png.latex?O%28%5Chat%7Bd%7D%5E6%29 "O(\hat{d}^6)")!
+This binomial coefficient is actually polynomial on $\hat{d}$ --- it's
+$\frac{1}{6!} \prod_{k=1}^6 (\hat{d}+k)$ --- a sixth degree polynomial (leading
+term $\frac{1}{6!} \hat{d}^6$), in fact. This means that we have turned the
+number of points we potentially need to track from exponential
+($O(13^{\hat{d}})$) to slightly smaller exponential ($O(6^{\hat{d}})$) to now
+*polynomial* $O(\hat{d}^6)$!
 
 So, not only did we figure out a way to generalize/compute our symmetries, we
 also now know that this method lets us keep our point set *polynomial* on the
 dimension, instead of exponential.
 
 To put a concrete number for context, for that dream of 10D, here are only
-![{ {8+6} \\choose 6 }](https://latex.codecogs.com/png.latex?%7B%20%7B8%2B6%7D%20%5Cchoose%206%20%7D "{ {8+6} \choose 6 }"),
-or 3003 potential unique `<z,w,...>` points, once you factor out symmetries! The
-number went down from
-![13\^8](https://latex.codecogs.com/png.latex?13%5E8 "13^8") (815,730,721)
-potential unique `<z,w,...>` points to
-![6\^8](https://latex.codecogs.com/png.latex?6%5E8 "6^8") (1,679,616) potential
-unique points with positive/negative symmetry to just 3003 with permutation
-symmetry.[^2] Furthermore, because of the blessing of dimensionality mentioned
-earlier, we can expect more and more of those to be empty as we increase our
-dimensions.
+${ {8+6} \choose 6 }$, or 3003 potential unique `<z,w,...>` points, once you
+factor out symmetries! The number went down from $13^8$ (815,730,721) potential
+unique `<z,w,...>` points to $6^8$ (1,679,616) potential unique points with
+positive/negative symmetry to just 3003 with permutation symmetry.[^2]
+Furthermore, because of the blessing of dimensionality mentioned earlier, we can
+expect more and more of those to be empty as we increase our dimensions.
 
 And in a flash, 10D didn't feel like a dream anymore; it felt like an
 inevitability. And now, it was just a race to see who could get there first.
@@ -906,12 +870,10 @@ the gap?
 Well, I didn't really know what to do about the neighbor multiplicity problem. I
 was still brute-forcing by way of forward neighbors + normalizing (as in the
 sample 4D python code snippet earlier). The naive brute-force method requires
-computing *all*
-![3\^{ {\\hat{d}} } - 1](https://latex.codecogs.com/png.latex?3%5E%7B%20%7B%5Chat%7Bd%7D%7D%20%7D%20-%201 "3^{ {\hat{d}} } - 1")
-higher-dimensional neighbors. So, even though the number of points I'd have to
-track grows polynomially, I still had that pesky exponential factor in building
-my neighbor cache. At high dimensions, that exponential factor dominates over
-everything.
+computing *all* $3^{ {\hat{d}} } - 1$ higher-dimensional neighbors. So, even
+though the number of points I'd have to track grows polynomially, I still had
+that pesky exponential factor in building my neighbor cache. At high dimensions,
+that exponential factor dominates over everything.
 
 So put on your hard hats and working boots ... we're going to dive deep into the
 world of hyper-dimensional symmetries!
@@ -954,11 +916,9 @@ bottling](https://www.youtube.com/watch?v=rSfebOXSBOE)!
 
 At least one pattern we can see clearly is that if you are at a point where each
 component is 4 or lower (so it doesn't run off the edge of our table), the sum
-of all the red dots (the forward neighbors) is
-![3\^3-1](https://latex.codecogs.com/png.latex?3%5E3-1 "3^3-1") = 26, just like
-how the sum of forward neighbors for interior points in 3D is
-![3\^2-1](https://latex.codecogs.com/png.latex?3%5E2-1 "3^2-1") = 8, and for 2D
-is ![3\^1-1](https://latex.codecogs.com/png.latex?3%5E1-1 "3^1-1") = 2.
+of all the red dots (the forward neighbors) is $3^3-1$ = 26, just like how the
+sum of forward neighbors for interior points in 3D is $3^2-1$ = 8, and for 2D is
+$3^1-1$ = 2.
 
 Another very important pattern is that "is a neighbor" seems to be reversible:
 the set of all *forward* neighbors of a point is the same as all *reverse*
@@ -1005,8 +965,7 @@ valid coordinate without any renormalizing necessary!
 
 In this light, we now have an algorithm to compute neighbors without requiring
 renormalization: we can walk bin-to-bin, "flowing" components from our origin
-vector to our new vector. We no longer have to try all
-![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1") (exponential)
+vector to our new vector. We no longer have to try all $3^d-1$ (exponential)
 candidates and re-normalize: we can now only iterate through the ones we care
 about.
 
@@ -1019,18 +978,15 @@ If we start at `0-2-1-3` (`1,1,2,3,3,3`) and "flow" to, say, `0-0-5-0`
 (`2,2,2,2,2`) and dump all our bins into 2. How many ways could this flow
 happen? The answer happens to be the [multinomial
 coefficient](https://en.wikipedia.org/wiki/Multinomial_theorem)
-![5 \\choose {2,1,3}](https://latex.codecogs.com/png.latex?5%20%5Cchoose%20%7B2%2C1%2C3%7D "5 \choose {2,1,3}")
-(or
-![5! / (2!\\,1!\\,3!)](https://latex.codecogs.com/png.latex?5%21%20%2F%20%282%21%5C%2C1%21%5C%2C3%21%29 "5! / (2!\,1!\,3!)")):
-there are 5! ways to end up with 5 in the bin, but that `5` came from
-contributions of `2+1+3` from either side, and so we divide by the ways we could
-pick from those contributing bins (2!, 1!, and 3!).
+$5 \choose {2,1,3}$ (or $5! / (2!\,1!\,3!)$): there are 5! ways to end up with 5
+in the bin, but that `5` came from contributions of `2+1+3` from either side,
+and so we divide by the ways we could pick from those contributing bins (2!, 1!,
+and 3!).
 
 Finally, we have to treat multiplicities for transitions from 0 to 1 slightly
 differently, because they can arise either a 0 to 1 transition or a 0 to -1
-transition. This comes out to a multiplication of
-![2\^n](https://latex.codecogs.com/png.latex?2%5En "2^n") at the end (n being
-the amount of 0-to-1 flow). Because of this special care, it's actually more
+transition. This comes out to a multiplication of $2^n$ at the end (n being the
+amount of 0-to-1 flow). Because of this special care, it's actually more
 convenient to fill in bin-by-bin "backwards", from the 6 slot to the 5 slot to
 the 4 slot, etc., because your options at the 0 component are already
 pre-determined for you by the choices you have already made. It keeps the tree a
@@ -1066,19 +1022,17 @@ If you mouse-over or tap a node, it'll highlight the trace from the beginning to
 the node you are highlighting, so you can see all of the choices made, as well
 as all the operations applied to our running multiplicity counter at each step.
 It'll also show the contributions from the left, center, and right of the
-current bin being picked (the
-![2+1+3](https://latex.codecogs.com/png.latex?2%2B1%2B3 "2+1+3") in the example
-above), and also the "regular" vector representation. For example, `<[2,2],2,4>`
-means that that node has already committed to having `<?,?,2,4>` in the target
-vector, but still has two 2s in the source vector to pull in and distribute.
+current bin being picked (the $2+1+3$ in the example above), and also the
+"regular" vector representation. For example, `<[2,2],2,4>` means that that node
+has already committed to having `<?,?,2,4>` in the target vector, but still has
+two 2s in the source vector to pull in and distribute.
 
 One final thing we need to keep track of is to not count a point transitioning
 to itself if it results from no actual internal changes (this is the "minus one"
-in ![3\^d-1](https://latex.codecogs.com/png.latex?3%5Ed-1 "3^d-1"): we should
-not include the single original point itself, but we *should* count extra
-occurrences of the original point if it arose from a reflection). This can be
-done by checking if each of our bin choices involved exactly no inter-bin flows
-(they were all of the form `0+x+0`).
+in $3^d-1$: we should not include the single original point itself, but we
+*should* count extra occurrences of the original point if it arose from a
+reflection). This can be done by checking if each of our bin choices involved
+exactly no inter-bin flows (they were all of the form `0+x+0`).
 
 Phew! That's a bit of a mathematical doozy, huh? But trust me when I say it's
 easier to understand if play around with the interactive element and follow
@@ -1131,8 +1085,7 @@ of cell cosets at the end of the simulation (the number of active "normalized"
 cells), and had been exploring the relationship between dimension and coset
 counts. The discovery was that after a certain "saturation point" (6D for
 Michael's set, 9D for Peter's set, 7D for my set), all of the coset counts were
-*perfectly quadratic*! For mine, it followed the relationship
-![d\^2 + 109d + 70](https://latex.codecogs.com/png.latex?d%5E2%20%2B%20109d%20%2B%2070 "d^2 + 109d + 70")
+*perfectly quadratic*! For mine, it followed the relationship $d^2 + 109d + 70$
 exactly for 7D and higher.
 
 My best guess as to why this was happening is that, at 7D and above, we enter a
@@ -1269,22 +1222,13 @@ one of a few choices of values. Instead of a "binary" game of life with a
 boolean at each cell, it's an "integer" game of life with a finite choice at
 each cell.
 
-Because there are
-![{ {\\hat{d}}+t} \\choose t](https://latex.codecogs.com/png.latex?%7B%20%7B%5Chat%7Bd%7D%7D%2Bt%7D%20%5Cchoose%20t "{ {\hat{d}}+t} \choose t")
-slice cosets for a given dimension and time, it means that our game is a
-![2\^{ { \\hat{d} + t} \\choose t }](https://latex.codecogs.com/png.latex?2%5E%7B%20%7B%20%5Chat%7Bd%7D%20%2B%20t%7D%20%5Cchoose%20t%20%7D "2^{ { \hat{d} + t} \choose t }")-valued
+Because there are ${ {\hat{d}}+t} \choose t$ slice cosets for a given dimension
+and time, it means that our game is a $2^{ { \hat{d} + t} \choose t }$-valued
 game of life, where each cell can be one of that many options (each slice coset
-and be present or not). That means at 2D
-(![\\hat{d} = 0](https://latex.codecogs.com/png.latex?%5Chat%7Bd%7D%20%3D%200 "\hat{d} = 0")),
-we have a normal 2-valued game of life
-(![2\^1](https://latex.codecogs.com/png.latex?2%5E1 "2^1")), at 3D we have
-![7 \\choose 6](https://latex.codecogs.com/png.latex?7%20%5Cchoose%206 "7 \choose 6")
-or 7 possible points at t=6, so that's a
-![2\^7](https://latex.codecogs.com/png.latex?2%5E7 "2^7") or 128-valued game of
-life, at 4D we have
-![8 \\choose 6](https://latex.codecogs.com/png.latex?8%20%5Cchoose%206 "8 \choose 6")
-or 28 possible points at t=6, and so that's a
-![2\^{28}](https://latex.codecogs.com/png.latex?2%5E%7B28%7D "2^{28}") or
+and be present or not). That means at 2D ($\hat{d} = 0$), we have a normal
+2-valued game of life ($2^1$), at 3D we have $7 \choose 6$ or 7 possible points
+at t=6, so that's a $2^7$ or 128-valued game of life, at 4D we have
+$8 \choose 6$ or 28 possible points at t=6, and so that's a $2^{28}$ or
 268435456-valued game of life.
 
 You can see this demonstrated in the simulation above, as well. As you progress,
@@ -1473,11 +1417,9 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     gives you whether or not that cell was alive.
 
 [^2]: For dramatic effect, I've omitted the fact that while there are only 3003
-    possible higher-dimensional points, there are
-    ![20\^2 \\times 3003](https://latex.codecogs.com/png.latex?20%5E2%20%5Ctimes%203003 "20^2 \times 3003")
-    actual unique points possible factoring in the 20x20 x-y grid. Still, it's a
-    pretty big improvement over the original situation
-    (![20\^2 \\times 815730721](https://latex.codecogs.com/png.latex?20%5E2%20%5Ctimes%20815730721 "20^2 \times 815730721")).
+    possible higher-dimensional points, there are $20^2 \times 3003$ actual
+    unique points possible factoring in the 20x20 x-y grid. Still, it's a pretty
+    big improvement over the original situation ($20^2 \times 815730721$).
 
 [^3]: It's also interesting to note that above 9D (where there are 7
     higher-dimensional coordinates), there is always at least one duplicated

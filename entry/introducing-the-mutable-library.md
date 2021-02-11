@@ -66,8 +66,8 @@ addFirst xs = iterate incr xs !! 1000000
 
 That's because `addFirst` will copy over the entire vector for every step ---
 every single item, even if not modified, will be copied one million times. It is
-![O(n\*l)](https://latex.codecogs.com/png.latex?O%28n%2Al%29 "O(n*l)") in memory
-updates --- it is very bad for long vectors or large matrices.
+$O(n*l)$ in memory updates --- it is very bad for long vectors or large
+matrices.
 
 However, this is extremely efficient with a mutable vector:
 
@@ -84,8 +84,7 @@ addFirst xs = runST $ do
 GHC)
 
 This is because all of the other items in the vector are kept the same and not
-copied-over over the course of one million updates. It is
-![O(n+l)](https://latex.codecogs.com/png.latex?O%28n%2Bl%29 "O(n+l)") in memory
+copied-over over the course of one million updates. It is $O(n+l)$ in memory
 updates. It is very good even for long vectors or large matrices.
 
 This situation is somewhat contrived, but it isolates a problem that many

@@ -59,15 +59,6 @@
 \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
 \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
 \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
-\usepackage{graphicx}
-\makeatletter
-\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
-\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
-\makeatother
-% Scale images if necessary, so that they will not overflow the page
-% margins by default, and it is still possible to overwrite the defaults
-% using explicit options in \includegraphics[width, height, ...]{}
-\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
 \ifxetex
   \usepackage[setpagesize=false, % page size defined by xetex
               unicode=false, % unicode breaks when used with xetex
@@ -158,112 +149,84 @@ some input ``question'' (predictor, independent variable) to some output
 
 Notationally, we might write it as a function:
 
-{[} f\_p(x) =
-y{]}(https://latex.codecogs.com/png.latex?\%0Af\_p\%28x\%29\%20\%3D\%20y\%0A "
-f\_p(x) = y ")
+\[
+f_p(x) = y
+\]
 
-The important thing is that, for every choice of \emph{parameterization}
-\includegraphics{https://latex.codecogs.com/png.latex?p}, we get a
-\emph{different function}
-\includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29}.
+The important thing is that, for every choice of \emph{parameterization} \(p\),
+we get a \emph{different function} \(f_p(x)\).
 
 For example, you might want to write a model that, when given an email, outputs
 whether or not that email is spam.
 
 The parameterization \emph{p} is some piece of data that we tweak to produce a
-different \includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29}.
-So, ``training'' (or ``learning'', or ``estimating'') a model is a process of
-picking the \includegraphics{https://latex.codecogs.com/png.latex?p} that gives
-the ``correct'' function
-\includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29} --- that is,
-the function that accurately predicts spam or whatever thing you are trying to
-predict.
+different \(f_p(x)\). So, ``training'' (or ``learning'', or ``estimating'') a
+model is a process of picking the \(p\) that gives the ``correct'' function
+\(f_p(x)\) --- that is, the function that accurately predicts spam or whatever
+thing you are trying to predict.
 
 For example, for \href{https://en.wikipedia.org/wiki/Linear_regression}{linear
-regression}, you are trying to ``fit'' your
-\includegraphics{https://latex.codecogs.com/png.latex?\%28x\%2C\%20y\%29} data
-points to some function
-\includegraphics{https://latex.codecogs.com/png.latex?f\%28x\%29\%20\%3D\%20\%5Cbeta\%20\%2B\%20\%5Calpha\%20x}.
-The \emph{parameters} are
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Calpha} and
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Cbeta}, the
-\emph{input} is \includegraphics{https://latex.codecogs.com/png.latex?x}, and
-the \emph{output} is
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Cbeta\%20\%2B\%20\%5Calpha\%20x}.
+regression}, you are trying to ``fit'' your \((x, y)\) data points to some
+function \(f(x) = \beta + \alpha x\). The \emph{parameters} are \(\alpha\) and
+\(\beta\), the \emph{input} is \(x\), and the \emph{output} is
+\(\beta + \alpha x\).
 
-As it so happens, a
-\includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29} is really
-just a ``partially applied''
-\includegraphics{https://latex.codecogs.com/png.latex?f\%28p\%2Cx\%29}.
-Imagining that function, it has type:\footnote{Those familiar with Haskell
-  idioms might recognize this type as being essentially
+As it so happens, a \(f_p(x)\) is really just a ``partially applied''
+\(f(p,x)\). Imagining that function, it has type:\footnote{Those familiar with
+  Haskell idioms might recognize this type as being essentially
   \texttt{a\ -\textgreater{}\ Reader\ p\ b} (or
   \texttt{Kleisli\ (Reader\ p)\ a\ b}) which roughly represents the notion of
   ``A function from \texttt{a} to \texttt{b} with an `environment' of type
   \texttt{p}''.}
 
-{[} f : (P \textbackslash times A) \textbackslash rightarrow
-B{]}(https://latex.codecogs.com/png.latex?\%0Af\%20\%3A\%20\%28P\%20\%5Ctimes\%20A\%29\%20\%5Crightarrow\%20B\%0A
-" f : (P \times A) \rightarrow B ")
+\[
+f : (P \times A) \rightarrow B
+\]
 
 If we \href{https://en.wikipedia.org/wiki/Currying}{curry} this, we get the
 original model representation we talked about:
 
-{[} f : P \textbackslash rightarrow (A \textbackslash rightarrow
-B){]}(https://latex.codecogs.com/png.latex?\%0Af\%20\%3A\%20P\%20\%5Crightarrow\%20\%28A\%20\%5Crightarrow\%20B\%29\%0A
-" f : P \rightarrow (A \rightarrow B) ")
+\[
+f : P \rightarrow (A \rightarrow B)
+\]
 
 \hypertarget{optimizing-models-with-observations}{%
 \subsection{Optimizing Models with
 Observations}\label{optimizing-models-with-observations}}
 
 Something interesting happens if we flip the script. What if, instead of
-\includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29}, we talked
-about \includegraphics{https://latex.codecogs.com/png.latex?f_x\%28p\%29}? That
-is, we fix the input and vary the parameter, and see what type of outputs we get
-for the same output while we vary the parameter?
+\(f_p(x)\), we talked about \(f_x(p)\)? That is, we fix the input and vary the
+parameter, and see what type of outputs we get for the same output while we vary
+the parameter?
 
 If we have an ``expected output'' for our input, then one thing we can do is
-look at \includegraphics{https://latex.codecogs.com/png.latex?f_x\%28p\%29} and
-see when the result is close to
-\includegraphics{https://latex.codecogs.com/png.latex?y_x} (the expected output
-of our model when given
-\includegraphics{https://latex.codecogs.com/png.latex?x}).
+look at \(f_x(p)\) and see when the result is close to \(y_x\) (the expected
+output of our model when given \(x\)).
 
-In fact, we can turn this into an optimization problem by trying to pick
-\includegraphics{https://latex.codecogs.com/png.latex?p} that minimizes the
-difference between
-\includegraphics{https://latex.codecogs.com/png.latex?f_x\%28p\%29} and
-\includegraphics{https://latex.codecogs.com/png.latex?y_x}. We can say that our
-model with parameter \includegraphics{https://latex.codecogs.com/png.latex?p}
-predicts \includegraphics{https://latex.codecogs.com/png.latex?y_x} the best
-when we minimize:
+In fact, we can turn this into an optimization problem by trying to pick \(p\)
+that minimizes the difference between \(f_x(p)\) and \(y_x\). We can say that
+our model with parameter \(p\) predicts \(y_x\) the best when we minimize:
 
-{[} (f\_x(p) -
-y\_x)\^{}2{]}(https://latex.codecogs.com/png.latex?\%0A\%28f\_x\%28p\%29\%20-\%20y\_x\%29\%5E2\%0A
-" (f\_x(p) - y\_x)\^{}2 ")
+\[
+(f_x(p) - y_x)^2
+\]
 
 If we minimize the squared error between the result of picking the parameter and
 the expected result, we find the best parameters for that given input!
 
-In general, picking the best parameter for the model involves picking the
-\includegraphics{https://latex.codecogs.com/png.latex?p} that minimizes the
-relationship
+In general, picking the best parameter for the model involves picking the \(p\)
+that minimizes the relationship
 
-{[} \textbackslash text\{loss\}(y\_x,
-f\_x(p)){]}(https://latex.codecogs.com/png.latex?\%0A\%5Ctext\%7Bloss\%7D\%28y\_x\%2C\%20f\_x\%28p\%29\%29\%0A
-" \text{loss}(y\_x, f\_x(p)) ")
+\[
+\text{loss}(y_x, f_x(p))
+\]
 
-Where
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Ctext\%7Bloss\%7D\%20\%3A\%20B\%20\%5Ctimes\%20B\%20\%5Crightarrow\%20\%5Cmathbb\%7BR\%7D}
-gives a measure of ``how badly'' the model result differs from the expected
-target. Common loss functions include squared error, cross-entropy, etc.
+Where \(\text{loss} : B \times B \rightarrow \mathbb{R}\) gives a measure of
+``how badly'' the model result differs from the expected target. Common loss
+functions include squared error, cross-entropy, etc.
 
 This gives us a supervised way to train any model: if we have enough
-observations
-(\includegraphics{https://latex.codecogs.com/png.latex?\%28x\%2C\%20y_x\%29}
-pairs) we can just pick a
-\includegraphics{https://latex.codecogs.com/png.latex?p} that does its best to
+observations (\((x, y_x)\) pairs) we can just pick a \(p\) that does its best to
 make the loss between all observations as small as possible.
 
 \hypertarget{stochastic-gradient-descent}{%
@@ -276,10 +239,9 @@ That is, we can always calculate the \emph{gradient} of the loss function with
 respect to our parameters. This gives us the direction we can ``nudge'' our
 parameters to make the loss bigger or smaller.
 
-That is, if we get the \emph{gradient} of the loss with respect to
-\includegraphics{https://latex.codecogs.com/png.latex?p}
-(\includegraphics{https://latex.codecogs.com/png.latex?\%5Cnabla_p\%20\%5Ctext\%7Bloss\%7D\%28f_x\%28p\%29\%2C\%20y_x\%29}),
-we now have a nice iterative way to ``train'' our model:
+That is, if we get the \emph{gradient} of the loss with respect to \(p\)
+(\(\nabla_p \text{loss}(f_x(p), y_x)\)), we now have a nice iterative way to
+``train'' our model:
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
@@ -287,19 +249,13 @@ we now have a nice iterative way to ``train'' our model:
 \item
   Start with an initial guess at the parameter
 \item
-  Look at a random
-  \includegraphics{https://latex.codecogs.com/png.latex?\%28x\%2C\%20y_x\%29}
-  observation pair.
+  Look at a random \((x, y_x)\) observation pair.
 \item
-  Compute the gradient
-  \includegraphics{https://latex.codecogs.com/png.latex?\%5Cnabla_p\%20\%5Ctext\%7Bloss\%7D\%28f_x\%28p\%29\%2C\%20y_x\%29}
-  of our current \includegraphics{https://latex.codecogs.com/png.latex?p}, which
-  tells us a direction we can ``nudge''
-  \includegraphics{https://latex.codecogs.com/png.latex?p} in to make the loss
+  Compute the gradient \(\nabla_p \text{loss}(f_x(p), y_x)\) of our current
+  \(p\), which tells us a direction we can ``nudge'' \(p\) in to make the loss
   smaller.
 \item
-  Nudge \includegraphics{https://latex.codecogs.com/png.latex?p} in that
-  direction
+  Nudge \(p\) in that direction
 \item
   Repeat from \#2 until satisfied
 \end{enumerate}
@@ -352,10 +308,9 @@ of \texttt{BVar}s.
 
 We can write a simple linear regression model:
 
-{[} f\_\{\textbackslash alpha, \textbackslash beta\}(x) = \textbackslash beta x
-+
-\textbackslash alpha{]}(https://latex.codecogs.com/png.latex?\%0Af\_\%7B\%5Calpha\%2C\%20\%5Cbeta\%7D\%28x\%29\%20\%3D\%20\%5Cbeta\%20x\%20\%2B\%20\%5Calpha\%0A
-" f\_\{\alpha, \beta\}(x) = \beta x + \alpha ")
+\[
+f_{\alpha, \beta}(x) = \beta x + \alpha
+\]
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -407,9 +362,9 @@ if we identify a loss function:\footnote{Note that this is only sound as a loss
   function for a single ``scalar value'', like \texttt{Double} or a one-vector.
   In general, we'd have this take a loss function as a parameter.}
 
-{[} \textbackslash nabla\_p (f(p, x) -
-y\_x)\^{}2{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cnabla\_p\%20\%28f\%28p\%2C\%20x\%29\%20-\%20y\_x\%29\%5E2\%0A
-" \nabla\_p (f(p, x) - y\_x)\^{}2 ")
+\[
+\nabla_p (f(p, x) - y_x)^2
+\]
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -470,10 +425,7 @@ parameter:
 
 Let's train our linear regression model to fit the points \texttt{(1,1)},
 \texttt{(2,3)}, \texttt{(3,5)}, \texttt{(4,7)}, and \texttt{(5,9)}! This should
-follow
-\includegraphics{https://latex.codecogs.com/png.latex?f\%28x\%29\%20\%3D\%202\%20x\%20-\%201},
-or
-\includegraphics{https://latex.codecogs.com/png.latex?\%5Calpha\%20\%3D\%20-1\%2C\%5C\%2C\%20\%5Cbeta\%20\%3D\%202}:
+follow \(f(x) = 2 x - 1\), or \(\alpha = -1,\, \beta = 2\):
 
 \begin{Shaded}
 \begin{Highlighting}[]

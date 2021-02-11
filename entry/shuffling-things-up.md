@@ -360,23 +360,14 @@ work with that data instead.
 
 So far so good! Now to think about how to define composition.
 
-If we want to do
-![f(x) = a\' x + b\'](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%20a%27%20x%20%2B%20b%27 "f(x) = a' x + b'")
-after
-![g(x) = a x + b](https://latex.codecogs.com/png.latex?g%28x%29%20%3D%20a%20x%20%2B%20b "g(x) = a x + b"),
-it's:
+If we want to do $f(x) = a' x + b'$ after $g(x) = a x + b$, it's:
 
-![
-\\begin{aligned}
-(f \\circ g)(x) & = a\' (a x + b) + b\'\\\\
-  (f \\circ g)(x) & = a\' x + a\' b + b\'
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%5Ccirc%20g%29%28x%29%20%26%20%3D%20a%27%20%28a%20x%20%2B%20b%29%20%2B%20b%27%5C%5C%0A%20%20%28f%20%5Ccirc%20g%29%28x%29%20%26%20%3D%20a%27%20x%20%2B%20a%27%20b%20%2B%20b%27%0A%5Cend%7Baligned%7D%0A "
+$$
 \begin{aligned}
 (f \circ g)(x) & = a' (a x + b) + b'\\
   (f \circ g)(x) & = a' x + a' b + b'
 \end{aligned}
-")
+$$
 
 So composing `a' x + b'` after `a x + b` is is `a' a x + a' b + b'`:
 
@@ -392,9 +383,7 @@ useful! And the `Num` instance (which requires `KnownNat n`) for `Finite n`
 takes care of automatically doing modular arithmetic for us.
 
 To define a `Monoid` instance, we need an identity permutation. This would just
-leave x alone, so it makes sense that it's
-![f(x) = 1 x + 0](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%201%20x%20%2B%200 "f(x) = 1 x + 0"),
-`1 x + 0`:
+leave x alone, so it makes sense that it's $f(x) = 1 x + 0$, `1 x + 0`:
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs#L33-L34

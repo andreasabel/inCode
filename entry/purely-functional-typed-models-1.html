@@ -8,7 +8,7 @@ m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 ga('create', 'UA-443711-8', 'jle.im');
 ga('send', 'pageview');
-</script><script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5234d67a6b68dcd4"></script><script type="text/javascript" src="https://blog.jle.im/js/page/entry_toc.js"></script><script type="text/javascript" src="https://blog.jle.im/js/disqus_count.js"></script><script type="text/javascript" src="https://blog.jle.im/js/social.js"></script><script type="text/javascript" src="https://blog.jle.im/js/jquery/jquery.toc.js"></script><script type="text/javascript" src="https://blog.jle.im/purescript/entry.js"></script></head><body><div id="fb-root"><script>(function(d, s, id) {
+</script><script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script type="text/javascript" src="//cdn.jsdelivr.net/npm/mathjax@3.1.2"></script><script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5234d67a6b68dcd4"></script><script type="text/javascript" src="https://blog.jle.im/js/page/entry_toc.js"></script><script type="text/javascript" src="https://blog.jle.im/js/disqus_count.js"></script><script type="text/javascript" src="https://blog.jle.im/js/social.js"></script><script type="text/javascript" src="https://blog.jle.im/js/jquery/jquery.toc.js"></script><script type="text/javascript" src="https://blog.jle.im/purescript/entry.js"></script></head><body><div id="fb-root"><script>(function(d, s, id) {
  var js, fjs = d.getElementsByTagName(s)[0];
  if (d.getElementById(id)) return;
  js = d.createElement(s); js.id = id;
@@ -25,54 +25,44 @@ compiled...really just the king of great languages.">Haskell</a><span class="inf
 <h2 id="essence-of-a-model">Essence of a Model</h2>
 <p>For the purpose of this post, a <em>parameterized model</em> is a function from some input “question” (predictor, independent variable) to some output “answer” (predictand, dependent variable)</p>
 <p>Notationally, we might write it as a function:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af_p%28x%29%20%3D%20y%0A" alt="
+<p><span class="math display">\[
 f_p(x) = y
-" title="
-f_p(x) = y
-" /><br /></p>
-<p>The important thing is that, for every choice of <em>parameterization</em> <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" />, we get a <em>different function</em> <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_p%28x%29" alt="f_p(x)" title="f_p(x)" />.</p>
+\]</span></p>
+<p>The important thing is that, for every choice of <em>parameterization</em> <span class="math inline">\(p\)</span>, we get a <em>different function</em> <span class="math inline">\(f_p(x)\)</span>.</p>
 <p>For example, you might want to write a model that, when given an email, outputs whether or not that email is spam.</p>
-<p>The parameterization <em>p</em> is some piece of data that we tweak to produce a different <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_p%28x%29" alt="f_p(x)" title="f_p(x)" />. So, “training” (or “learning”, or “estimating”) a model is a process of picking the <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> that gives the “correct” function <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_p%28x%29" alt="f_p(x)" title="f_p(x)" /> — that is, the function that accurately predicts spam or whatever thing you are trying to predict.</p>
-<p>For example, for <a href="https://en.wikipedia.org/wiki/Linear_regression">linear regression</a>, you are trying to “fit” your <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%28x%2C%20y%29" alt="(x, y)" title="(x, y)" /> data points to some function <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%28x%29%20%3D%20%5Cbeta%20%2B%20%5Calpha%20x" alt="f(x) = \beta + \alpha x" title="f(x) = \beta + \alpha x" />. The <em>parameters</em> are <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Calpha" alt="\alpha" title="\alpha" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cbeta" alt="\beta" title="\beta" />, the <em>input</em> is <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x" alt="x" title="x" />, and the <em>output</em> is <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cbeta%20%2B%20%5Calpha%20x" alt="\beta + \alpha x" title="\beta + \alpha x" />.</p>
-<p>As it so happens, a <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_p%28x%29" alt="f_p(x)" title="f_p(x)" /> is really just a “partially applied” <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%28p%2Cx%29" alt="f(p,x)" title="f(p,x)" />. Imagining that function, it has type:<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af%20%3A%20%28P%20%5Ctimes%20A%29%20%5Crightarrow%20B%0A" alt="
+<p>The parameterization <em>p</em> is some piece of data that we tweak to produce a different <span class="math inline">\(f_p(x)\)</span>. So, “training” (or “learning”, or “estimating”) a model is a process of picking the <span class="math inline">\(p\)</span> that gives the “correct” function <span class="math inline">\(f_p(x)\)</span> — that is, the function that accurately predicts spam or whatever thing you are trying to predict.</p>
+<p>For example, for <a href="https://en.wikipedia.org/wiki/Linear_regression">linear regression</a>, you are trying to “fit” your <span class="math inline">\((x, y)\)</span> data points to some function <span class="math inline">\(f(x) = \beta + \alpha x\)</span>. The <em>parameters</em> are <span class="math inline">\(\alpha\)</span> and <span class="math inline">\(\beta\)</span>, the <em>input</em> is <span class="math inline">\(x\)</span>, and the <em>output</em> is <span class="math inline">\(\beta + \alpha x\)</span>.</p>
+<p>As it so happens, a <span class="math inline">\(f_p(x)\)</span> is really just a “partially applied” <span class="math inline">\(f(p,x)\)</span>. Imagining that function, it has type:<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p><span class="math display">\[
 f : (P \times A) \rightarrow B
-" title="
-f : (P \times A) \rightarrow B
-" /><br /></p>
+\]</span></p>
 <p>If we <a href="https://en.wikipedia.org/wiki/Currying">curry</a> this, we get the original model representation we talked about:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af%20%3A%20P%20%5Crightarrow%20%28A%20%5Crightarrow%20B%29%0A" alt="
+<p><span class="math display">\[
 f : P \rightarrow (A \rightarrow B)
-" title="
-f : P \rightarrow (A \rightarrow B)
-" /><br /></p>
+\]</span></p>
 <h3 id="optimizing-models-with-observations">Optimizing Models with Observations</h3>
-<p>Something interesting happens if we flip the script. What if, instead of <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_p%28x%29" alt="f_p(x)" title="f_p(x)" />, we talked about <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_x%28p%29" alt="f_x(p)" title="f_x(p)" />? That is, we fix the input and vary the parameter, and see what type of outputs we get for the same output while we vary the parameter?</p>
-<p>If we have an “expected output” for our input, then one thing we can do is look at <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_x%28p%29" alt="f_x(p)" title="f_x(p)" /> and see when the result is close to <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y_x" alt="y_x" title="y_x" /> (the expected output of our model when given <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?x" alt="x" title="x" />).</p>
-<p>In fact, we can turn this into an optimization problem by trying to pick <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> that minimizes the difference between <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f_x%28p%29" alt="f_x(p)" title="f_x(p)" /> and <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y_x" alt="y_x" title="y_x" />. We can say that our model with parameter <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> predicts <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?y_x" alt="y_x" title="y_x" /> the best when we minimize:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%28f_x%28p%29%20-%20y_x%29%5E2%0A" alt="
+<p>Something interesting happens if we flip the script. What if, instead of <span class="math inline">\(f_p(x)\)</span>, we talked about <span class="math inline">\(f_x(p)\)</span>? That is, we fix the input and vary the parameter, and see what type of outputs we get for the same output while we vary the parameter?</p>
+<p>If we have an “expected output” for our input, then one thing we can do is look at <span class="math inline">\(f_x(p)\)</span> and see when the result is close to <span class="math inline">\(y_x\)</span> (the expected output of our model when given <span class="math inline">\(x\)</span>).</p>
+<p>In fact, we can turn this into an optimization problem by trying to pick <span class="math inline">\(p\)</span> that minimizes the difference between <span class="math inline">\(f_x(p)\)</span> and <span class="math inline">\(y_x\)</span>. We can say that our model with parameter <span class="math inline">\(p\)</span> predicts <span class="math inline">\(y_x\)</span> the best when we minimize:</p>
+<p><span class="math display">\[
 (f_x(p) - y_x)^2
-" title="
-(f_x(p) - y_x)^2
-" /><br /></p>
+\]</span></p>
 <p>If we minimize the squared error between the result of picking the parameter and the expected result, we find the best parameters for that given input!</p>
-<p>In general, picking the best parameter for the model involves picking the <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> that minimizes the relationship</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%5Ctext%7Bloss%7D%28y_x%2C%20f_x%28p%29%29%0A" alt="
+<p>In general, picking the best parameter for the model involves picking the <span class="math inline">\(p\)</span> that minimizes the relationship</p>
+<p><span class="math display">\[
 \text{loss}(y_x, f_x(p))
-" title="
-\text{loss}(y_x, f_x(p))
-" /><br /></p>
-<p>Where <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Ctext%7Bloss%7D%20%3A%20B%20%5Ctimes%20B%20%5Crightarrow%20%5Cmathbb%7BR%7D" alt="\text{loss} : B \times B \rightarrow \mathbb{R}" title="\text{loss} : B \times B \rightarrow \mathbb{R}" /> gives a measure of “how badly” the model result differs from the expected target. Common loss functions include squared error, cross-entropy, etc.</p>
-<p>This gives us a supervised way to train any model: if we have enough observations (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%28x%2C%20y_x%29" alt="(x, y_x)" title="(x, y_x)" /> pairs) we can just pick a <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> that does its best to make the loss between all observations as small as possible.</p>
+\]</span></p>
+<p>Where <span class="math inline">\(\text{loss} : B \times B \rightarrow \mathbb{R}\)</span> gives a measure of “how badly” the model result differs from the expected target. Common loss functions include squared error, cross-entropy, etc.</p>
+<p>This gives us a supervised way to train any model: if we have enough observations (<span class="math inline">\((x, y_x)\)</span> pairs) we can just pick a <span class="math inline">\(p\)</span> that does its best to make the loss between all observations as small as possible.</p>
 <h3 id="stochastic-gradient-descent">Stochastic Gradient Descent</h3>
 <p>If our model is a <em>differentiable function</em>, then we have a nice tool we can use: <em>stochastic gradient descent</em> (SGD).</p>
 <p>That is, we can always calculate the <em>gradient</em> of the loss function with respect to our parameters. This gives us the direction we can “nudge” our parameters to make the loss bigger or smaller.</p>
-<p>That is, if we get the <em>gradient</em> of the loss with respect to <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> (<img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cnabla_p%20%5Ctext%7Bloss%7D%28f_x%28p%29%2C%20y_x%29" alt="\nabla_p \text{loss}(f_x(p), y_x)" title="\nabla_p \text{loss}(f_x(p), y_x)" />), we now have a nice iterative way to “train” our model:</p>
+<p>That is, if we get the <em>gradient</em> of the loss with respect to <span class="math inline">\(p\)</span> (<span class="math inline">\(\nabla_p \text{loss}(f_x(p), y_x)\)</span>), we now have a nice iterative way to “train” our model:</p>
 <ol type="1">
 <li>Start with an initial guess at the parameter</li>
-<li>Look at a random <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%28x%2C%20y_x%29" alt="(x, y_x)" title="(x, y_x)" /> observation pair.</li>
-<li>Compute the gradient <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Cnabla_p%20%5Ctext%7Bloss%7D%28f_x%28p%29%2C%20y_x%29" alt="\nabla_p \text{loss}(f_x(p), y_x)" title="\nabla_p \text{loss}(f_x(p), y_x)" /> of our current <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" />, which tells us a direction we can “nudge” <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> in to make the loss smaller.</li>
-<li>Nudge <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?p" alt="p" title="p" /> in that direction</li>
+<li>Look at a random <span class="math inline">\((x, y_x)\)</span> observation pair.</li>
+<li>Compute the gradient <span class="math inline">\(\nabla_p \text{loss}(f_x(p), y_x)\)</span> of our current <span class="math inline">\(p\)</span>, which tells us a direction we can “nudge” <span class="math inline">\(p\)</span> in to make the loss smaller.</li>
+<li>Nudge <span class="math inline">\(p\)</span> in that direction</li>
 <li>Repeat from #2 until satisfied</li>
 </ol>
 <p>With every new observation, we see how we can nudge the parameter to make the model more accurate, and then we perform that nudge. At the end of it all, we wind up just the right <code>p</code> to model the relationship between our observation pairs.</p>
@@ -90,11 +80,9 @@ f : P \rightarrow (A \rightarrow B)
 <span id="cb2-6"><a href="#cb2-6"></a>                <span class="ot">-&gt;</span> <span class="dt">BVar</span> z b</span></code></pre></div>
 <p>This is a RankN <em>type synonym</em>, which is saying that a <code>Model p a b</code> is just a type synonym for a differentiable <code>BVar z p -&gt; BVar z a -&gt; BVar z b</code>. The <code>Reifies z W</code> is just a constraint that allows for backpropagation of <code>BVar</code>s.</p>
 <p>We can write a simple linear regression model:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0Af_%7B%5Calpha%2C%20%5Cbeta%7D%28x%29%20%3D%20%5Cbeta%20x%20%2B%20%5Calpha%0A" alt="
+<p><span class="math display">\[
 f_{\alpha, \beta}(x) = \beta x + \alpha
-" title="
-f_{\alpha, \beta}(x) = \beta x + \alpha
-" /><br /></p>
+\]</span></p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L48-L369</span></span>
 <span id="cb3-2"><a href="#cb3-2"></a></span>
 <span id="cb3-3"><a href="#cb3-3"></a><span class="kw">data</span> a <span class="op">:&amp;</span> b <span class="ot">=</span> <span class="op">!</span>a <span class="op">:&amp;</span> <span class="op">!</span>b</span>
@@ -114,11 +102,9 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1"></a>ghci<span class="op">&gt;</span> evalBP2 linReg (<span class="fl">0.3</span> <span class="op">:&amp;</span> (<span class="op">-</span><span class="fl">0.1</span>)) <span class="dv">5</span></span>
 <span id="cb4-2"><a href="#cb4-2"></a><span class="op">-</span><span class="fl">0.2</span>        <span class="co">-- (-0.1) * 5 + 0.3</span></span></code></pre></div>
 <p>But the neat thing is that we can also get the gradient of the parameters, too, if we identify a loss function:<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_p%20%28f%28p%2C%20x%29%20-%20y_x%29%5E2%0A" alt="
+<p><span class="math display">\[
 \nabla_p (f(p, x) - y_x)^2
-" title="
-\nabla_p (f(p, x) - y_x)^2
-" /><br /></p>
+\]</span></p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L60-L68</span></span>
 <span id="cb5-2"><a href="#cb5-2"></a></span>
 <span id="cb5-3"><a href="#cb5-3"></a>squaredErrorGrad</span>
@@ -152,7 +138,7 @@ f_{\alpha, \beta}(x) = \beta x + \alpha
 <span id="cb7-8"><a href="#cb7-8"></a>trainModelIO m xs <span class="ot">=</span> <span class="kw">do</span></span>
 <span id="cb7-9"><a href="#cb7-9"></a>    p0 <span class="ot">&lt;-</span> (<span class="op">/</span> <span class="dv">10</span>) <span class="op">.</span> <span class="fu">subtract</span> <span class="fl">0.5</span> <span class="op">&lt;$&gt;</span> randomIO</span>
 <span id="cb7-10"><a href="#cb7-10"></a>    <span class="fu">return</span> <span class="op">$</span> trainModel m p0 xs</span></code></pre></div>
-<p>Let’s train our linear regression model to fit the points <code>(1,1)</code>, <code>(2,3)</code>, <code>(3,5)</code>, <code>(4,7)</code>, and <code>(5,9)</code>! This should follow <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%28x%29%20%3D%202%20x%20-%201" alt="f(x) = 2 x - 1" title="f(x) = 2 x - 1" />, or <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%5Calpha%20%3D%20-1%2C%5C%2C%20%5Cbeta%20%3D%202" alt="\alpha = -1,\, \beta = 2" title="\alpha = -1,\, \beta = 2" />:</p>
+<p>Let’s train our linear regression model to fit the points <code>(1,1)</code>, <code>(2,3)</code>, <code>(3,5)</code>, <code>(4,7)</code>, and <code>(5,9)</code>! This should follow <span class="math inline">\(f(x) = 2 x - 1\)</span>, or <span class="math inline">\(\alpha = -1,\, \beta = 2\)</span>:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1"></a>ghci<span class="op">&gt;</span> samps <span class="ot">=</span> [(<span class="dv">1</span>,<span class="dv">1</span>),(<span class="dv">2</span>,<span class="dv">3</span>),(<span class="dv">3</span>,<span class="dv">5</span>),(<span class="dv">4</span>,<span class="dv">7</span>),(<span class="dv">5</span>,<span class="dv">9</span>)]</span>
 <span id="cb8-2"><a href="#cb8-2"></a>ghci<span class="op">&gt;</span> trainModelIO linReg <span class="op">$</span> <span class="fu">take</span> <span class="dv">5000</span> (<span class="fu">cycle</span> samps)</span>
 <span id="cb8-3"><a href="#cb8-3"></a>(<span class="op">-</span><span class="fl">1.0000000000000024</span>) <span class="op">:&amp;</span> <span class="fl">2.0000000000000036</span></span>

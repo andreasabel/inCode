@@ -21,11 +21,10 @@ consisting of photons, where its color is the frequency of its constituent
 photons and its *amplitude*/brightness as corresponding roughly to the "number
 of photons" emitted. If we do the math, then the average commercial hand-held
 laser, operating at a power of around 1 mW and emitting 700nm red light, would
-appear to have a cross-sectional flux of roughly
-![3.5 \\times 10\^{15}](https://latex.codecogs.com/png.latex?3.5%20%5Ctimes%2010%5E%7B15%7D "3.5 \times 10^{15}")
-(three and a half quadrillion) photons per second. So, in this picture, a
-handheld laser would be like a hose spraying a quadrillion little balls out of
-its end per second at the speed of light.
+appear to have a cross-sectional flux of roughly $3.5 \times 10^{15}$ (three and
+a half quadrillion) photons per second. So, in this picture, a handheld laser
+would be like a hose spraying a quadrillion little balls out of its end per
+second at the speed of light.
 
 In this light, the asker's question begins to make sense. If this laser is
 traveling in a straight line, then all of these quadrillion balls must also be
@@ -69,27 +68,23 @@ values.
 
 In the case of energy, this discretization means that the energy of the laser
 beam exists on a "staircase" of possible values, where each step is an increase
-of
-![\\Delta E = \\frac{h c}{\\lambda}](https://latex.codecogs.com/png.latex?%5CDelta%20E%20%3D%20%5Cfrac%7Bh%20c%7D%7B%5Clambda%7D "\Delta E = \frac{h c}{\lambda}"),
-where ![h](https://latex.codecogs.com/png.latex?h "h") is the Planck constant
-and ![c](https://latex.codecogs.com/png.latex?c "c") is the seed of light in a
-vacuum. So for a 700nm red laser, this step size is about 1.77 electron-Volts of
-energy. You can have a 8.85eV red laser and a 10.62eV laser (five steps, or six
-steps)...but you can't have anything in-between (no 9.5eV 700nm lasers!)
+of $\Delta E = \frac{h c}{\lambda}$, where $h$ is the Planck constant and $c$ is
+the seed of light in a vacuum. So for a 700nm red laser, this step size is about
+1.77 electron-Volts of energy. You can have a 8.85eV red laser and a 10.62eV
+laser (five steps, or six steps)...but you can't have anything in-between (no
+9.5eV 700nm lasers!)
 
 This means that if this laser beam ever *loses* or *gains* energy, it can't lose
 any small amount of energy. Its energy can only ever be integer multiples of
 1.77eV...so it can only ever gain or lose energy in increments of 1.77eV!
 
 This "minimal increment" of energy --- this abstract concept of a minimal
-![\\Delta E](https://latex.codecogs.com/png.latex?%5CDelta%20E "\Delta E") ---
-is known as a *photon*.
+$\Delta E$ --- is known as a *photon*.
 
 *That* is a photon. Not a little point-particle ball you shoot out of a canon,
 but rather an abstract *name* we give to the minimal amount a wave energy in the
 electromagnetic field is allowed to change. The *concept* of that minimal
-![\\Delta E](https://latex.codecogs.com/png.latex?%5CDelta%20E "\Delta E") is
-what we call a photon.
+$\Delta E$ is what we call a photon.
 
 A Quadrillion Giant Photons
 ---------------------------

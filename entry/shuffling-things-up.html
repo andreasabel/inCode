@@ -8,7 +8,7 @@ m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
 })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 ga('create', 'UA-443711-8', 'jle.im');
 ga('send', 'pageview');
-</script><script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5234d67a6b68dcd4"></script><script type="text/javascript" src="https://blog.jle.im/js/page/entry_toc.js"></script><script type="text/javascript" src="https://blog.jle.im/js/disqus_count.js"></script><script type="text/javascript" src="https://blog.jle.im/js/social.js"></script><script type="text/javascript" src="https://blog.jle.im/js/jquery/jquery.toc.js"></script><script type="text/javascript" src="https://blog.jle.im/purescript/entry.js"></script></head><body><div id="fb-root"><script>(function(d, s, id) {
+</script><script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script><script type="text/javascript" src="//cdn.jsdelivr.net/npm/mathjax@3.1.2"></script><script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-5234d67a6b68dcd4"></script><script type="text/javascript" src="https://blog.jle.im/js/page/entry_toc.js"></script><script type="text/javascript" src="https://blog.jle.im/js/disqus_count.js"></script><script type="text/javascript" src="https://blog.jle.im/js/social.js"></script><script type="text/javascript" src="https://blog.jle.im/js/jquery/jquery.toc.js"></script><script type="text/javascript" src="https://blog.jle.im/purescript/entry.js"></script></head><body><div id="fb-root"><script>(function(d, s, id) {
  var js, fjs = d.getElementsByTagName(s)[0];
  if (d.getElementById(id)) return;
  js = d.createElement(s); js.id = id;
@@ -163,25 +163,20 @@ in  x4 &lt;&gt; x4</code></pre>
 <span id="cb14-15"><a href="#cb14-15"></a>    <span class="st">&quot;deal&quot;</span><span class="op">:</span><span class="st">&quot;with&quot;</span><span class="op">:</span>_<span class="op">:</span>n<span class="op">:</span>_ <span class="ot">-&gt;</span> <span class="dt">Aff</span> (modulo (<span class="fu">read</span> n))                 <span class="dv">0</span></span></code></pre></div>
 <p>This is “defunctionalization”: if we notice a pattern in our functions, we can instead abstract out the data that defines each instance of that pattern, and work with that data instead.</p>
 <p>So far so good! Now to think about how to define composition.</p>
-<p>If we want to do <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%28x%29%20%3D%20a%27%20x%20%2B%20b%27" alt="f(x) = a&#39; x + b&#39;" title="f(x) = a&#39; x + b&#39;" /> after <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?g%28x%29%20%3D%20a%20x%20%2B%20b" alt="g(x) = a x + b" title="g(x) = a x + b" />, it’s:</p>
-<p><br /><img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%28f%20%5Ccirc%20g%29%28x%29%20%26%20%3D%20a%27%20%28a%20x%20%2B%20b%29%20%2B%20b%27%5C%5C%0A%20%20%28f%20%5Ccirc%20g%29%28x%29%20%26%20%3D%20a%27%20x%20%2B%20a%27%20b%20%2B%20b%27%0A%5Cend%7Baligned%7D%0A" alt="
+<p>If we want to do <span class="math inline">\(f(x) = a&#39; x + b&#39;\)</span> after <span class="math inline">\(g(x) = a x + b\)</span>, it’s:</p>
+<p><span class="math display">\[
 \begin{aligned}
 (f \circ g)(x) &amp; = a&#39; (a x + b) + b&#39;\\
   (f \circ g)(x) &amp; = a&#39; x + a&#39; b + b&#39;
 \end{aligned}
-" title="
-\begin{aligned}
-(f \circ g)(x) &amp; = a&#39; (a x + b) + b&#39;\\
-  (f \circ g)(x) &amp; = a&#39; x + a&#39; b + b&#39;
-\end{aligned}
-" /><br /></p>
+\]</span></p>
 <p>So composing <code>a' x + b'</code> after <code>a x + b</code> is is <code>a' a x + a' b + b'</code>:</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs#L30-L31</span></span>
 <span id="cb15-2"><a href="#cb15-2"></a></span>
 <span id="cb15-3"><a href="#cb15-3"></a><span class="kw">instance</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Semigroup</span> (<span class="dt">Affine</span> n) <span class="kw">where</span></span>
 <span id="cb15-4"><a href="#cb15-4"></a>    <span class="dt">Aff</span> a&#39; b&#39; <span class="op">&lt;&gt;</span> <span class="dt">Aff</span> a b <span class="ot">=</span> <span class="dt">Aff</span> (a&#39; <span class="op">*</span> a) (a&#39; <span class="op">*</span> b <span class="op">+</span> b&#39;)</span></code></pre></div>
 <p>Neat! We can now compose <em>and</em> run <code>Affine</code>s efficiently, which makes <code>stimes</code> useful! And the <code>Num</code> instance (which requires <code>KnownNat n</code>) for <code>Finite n</code> takes care of automatically doing modular arithmetic for us.</p>
-<p>To define a <code>Monoid</code> instance, we need an identity permutation. This would just leave x alone, so it makes sense that it’s <img style="vertical-align:middle" src="https://latex.codecogs.com/png.latex?f%28x%29%20%3D%201%20x%20%2B%200" alt="f(x) = 1 x + 0" title="f(x) = 1 x + 0" />, <code>1 x + 0</code>:</p>
+<p>To define a <code>Monoid</code> instance, we need an identity permutation. This would just leave x alone, so it makes sense that it’s <span class="math inline">\(f(x) = 1 x + 0\)</span>, <code>1 x + 0</code>:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1"></a><span class="co">-- source: https://github.com/mstksg/inCode/tree/master/code-samples/misc/advent-shuffle.hs#L33-L34</span></span>
 <span id="cb16-2"><a href="#cb16-2"></a></span>
 <span id="cb16-3"><a href="#cb16-3"></a><span class="kw">instance</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Monoid</span> (<span class="dt">Affine</span> n) <span class="kw">where</span></span>

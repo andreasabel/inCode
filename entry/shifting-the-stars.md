@@ -192,33 +192,15 @@ Part 1
 > *What message will eventually appear in the sky?*
 
 The problem tells us to talk about a system of N particles, each moving at
-constant velocity. From this, we can see that the position of particle
-![i](https://latex.codecogs.com/png.latex?i "i") at time
-![t](https://latex.codecogs.com/png.latex?t "t") is
-![\\mathbf{r}\_i + \\mathbf{v}\_i t](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D_i%20%2B%20%5Cmathbf%7Bv%7D_i%20t "\mathbf{r}_i + \mathbf{v}_i t"),
-where
-![\\mathbf{r}\_i](https://latex.codecogs.com/png.latex?%5Cmathbf%7Br%7D_i "\mathbf{r}_i")
-is the *initial position* vector, and
-![\\mathbf{v}\_i](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D_i "\mathbf{v}_i")
-is the *velocity* vector.
+constant velocity. From this, we can see that the position of particle $i$ at
+time $t$ is $\mathbf{r}_i + \mathbf{v}_i t$, where $\mathbf{r}_i$ is the
+*initial position* vector, and $\mathbf{v}_i$ is the *velocity* vector.
 
 More generally, we can express this in terms of matrices. If we talk talk about
-![R](https://latex.codecogs.com/png.latex?R "R") as the
-![N \\times 2](https://latex.codecogs.com/png.latex?N%20%5Ctimes%202 "N \times 2")
-matrix of initial positions, and
-![V](https://latex.codecogs.com/png.latex?V "V") as the
-![N \\times 2](https://latex.codecogs.com/png.latex?N%20%5Ctimes%202 "N \times 2")
+$R$ as the $N \times 2$ matrix of initial positions, and $V$ as the $N \times 2$
 matrix of initial velocities:
 
-![
-R =
-\\begin{bmatrix}
-x\_1 & y\_1 \\\\
-x\_2 & y\_2 \\\\
-\\vdots & \\vdots \\\\
-x\_N & y\_N
-\\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0AR%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Ax_1%20%26%20y_1%20%5C%5C%0Ax_2%20%26%20y_2%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%20%5C%5C%0Ax_N%20%26%20y_N%0A%5Cend%7Bbmatrix%7D%0A "
+$$
 R =
 \begin{bmatrix}
 x_1 & y_1 \\
@@ -226,17 +208,9 @@ x_2 & y_2 \\
 \vdots & \vdots \\
 x_N & y_N
 \end{bmatrix}
-")
+$$
 
-![
-V =
-\\begin{bmatrix}
-v\_{x1} & v\_{y1} \\\\
-v\_{x2} & v\_{y2} \\\\
-\\vdots & \\vdots \\\\
-v\_{xN} & v\_{yN}
-\\end{bmatrix}
-](https://latex.codecogs.com/png.latex?%0AV%20%3D%0A%5Cbegin%7Bbmatrix%7D%0Av_%7Bx1%7D%20%26%20v_%7By1%7D%20%5C%5C%0Av_%7Bx2%7D%20%26%20v_%7By2%7D%20%5C%5C%0A%5Cvdots%20%26%20%5Cvdots%20%5C%5C%0Av_%7BxN%7D%20%26%20v_%7ByN%7D%0A%5Cend%7Bbmatrix%7D%0A "
+$$
 V =
 \begin{bmatrix}
 v_{x1} & v_{y1} \\
@@ -244,11 +218,10 @@ v_{x2} & v_{y2} \\
 \vdots & \vdots \\
 v_{xN} & v_{yN}
 \end{bmatrix}
-")
+$$
 
-Then we can say that the state of the total system at time
-![t](https://latex.codecogs.com/png.latex?t "t") is given by
-![R + V t](https://latex.codecogs.com/png.latex?R%20%2B%20V%20t "R + V t")
+Then we can say that the state of the total system at time $t$ is given by
+$R + V t$
 
 Now, how can we find the time when all of the letters are aligned?
 
@@ -260,20 +233,17 @@ whereas the start times are all in the thousands or higher. And, once things get
 clustered, they will also get un-clustered right away, because of the randomness
 of the directions of motion.
 
-This gives us a clue: if we can find the
-![t](https://latex.codecogs.com/png.latex?t "t") that will give us the
-![R + V t](https://latex.codecogs.com/png.latex?R%20%2B%20V%20t "R + V t") with
-the *least variance*, we are good to go! All of a sudden, this is now an
+This gives us a clue: if we can find the $t$ that will give us the $R + V t$
+with the *least variance*, we are good to go! All of a sudden, this is now an
 [optimization](https://en.wikipedia.org/wiki/Mathematical_optimization) problem.
-Find the ![t](https://latex.codecogs.com/png.latex?t "t") that minimizes the
-variance of x plus the variance of y. We can find this by finding the formula
-for the sum of variances, taking the first derivative, and setting it to zero.
+Find the $t$ that minimizes the variance of x plus the variance of y. We can
+find this by finding the formula for the sum of variances, taking the first
+derivative, and setting it to zero.
 
-The typical formula for finding the sum of variances of a matrix
-![M](https://latex.codecogs.com/png.latex?M "M") is to take the
-[trace](https://en.wikipedia.org/wiki/Trace_(linear_algebra)) of the [covariance
-matrix](https://en.wikipedia.org/wiki/Covariance_matrix),
-![\\mathrm{Tr} \\left\[ \\left(M - \\mu\_M \\right)\^T \\left(M - \\mu\_M \\right) \\right\]](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%5B%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%5ET%20%5Cleft%28M%20-%20%5Cmu_M%20%5Cright%29%20%5Cright%5D "\mathrm{Tr} \left[ \left(M - \mu_M \right)^T \left(M - \mu_M \right) \right]").
+The typical formula for finding the sum of variances of a matrix $M$ is to take
+the [trace](https://en.wikipedia.org/wiki/Trace_(linear_algebra)) of the
+[covariance matrix](https://en.wikipedia.org/wiki/Covariance_matrix),
+$\mathrm{Tr} \left[ \left(M - \mu_M \right)^T \left(M - \mu_M \right) \right]$.
 However, in this form, it's not too fun to work with. That's because we have to
 re-compute the mean of of the positions at every point, and things will get
 messy before they get clean.
@@ -285,95 +255,66 @@ because our system has no external forces (and no net acceleration), we can
 transform](https://en.wikipedia.org/wiki/Galilean_transformation)* into a frame
 of reference where the center of mass is *fixed at the origin*, and *never
 changes*. If we can do this, then we only need to compute
-![\\mathrm{Tr} \\left(M\^T M \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%28M%5ET%20M%20%5Cright%29 "\mathrm{Tr} \left(M^T M \right)")
-(since we guarantee that the mean of
-![M](https://latex.codecogs.com/png.latex?M "M") is 0), which is relatively easy
-peasy.
+$\mathrm{Tr} \left(M^T M \right)$ (since we guarantee that the mean of $M$ is
+0), which is relatively easy peasy.
 
-Because our system has points of all equal "mass", we can shift
-![R](https://latex.codecogs.com/png.latex?R "R") into
-![\\hat{R}](https://latex.codecogs.com/png.latex?%5Chat%7BR%7D "\hat{R}")
-(![R](https://latex.codecogs.com/png.latex?R "R") shifted into the center of
-mass frame) and ![V](https://latex.codecogs.com/png.latex?V "V") into
-![\\hat{V}](https://latex.codecogs.com/png.latex?%5Chat%7BV%7D "\hat{V}") by
+Because our system has points of all equal "mass", we can shift $R$ into
+$\hat{R}$ ($R$ shifted into the center of mass frame) and $V$ into $\hat{V}$ by
 just subtracting by the *initial* mean:
 
-![
-\\begin{aligned}
-\\hat{R} & = R - \\mu\_R \\\\
-\\hat{V} & = V - \\mu\_V
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Chat%7BR%7D%20%26%20%3D%20R%20-%20%5Cmu_R%20%5C%5C%0A%5Chat%7BV%7D%20%26%20%3D%20V%20-%20%5Cmu_V%0A%5Cend%7Baligned%7D%0A "
+$$
 \begin{aligned}
 \hat{R} & = R - \mu_R \\
 \hat{V} & = V - \mu_V
 \end{aligned}
-")
+$$
 
 This means that our formula for variance at time T is now simple to manipulate.
 Because we now know that center of mass *is always zero*, we can compute the sum
 of variance as:
 
-![
-\\lvert \\Sigma(t) \\rvert = \\mathrm{Tr} \\left\[ \\left( \\hat{R} + \\hat{V} t \\right)\^T \\left( \\hat{R} + \\hat{V} t \\right) \\right\]
-](https://latex.codecogs.com/png.latex?%0A%5Clvert%20%5CSigma%28t%29%20%5Crvert%20%3D%20%5Cmathrm%7BTr%7D%20%5Cleft%5B%20%5Cleft%28%20%5Chat%7BR%7D%20%2B%20%5Chat%7BV%7D%20t%20%5Cright%29%5ET%20%5Cleft%28%20%5Chat%7BR%7D%20%2B%20%5Chat%7BV%7D%20t%20%5Cright%29%20%5Cright%5D%0A "
+$$
 \lvert \Sigma(t) \rvert = \mathrm{Tr} \left[ \left( \hat{R} + \hat{V} t \right)^T \left( \hat{R} + \hat{V} t \right) \right]
-")
+$$
 
 We can do some simplification, remembering that the trace distributes over
 addition, and that
-![\\mathrm{Tr} \\left( X\^T Y \\right) = \\mathrm{Tr} \\left (Y\^T X \\right)](https://latex.codecogs.com/png.latex?%5Cmathrm%7BTr%7D%20%5Cleft%28%20X%5ET%20Y%20%5Cright%29%20%3D%20%5Cmathrm%7BTr%7D%20%5Cleft%20%28Y%5ET%20X%20%5Cright%29 "\mathrm{Tr} \left( X^T Y \right) = \mathrm{Tr} \left (Y^T X \right)"):
+$\mathrm{Tr} \left( X^T Y \right) = \mathrm{Tr} \left (Y^T X \right)$:
 
-![
-\\lvert \\Sigma(t) \\rvert = \\mathrm{Tr} (\\hat{R}\^T \\hat{R})
-                   + 2 \\mathrm{Tr} (\\hat{R}\^T \\hat{V}) t
-                   + \\mathrm{Tr} (\\hat{V}\^T \\hat{V}) t\^2
-](https://latex.codecogs.com/png.latex?%0A%5Clvert%20%5CSigma%28t%29%20%5Crvert%20%3D%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BR%7D%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2B%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%20t%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2B%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%20t%5E2%0A "
+$$
 \lvert \Sigma(t) \rvert = \mathrm{Tr} (\hat{R}^T \hat{R})
                    + 2 \mathrm{Tr} (\hat{R}^T \hat{V}) t
                    + \mathrm{Tr} (\hat{V}^T \hat{V}) t^2
-")
+$$
 
 Now, we want to minimize the sum of variances. So to do that, we can take the
-first derivative with respect to
-![t](https://latex.codecogs.com/png.latex?t "t"), and set it to be zero:
+first derivative with respect to $t$, and set it to be zero:
 
-![
-\\begin{aligned}
-\\frac{d}{d t} \\lvert \\Sigma(t) \\rvert & = 2 \\mathrm{Tr} (\\hat{R}\^T \\hat{V})
-                                  + 2 \\mathrm{Tr} (\\hat{V}\^T \\hat{V}) t \\\\
-0 & = 2 \\mathrm{Tr} (\\hat{R}\^T \\hat{V}) + 2 \\mathrm{Tr} (\\hat{V}\^T \\hat{V}) t\_f \\\\
-t\_f & = - \\frac{\\mathrm{Tr} (\\hat{R}\^T \\hat{V})}{\\mathrm{Tr}(\\hat{V}\^T \\hat{V})}
-\\end{aligned}
-](https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bd%20t%7D%20%5Clvert%20%5CSigma%28t%29%20%5Crvert%20%26%20%3D%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%2B%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%20t%20%5C%5C%0A0%20%26%20%3D%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%20%2B%202%20%5Cmathrm%7BTr%7D%20%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%20t_f%20%5C%5C%0At_f%20%26%20%3D%20-%20%5Cfrac%7B%5Cmathrm%7BTr%7D%20%28%5Chat%7BR%7D%5ET%20%5Chat%7BV%7D%29%7D%7B%5Cmathrm%7BTr%7D%28%5Chat%7BV%7D%5ET%20%5Chat%7BV%7D%29%7D%0A%5Cend%7Baligned%7D%0A "
+$$
 \begin{aligned}
 \frac{d}{d t} \lvert \Sigma(t) \rvert & = 2 \mathrm{Tr} (\hat{R}^T \hat{V})
                                   + 2 \mathrm{Tr} (\hat{V}^T \hat{V}) t \\
 0 & = 2 \mathrm{Tr} (\hat{R}^T \hat{V}) + 2 \mathrm{Tr} (\hat{V}^T \hat{V}) t_f \\
 t_f & = - \frac{\mathrm{Tr} (\hat{R}^T \hat{V})}{\mathrm{Tr}(\hat{V}^T \hat{V})}
 \end{aligned}
-")
+$$
 
-And just like that, we have a formula for
-![t\_f](https://latex.codecogs.com/png.latex?t_f "t_f")!
+And just like that, we have a formula for $t_f$!
 
 We can simplify this a little more by remembering that the trace of a matrix
 multiplication is the sum of the dot products of the columns of the first matrix
 by the rows of the second. That means we can write:
 
-![
-t\_f = - \\frac{\\sum\_i \\hat{\\mathbf{r}}\_i \\cdot \\hat{\\mathbf{v}}\_i}{\\sum\_i \\hat{\\mathbf{v}}\_i \\cdot \\hat{\\mathbf{v}}\_i}
-](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5Csum_i%20%5Chat%7B%5Cmathbf%7Br%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%7B%5Csum_i%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%0A "
+$$
 t_f = - \frac{\sum_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\sum_i \hat{\mathbf{v}}_i \cdot \hat{\mathbf{v}}_i}
-")
+$$
 
 Once we find this, we can plug into our original form, to find that our final
-points are, in our un-shifted coordinates,
-![R + V t\_f](https://latex.codecogs.com/png.latex?R%20%2B%20V%20t_f "R + V t_f").
-This is because Galilean transformations leave time unchanged, unlike other
-frame transformations, like the Lorentz transform. However, we have a simpler
-option: we could just leave our answer in shifted coordinates as well, since we
-only care about the shape of the result, and not the absolute position.
+points are, in our un-shifted coordinates, $R + V t_f$. This is because Galilean
+transformations leave time unchanged, unlike other frame transformations, like
+the Lorentz transform. However, we have a simpler option: we could just leave
+our answer in shifted coordinates as well, since we only care about the shape of
+the result, and not the absolute position.
 
 We can write this as a Haskell function, assuming we take in a list of
 `V2 Double` for velocities and `V2 Double` for positions, from the
@@ -414,9 +355,8 @@ Part 2
 > *exactly how many seconds would they have needed to wait for that message to
 > appear?*
 
-This one is just ![t](https://latex.codecogs.com/png.latex?t "t"), which we
-solved for in the last part! This time, we do need to remember to `round` it
-before we submit.
+This one is just $t$, which we solved for in the last part! This time, we do
+need to remember to `round` it before we submit.
 
 Message in the Stars
 --------------------
@@ -448,11 +388,9 @@ It's always fun when something that you might think can only be solved by
 simulation turns out to have a closed-form solution...but even more fun when the
 closed-form solution turns out to just be simple linear algebra:
 
-![
-t\_f = - \\frac{\\sum\_i \\hat{\\mathbf{r}}\_i \\cdot \\hat{\\mathbf{v}}\_i}{\\sum\_i \\hat{\\mathbf{v}}\_i \\cdot \\hat{\\mathbf{v}}\_i}
-](https://latex.codecogs.com/png.latex?%0At_f%20%3D%20-%20%5Cfrac%7B%5Csum_i%20%5Chat%7B%5Cmathbf%7Br%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%7B%5Csum_i%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%20%5Ccdot%20%5Chat%7B%5Cmathbf%7Bv%7D%7D_i%7D%0A "
+$$
 t_f = - \frac{\sum_i \hat{\mathbf{r}}_i \cdot \hat{\mathbf{v}}_i}{\sum_i \hat{\mathbf{v}}_i \cdot \hat{\mathbf{v}}_i}
-")
+$$
 
 "It's just dot products all the way down."
 

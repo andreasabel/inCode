@@ -57,110 +57,78 @@ input "question" (predictor, independent variable) to some output "answer"
 
 Notationally, we might write it as a function:
 
-![
-f\_p(x) = y
-](https://latex.codecogs.com/png.latex?%0Af_p%28x%29%20%3D%20y%0A "
+$$
 f_p(x) = y
-")
+$$
 
-The important thing is that, for every choice of *parameterization*
-![p](https://latex.codecogs.com/png.latex?p "p"), we get a *different function*
-![f\_p(x)](https://latex.codecogs.com/png.latex?f_p%28x%29 "f_p(x)").
+The important thing is that, for every choice of *parameterization* $p$, we get
+a *different function* $f_p(x)$.
 
 For example, you might want to write a model that, when given an email, outputs
 whether or not that email is spam.
 
 The parameterization *p* is some piece of data that we tweak to produce a
-different ![f\_p(x)](https://latex.codecogs.com/png.latex?f_p%28x%29 "f_p(x)").
-So, "training" (or "learning", or "estimating") a model is a process of picking
-the ![p](https://latex.codecogs.com/png.latex?p "p") that gives the "correct"
-function ![f\_p(x)](https://latex.codecogs.com/png.latex?f_p%28x%29 "f_p(x)")
---- that is, the function that accurately predicts spam or whatever thing you
-are trying to predict.
+different $f_p(x)$. So, "training" (or "learning", or "estimating") a model is a
+process of picking the $p$ that gives the "correct" function $f_p(x)$ --- that
+is, the function that accurately predicts spam or whatever thing you are trying
+to predict.
 
 For example, for [linear
 regression](https://en.wikipedia.org/wiki/Linear_regression), you are trying to
-"fit" your
-![(x, y)](https://latex.codecogs.com/png.latex?%28x%2C%20y%29 "(x, y)") data
-points to some function
-![f(x) = \\beta + \\alpha x](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%20%5Cbeta%20%2B%20%5Calpha%20x "f(x) = \beta + \alpha x").
-The *parameters* are
-![\\alpha](https://latex.codecogs.com/png.latex?%5Calpha "\alpha") and
-![\\beta](https://latex.codecogs.com/png.latex?%5Cbeta "\beta"), the *input* is
-![x](https://latex.codecogs.com/png.latex?x "x"), and the *output* is
-![\\beta + \\alpha x](https://latex.codecogs.com/png.latex?%5Cbeta%20%2B%20%5Calpha%20x "\beta + \alpha x").
+"fit" your $(x, y)$ data points to some function $f(x) = \beta + \alpha x$. The
+*parameters* are $\alpha$ and $\beta$, the *input* is $x$, and the *output* is
+$\beta + \alpha x$.
 
-As it so happens, a
-![f\_p(x)](https://latex.codecogs.com/png.latex?f_p%28x%29 "f_p(x)") is really
-just a "partially applied"
-![f(p,x)](https://latex.codecogs.com/png.latex?f%28p%2Cx%29 "f(p,x)"). Imagining
-that function, it has type:[^1]
+As it so happens, a $f_p(x)$ is really just a "partially applied" $f(p,x)$.
+Imagining that function, it has type:[^1]
 
-![
-f : (P \\times A) \\rightarrow B
-](https://latex.codecogs.com/png.latex?%0Af%20%3A%20%28P%20%5Ctimes%20A%29%20%5Crightarrow%20B%0A "
+$$
 f : (P \times A) \rightarrow B
-")
+$$
 
 If we [curry](https://en.wikipedia.org/wiki/Currying) this, we get the original
 model representation we talked about:
 
-![
-f : P \\rightarrow (A \\rightarrow B)
-](https://latex.codecogs.com/png.latex?%0Af%20%3A%20P%20%5Crightarrow%20%28A%20%5Crightarrow%20B%29%0A "
+$$
 f : P \rightarrow (A \rightarrow B)
-")
+$$
 
 ### Optimizing Models with Observations
 
 Something interesting happens if we flip the script. What if, instead of
-![f\_p(x)](https://latex.codecogs.com/png.latex?f_p%28x%29 "f_p(x)"), we talked
-about ![f\_x(p)](https://latex.codecogs.com/png.latex?f_x%28p%29 "f_x(p)")? That
-is, we fix the input and vary the parameter, and see what type of outputs we get
-for the same output while we vary the parameter?
+$f_p(x)$, we talked about $f_x(p)$? That is, we fix the input and vary the
+parameter, and see what type of outputs we get for the same output while we vary
+the parameter?
 
 If we have an "expected output" for our input, then one thing we can do is look
-at ![f\_x(p)](https://latex.codecogs.com/png.latex?f_x%28p%29 "f_x(p)") and see
-when the result is close to
-![y\_x](https://latex.codecogs.com/png.latex?y_x "y_x") (the expected output of
-our model when given ![x](https://latex.codecogs.com/png.latex?x "x")).
+at $f_x(p)$ and see when the result is close to $y_x$ (the expected output of
+our model when given $x$).
 
-In fact, we can turn this into an optimization problem by trying to pick
-![p](https://latex.codecogs.com/png.latex?p "p") that minimizes the difference
-between ![f\_x(p)](https://latex.codecogs.com/png.latex?f_x%28p%29 "f_x(p)") and
-![y\_x](https://latex.codecogs.com/png.latex?y_x "y_x"). We can say that our
-model with parameter ![p](https://latex.codecogs.com/png.latex?p "p") predicts
-![y\_x](https://latex.codecogs.com/png.latex?y_x "y_x") the best when we
-minimize:
+In fact, we can turn this into an optimization problem by trying to pick $p$
+that minimizes the difference between $f_x(p)$ and $y_x$. We can say that our
+model with parameter $p$ predicts $y_x$ the best when we minimize:
 
-![
-(f\_x(p) - y\_x)\^2
-](https://latex.codecogs.com/png.latex?%0A%28f_x%28p%29%20-%20y_x%29%5E2%0A "
+$$
 (f_x(p) - y_x)^2
-")
+$$
 
 If we minimize the squared error between the result of picking the parameter and
 the expected result, we find the best parameters for that given input!
 
-In general, picking the best parameter for the model involves picking the
-![p](https://latex.codecogs.com/png.latex?p "p") that minimizes the relationship
+In general, picking the best parameter for the model involves picking the $p$
+that minimizes the relationship
 
-![
-\\text{loss}(y\_x, f\_x(p))
-](https://latex.codecogs.com/png.latex?%0A%5Ctext%7Bloss%7D%28y_x%2C%20f_x%28p%29%29%0A "
+$$
 \text{loss}(y_x, f_x(p))
-")
+$$
 
-Where
-![\\text{loss} : B \\times B \\rightarrow \\mathbb{R}](https://latex.codecogs.com/png.latex?%5Ctext%7Bloss%7D%20%3A%20B%20%5Ctimes%20B%20%5Crightarrow%20%5Cmathbb%7BR%7D "\text{loss} : B \times B \rightarrow \mathbb{R}")
-gives a measure of "how badly" the model result differs from the expected
-target. Common loss functions include squared error, cross-entropy, etc.
+Where $\text{loss} : B \times B \rightarrow \mathbb{R}$ gives a measure of "how
+badly" the model result differs from the expected target. Common loss functions
+include squared error, cross-entropy, etc.
 
 This gives us a supervised way to train any model: if we have enough
-observations
-(![(x, y\_x)](https://latex.codecogs.com/png.latex?%28x%2C%20y_x%29 "(x, y_x)")
-pairs) we can just pick a ![p](https://latex.codecogs.com/png.latex?p "p") that
-does its best to make the loss between all observations as small as possible.
+observations ($(x, y_x)$ pairs) we can just pick a $p$ that does its best to
+make the loss between all observations as small as possible.
 
 ### Stochastic Gradient Descent
 
@@ -171,22 +139,15 @@ That is, we can always calculate the *gradient* of the loss function with
 respect to our parameters. This gives us the direction we can "nudge" our
 parameters to make the loss bigger or smaller.
 
-That is, if we get the *gradient* of the loss with respect to
-![p](https://latex.codecogs.com/png.latex?p "p")
-(![\\nabla\_p \\text{loss}(f\_x(p), y\_x)](https://latex.codecogs.com/png.latex?%5Cnabla_p%20%5Ctext%7Bloss%7D%28f_x%28p%29%2C%20y_x%29 "\nabla_p \text{loss}(f_x(p), y_x)")),
-we now have a nice iterative way to "train" our model:
+That is, if we get the *gradient* of the loss with respect to $p$
+($\nabla_p \text{loss}(f_x(p), y_x)$), we now have a nice iterative way to
+"train" our model:
 
 1.  Start with an initial guess at the parameter
-2.  Look at a random
-    ![(x, y\_x)](https://latex.codecogs.com/png.latex?%28x%2C%20y_x%29 "(x, y_x)")
-    observation pair.
-3.  Compute the gradient
-    ![\\nabla\_p \\text{loss}(f\_x(p), y\_x)](https://latex.codecogs.com/png.latex?%5Cnabla_p%20%5Ctext%7Bloss%7D%28f_x%28p%29%2C%20y_x%29 "\nabla_p \text{loss}(f_x(p), y_x)")
-    of our current ![p](https://latex.codecogs.com/png.latex?p "p"), which tells
-    us a direction we can "nudge"
-    ![p](https://latex.codecogs.com/png.latex?p "p") in to make the loss
-    smaller.
-4.  Nudge ![p](https://latex.codecogs.com/png.latex?p "p") in that direction
+2.  Look at a random $(x, y_x)$ observation pair.
+3.  Compute the gradient $\nabla_p \text{loss}(f_x(p), y_x)$ of our current $p$,
+    which tells us a direction we can "nudge" $p$ in to make the loss smaller.
+4.  Nudge $p$ in that direction
 5.  Repeat from \#2 until satisfied
 
 With every new observation, we see how we can nudge the parameter to make the
@@ -231,11 +192,9 @@ type synonym for a differentiable `BVar z p -> BVar z a -> BVar z b`. The
 
 We can write a simple linear regression model:
 
-![
-f\_{\\alpha, \\beta}(x) = \\beta x + \\alpha
-](https://latex.codecogs.com/png.latex?%0Af_%7B%5Calpha%2C%20%5Cbeta%7D%28x%29%20%3D%20%5Cbeta%20x%20%2B%20%5Calpha%0A "
+$$
 f_{\alpha, \beta}(x) = \beta x + \alpha
-")
+$$
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L48-L369
@@ -276,11 +235,9 @@ ghci> evalBP2 linReg (0.3 :& (-0.1)) 5
 But the neat thing is that we can also get the gradient of the parameters, too,
 if we identify a loss function:[^2]
 
-![
-\\nabla\_p (f(p, x) - y\_x)\^2
-](https://latex.codecogs.com/png.latex?%0A%5Cnabla_p%20%28f%28p%2C%20x%29%20-%20y_x%29%5E2%0A "
+$$
 \nabla_p (f(p, x) - y_x)^2
-")
+$$
 
 ``` {.haskell}
 -- source: https://github.com/mstksg/inCode/tree/master/code-samples/functional-models/model.hs#L60-L68
@@ -332,10 +289,8 @@ trainModelIO m xs = do
 ```
 
 Let's train our linear regression model to fit the points `(1,1)`, `(2,3)`,
-`(3,5)`, `(4,7)`, and `(5,9)`! This should follow
-![f(x) = 2 x - 1](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%202%20x%20-%201 "f(x) = 2 x - 1"),
-or
-![\\alpha = -1,\\, \\beta = 2](https://latex.codecogs.com/png.latex?%5Calpha%20%3D%20-1%2C%5C%2C%20%5Cbeta%20%3D%202 "\alpha = -1,\, \beta = 2"):
+`(3,5)`, `(4,7)`, and `(5,9)`! This should follow $f(x) = 2 x - 1$, or
+$\alpha = -1,\, \beta = 2$:
 
 ``` {.haskell}
 ghci> samps = [(1,1),(2,3),(3,5),(4,7),(5,9)]

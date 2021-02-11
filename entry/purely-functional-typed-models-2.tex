@@ -112,25 +112,15 @@ first!
 In the last post, we looked at models as ``question and answer'' systems. We
 described them as essentially being functions of type
 
-{[} f : P \textbackslash rightarrow (A \textbackslash rightarrow
-B){]}(https://latex.codecogs.com/png.latex?\%0Af\%20\%3A\%20P\%20\%5Crightarrow\%20\%28A\%20\%5Crightarrow\%20B\%29\%0A
-" f : P \rightarrow (A \rightarrow B) ")
+\[
+f : P \rightarrow (A \rightarrow B)
+\]
 
-Where, for
-\includegraphics{https://latex.codecogs.com/png.latex?f_p\%28x\%29\%20\%3D\%20y},
-you have a ``question''
-\includegraphics{https://latex.codecogs.com/png.latex?x\%20\%3A\%20A} and are
-looking for an ``answer''
-\includegraphics{https://latex.codecogs.com/png.latex?y\%20\%3A\%20B}. Picking a
-\emph{different}
-\includegraphics{https://latex.codecogs.com/png.latex?p\%20\%3A\%20P} will give
-a \emph{different}
-\includegraphics{https://latex.codecogs.com/png.latex?A\%20\%5Crightarrow\%20B}
-function. We claimed that training a model was finding just the right
-\includegraphics{https://latex.codecogs.com/png.latex?p} to use with the model
-to yield the right
-\includegraphics{https://latex.codecogs.com/png.latex?A\%20\%5Crightarrow\%20B}
-function that models your situation.
+Where, for \(f_p(x) = y\), you have a ``question'' \(x : A\) and are looking for
+an ``answer'' \(y : B\). Picking a \emph{different} \(p : P\) will give a
+\emph{different} \(A \rightarrow B\) function. We claimed that training a model
+was finding just the right \(p\) to use with the model to yield the right
+\(A \rightarrow B\) function that models your situation.
 
 We then noted that if you have a set of \texttt{(a,\ b)} observations, and your
 function is differentiable, you can find the \emph{gradient} of \texttt{p} with
@@ -156,37 +146,31 @@ In the wild, many models are not simple ``question and answer'', but rather
 represent a ``time series''. As a generalization, we can talk about time series
 models as:
 
-{[} f\_p(x,t) =
-y{]}(https://latex.codecogs.com/png.latex?\%0Af\_p\%28x\%2Ct\%29\%20\%3D\%20y\%0A
-" f\_p(x,t) = y ")
+\[
+f_p(x,t) = y
+\]
 
 Which says, given an input and a time, return an output based on both. The point
 of this is to let us have recurrent relationships, like for
 \href{https://en.wikipedia.org/wiki/Autoregressive_model}{autoregressive models}
 found in statistics:
 
-{[} \textbackslash text\{AR\}\_\{\textbackslash phi\_1, \textbackslash phi\_2,
-\textbackslash ldots\}(x,t) = \textbackslash epsilon\_t + \textbackslash phi\_1
-\textbackslash text\{AR\}\_\{\textbackslash phi\_1, \textbackslash phi\_2,
-\textbackslash ldots\}(x, t-1) + \textbackslash phi\_2
-\textbackslash text\{AR\}\_\{\textbackslash phi\_1, \textbackslash phi\_2,
-\textbackslash ldots\}(x, t-2) +
-\textbackslash ldots{]}(https://latex.codecogs.com/png.latex?\%0A\%5Ctext\%7BAR\%7D\_\%7B\%5Cphi\_1\%2C\%20\%5Cphi\_2\%2C\%20\%5Cldots\%7D\%28x\%2Ct\%29\%0A\%20\%20\%3D\%20\%5Cepsilon\_t\%20\%2B\%20\%5Cphi\_1\%20\%5Ctext\%7BAR\%7D\_\%7B\%5Cphi\_1\%2C\%20\%5Cphi\_2\%2C\%20\%5Cldots\%7D\%28x\%2C\%20t-1\%29\%0A\%20\%20\%2B\%20\%5Cphi\_2\%20\%5Ctext\%7BAR\%7D\_\%7B\%5Cphi\_1\%2C\%20\%5Cphi\_2\%2C\%20\%5Cldots\%7D\%28x\%2C\%20t-2\%29\%0A\%20\%20\%2B\%20\%5Cldots\%0A
-" \text{AR}\_\{\phi\_1, \phi\_2, \ldots\}(x,t) = \epsilon\_t + \phi\emph{1
-\text{AR}}\{\phi\_1, \phi\_2, \ldots\}(x, t-1) + \phi\emph{2
-\text{AR}}\{\phi\_1, \phi\_2, \ldots\}(x, t-2) + \ldots ")
+\[
+\text{AR}_{\phi_1, \phi_2, \ldots}(x,t)
+  = \epsilon_t + \phi_1 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-1)
+  + \phi_2 \text{AR}_{\phi_1, \phi_2, \ldots}(x, t-2)
+  + \ldots
+\]
 
 However, this is a bad way of \emph{implementing} models on time series, because
 nothing is stopping the result of a model from depending on a future value (the
-value at time
-\includegraphics{https://latex.codecogs.com/png.latex?t\%20\%3D\%203}, for
-instance, might depend explicitly only the value at time
-\includegraphics{https://latex.codecogs.com/png.latex?t\%20\%3D\%205}). Instead,
-we can imagine time series models as explicitly ``stateful'' models:
+value at time \(t = 3\), for instance, might depend explicitly only the value at
+time \(t = 5\)). Instead, we can imagine time series models as explicitly
+``stateful'' models:
 
-{[} f\_p(x, s\_\{\textbackslash text\{old\}\}) = (y,
-s\_\{\textbackslash text\{new\}\}){]}(https://latex.codecogs.com/png.latex?\%0Af\_p\%28x\%2C\%20s\_\%7B\%5Ctext\%7Bold\%7D\%7D\%29\%20\%3D\%20\%28y\%2C\%20s\_\%7B\%5Ctext\%7Bnew\%7D\%7D\%29\%0A
-" f\_p(x, s\_\{\text{old}\}) = (y, s\_\{\text{new}\}) ")
+\[
+f_p(x, s_{\text{old}}) = (y, s_{\text{new}})
+\]
 
 These have type:\footnote{If you recognized our original stateless model type as
   \texttt{a\ -\textgreater{}\ Reader\ p\ b}, then you might have also recognized
@@ -196,10 +180,9 @@ These have type:\footnote{If you recognized our original stateless model type as
   of a ``function from \texttt{a} to \texttt{b} with environment \texttt{p},
   that takes and returns a modified version of some `state' \texttt{s}''.}
 
-{[} f : (P \textbackslash times A \textbackslash times S)
-\textbackslash rightarrow (B \textbackslash times
-S){]}(https://latex.codecogs.com/png.latex?\%0Af\%20\%3A\%20\%28P\%20\%5Ctimes\%20A\%20\%5Ctimes\%20S\%29\%20\%5Crightarrow\%20\%28B\%20\%5Ctimes\%20S\%29\%0A
-" f : (P \times A \times S) \rightarrow (B \times S) ")
+\[
+f : (P \times A \times S) \rightarrow (B \times S)
+\]
 
 This makes it clear that the output of our model can only depend on current and
 \emph{previously occurring} information, preserving causality.
@@ -214,44 +197,39 @@ on the \emph{last two} most recent observed values. We can do this by setting
 the ``input'' to be the last observed value, and the ``state'' to be the
 second-to-last observed value:
 
-{[} \textbackslash begin\{aligned\} s\_t \& = x\_t
-\textbackslash\textbackslash{} y\_t \& = c + \textbackslash phi\_1 s\_t +
-\textbackslash phi\_2 s\_\{t - 1\}
-\textbackslash end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0As\_t\%20\%26\%20\%3D\%20x\_t\%20\%5C\%5C\%0Ay\_t\%20\%26\%20\%3D\%20c\%20\%2B\%20\%5Cphi\_1\%20s\_t\%20\%2B\%20\%5Cphi\_2\%20s\_\%7Bt\%20-\%201\%7D\%0A\%5Cend\%7Baligned\%7D\%0A
-" \textbackslash begin\{aligned\} s\_t \& = x\_t \textbackslash{} y\_t \& = c +
-\phi\_1 s\_t + \phi\emph{2 s}\{t - 1\} \textbackslash end\{aligned\} ")
+\[
+\begin{aligned}
+s_t & = x_t \\
+y_t & = c + \phi_1 s_t + \phi_2 s_{t - 1}
+\end{aligned}
+\]
 
 Or, in our function form:
 
-{[} f\_\{c, \textbackslash phi\_1, \textbackslash phi\_2\}(x, s) = (c +
-\textbackslash phi\_1 x + \textbackslash phi\_2 s,
-x){]}(https://latex.codecogs.com/png.latex?\%0Af\_\%7Bc\%2C\%20\%5Cphi\_1\%2C\%20\%5Cphi\_2\%7D\%28x\%2C\%20s\%29\%20\%3D\%20\%28c\%20\%2B\%20\%5Cphi\_1\%20x\%20\%2B\%20\%5Cphi\_2\%20s\%2C\%20x\%29\%0A
-" f\_\{c, \phi\_1, \phi\_2\}(x, s) = (c + \phi\_1 x + \phi\_2 s, x) ")
+\[
+f_{c, \phi_1, \phi_2}(x, s) = (c + \phi_1 x + \phi_2 s, x)
+\]
 
 There's also the classic
 \href{http://karpathy.github.io/2015/05/21/rnn-effectiveness/}{fully-connected
 recurrent neural network layer}, whose output is a linear combination of the
 (logistic'd) previous output and the current input, plus a bias:
 
-{[} \textbackslash begin\{aligned\} s\_t \& = \textbackslash sigma(y\_t)
-\textbackslash\textbackslash{} y\_t \& = W\_x \textbackslash mathbf\{x\}\_t +
-W\_s \textbackslash mathbf\{s\}\_\{t-1\} + \textbackslash mathbf\{b\}
-\textbackslash end\{aligned\}{]}(https://latex.codecogs.com/png.latex?\%0A\%5Cbegin\%7Baligned\%7D\%0As\_t\%20\%26\%20\%3D\%20\%5Csigma\%28y\_t\%29\%20\%5C\%5C\%0Ay\_t\%20\%26\%20\%3D\%20W\_x\%20\%5Cmathbf\%7Bx\%7D\_t\%20\%2B\%20W\_s\%20\%5Cmathbf\%7Bs\%7D\_\%7Bt-1\%7D\%20\%2B\%20\%5Cmathbf\%7Bb\%7D\%0A\%5Cend\%7Baligned\%7D\%0A
-" \textbackslash begin\{aligned\} s\_t \& = \sigma(y\_t) \textbackslash{} y\_t
-\& = W\_x \mathbf{x}\emph{t + W\_s \mathbf{s}}\{t-1\} + \mathbf{b}
-\textbackslash end\{aligned\} ")
+\[
+\begin{aligned}
+s_t & = \sigma(y_t) \\
+y_t & = W_x \mathbf{x}_t + W_s \mathbf{s}_{t-1} + \mathbf{b}
+\end{aligned}
+\]
 
 Or, in our function form:
 
-{[} f\_\{W\_x, W\_s, \textbackslash mathbf\{b\}\}(\textbackslash mathbf\{x\},
-\textbackslash mathbf\{s\}) = ( W\_x \textbackslash mathbf\{x\} + W\_s
-\textbackslash mathbf\{s\} + \textbackslash mathbf\{b\} ,
-\textbackslash sigma(W\_x \textbackslash mathbf\{x\} + W\_s
-\textbackslash mathbf\{s\} + \textbackslash mathbf\{b\})
-){]}(https://latex.codecogs.com/png.latex?\%0Af\_\%7BW\_x\%2C\%20W\_s\%2C\%20\%5Cmathbf\%7Bb\%7D\%7D\%28\%5Cmathbf\%7Bx\%7D\%2C\%20\%5Cmathbf\%7Bs\%7D\%29\%20\%3D\%0A\%20\%20\%28\%20W\_x\%20\%5Cmathbf\%7Bx\%7D\%20\%2B\%20W\_s\%20\%5Cmathbf\%7Bs\%7D\%20\%2B\%20\%5Cmathbf\%7Bb\%7D\%0A\%20\%20\%2C\%20\%5Csigma\%28W\_x\%20\%5Cmathbf\%7Bx\%7D\%20\%2B\%20W\_s\%20\%5Cmathbf\%7Bs\%7D\%20\%2B\%20\%5Cmathbf\%7Bb\%7D\%29\%0A\%20\%20\%29\%0A
-" f\_\{W\_x, W\_s, \mathbf{b}\}(\mathbf{x}, \mathbf{s}) = ( W\_x \mathbf{x} +
-W\_s \mathbf{s} + \mathbf{b} , \sigma(W\_x \mathbf{x} + W\_s \mathbf{s} +
-\mathbf{b}) ) ")
+\[
+f_{W_x, W_s, \mathbf{b}}(\mathbf{x}, \mathbf{s}) =
+  ( W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b}
+  , \sigma(W_x \mathbf{x} + W_s \mathbf{s} + \mathbf{b})
+  )
+\]
 
 \hypertarget{the-connection}{%
 \subsection{The connection}\label{the-connection}}
@@ -293,9 +271,8 @@ To help us see, let's try implementing this in Haskell. Remember our previous
 \end{Highlighting}
 \end{Shaded}
 
-which represented a differentiable
-\includegraphics{https://latex.codecogs.com/png.latex?f\%20\%3A\%20\%28P\%20\%5Ctimes\%20A\%29\%20\%5Crightarrow\%20B}.
-We can directly translate this to a new \texttt{ModelS} type:
+which represented a differentiable \(f : (P \times A) \rightarrow B\). We can
+directly translate this to a new \texttt{ModelS} type:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -310,7 +287,7 @@ We can directly translate this to a new \texttt{ModelS} type:
 \end{Shaded}
 
 which represents a differentiable
-\includegraphics{https://latex.codecogs.com/png.latex?f\%20\%3A\%20\%28P\%20\%5Ctimes\%20A\%20\%5Ctimes\%20S\%29\%20\%5Crightarrow\%20\%28B\%20\%5Ctimes\%20S\%29}.
+\(f : (P \times A \times S) \rightarrow (B \times S)\).
 
 We can implement AR(2) as mentioned before by translating the math formula
 directly:
@@ -857,9 +834,9 @@ We can peek inside the parameterization of our learned AR(2):
 
 Meaning that the gradient descent has concluded that our AR(2) model is:
 
-{[} y\_t = 0 + 1.9372 y\_\{t - 1\} - y\_\{t -
-2\}{]}(https://latex.codecogs.com/png.latex?\%0Ay\_t\%20\%3D\%200\%20\%2B\%201.9372\%20y\_\%7Bt\%20-\%201\%7D\%20-\%20y\_\%7Bt\%20-\%202\%7D\%0A
-" y\_t = 0 + 1.9372 y\_\{t - 1\} - y\_\{t - 2\} ")
+\[
+y_t = 0 + 1.9372 y_{t - 1} - y_{t - 2}
+\]
 
 The power of math!
 

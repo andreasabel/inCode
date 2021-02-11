@@ -110,37 +110,26 @@ layers. Every node "outputs" a weighted sum of all of the outputs of the
 *previous* layer, plus an always-on "bias" term (so that its result can be
 non-zero even when all of its inputs are zero). Symbolically, it looks like:
 
-![
-y\_j = b\_j + \\sum\_i\^m w\_{ij} x\_i
-](https://latex.codecogs.com/png.latex?%0Ay_j%20%3D%20b_j%20%2B%20%5Csum_i%5Em%20w_%7Bij%7D%20x_i%0A "
+$$
 y_j = b_j + \sum_i^m w_{ij} x_i
-")
+$$
 
 Or, if we treat the output of a layer and the list of list of weights as a
 matrix, we can write it a little cleaner:
 
-![
-\\mathbf{y} = \\mathbf{b} + W \\mathbf{x}
-](https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7By%7D%20%3D%20%5Cmathbf%7Bb%7D%20%2B%20W%20%5Cmathbf%7Bx%7D%0A "
+$$
 \mathbf{y} = \mathbf{b} + W \mathbf{x}
-")
+$$
 
-The result, the ![n](https://latex.codecogs.com/png.latex?n "n")-vector of nodes
-![\\mathbf{y}](https://latex.codecogs.com/png.latex?%5Cmathbf%7By%7D "\mathbf{y}"),
-is computed from the ![n](https://latex.codecogs.com/png.latex?n "n")-vector of
-biases
-![\\mathbf{b}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bb%7D "\mathbf{b}")
-and the
-![n \\times m](https://latex.codecogs.com/png.latex?n%20%5Ctimes%20m "n \times m")
-weight matrix ![W](https://latex.codecogs.com/png.latex?W "W") multiplied with
-the ![m](https://latex.codecogs.com/png.latex?m "m")-vector input,
-![\\mathbf{x}](https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D "\mathbf{x}").
+The result, the $n$-vector of nodes $\mathbf{y}$, is computed from the
+$n$-vector of biases $\mathbf{b}$ and the $n \times m$ weight matrix $W$
+multiplied with the $m$-vector input, $\mathbf{x}$.
 
 To "scale" the result (and to give the system the magical powers of
 nonlinearity), we actually apply an "activation function" to the output before
 passing it down to the next step. We'll be using the popular [logistic
 function](https://en.wikipedia.org/wiki/Logistic_function),
-![f(x) = 1 / (1 + e\^{-x})](https://latex.codecogs.com/png.latex?f%28x%29%20%3D%201%20%2F%20%281%20%2B%20e%5E%7B-x%7D%29 "f(x) = 1 / (1 + e^{-x})").
+$f(x) = 1 / (1 + e^{-x})$.
 
 *Training* a network involves picking the right set of weights to get the
 network to answer the question you want.
