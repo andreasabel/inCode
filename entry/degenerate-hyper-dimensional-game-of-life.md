@@ -9,8 +9,8 @@ course of a month, we were able to discover successive new mathematical
 properties of a "degenerate" hyper-dimensional game of life\" to take a "7
 dimensions may just barely be possible on a commercial PC, could we ever reach
 10 dimensions?" to "10 dimensions is easy enough to be run on any modern browser
-([jump to spoilers here](#golFlat)), and 60 dimensions can be reached with a
-compiled language".
+([jump](#gol2D) [to](#gol3D) [spoilers](#gol4D) [here](#golFlat)), and 60
+dimensions can be reached with a compiled language".
 
 This is a story about breaking a degenerate hyper-dimensional game of life via
 interactive exploratory visualizations and math!
@@ -474,9 +474,11 @@ Please enable Javascript
 
 (Some patterns I recommend trying are the patterns with double reflection
 symmetry like
-[bulls-eye](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▀▀▜.▌▛▜▐.▌▙▟▐.▙▄▄▟){.loadpoints}
-and [full
-block](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.████.████.████){.loadpoints},
+[bulls-eye](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▀▀▜.▌▛▜▐.▌▙▟▐.▙▄▄▟){.loadpoints},
+[full
+block](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.████.████.████){.loadpoints}
+and the twinkly
+[tub](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=____._▞▖_._▝__.____){.loadpoints},
 rotational symmetry like [spiral
 galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█.▜███.███▙.█▛██){.loadpoints},
 and single-reflection symmetries like [broken bar
