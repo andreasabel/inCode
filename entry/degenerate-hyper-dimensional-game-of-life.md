@@ -1183,7 +1183,7 @@ Please enable Javascript
 
 (A lot of examples with symmetries look nice here, such as [spiral
 galaxy](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=██▟█.▜███.███▙.█▛██){.loadpoints}
-and
+up to 6D and
 [bulls-eye](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=▛▀▀▜.▌▛▜▐.▌▙▟▐.▙▄▄▟){.loadpoints};
 the alternating symmetries of [broken bar
 code](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html?points=████.▄▗▖▄.▀▝▘▀.████){.loadpoints}
