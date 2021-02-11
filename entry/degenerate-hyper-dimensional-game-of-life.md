@@ -1364,12 +1364,12 @@ here](https://github.com/MichalMarsalek/Advent-of-code/blob/master/2020/misc/day
 that you should check out too if you have the time!
 
 Thank you to so many people --- Michal Marsalek, Peter Tseng, leftylink, sim64,
-, /u/cetttbycettt, /u/bsterc, /u/flwyd, and so many others that I probably
-missed. An especially deep thanks to [Eric Wastl](https://twitter.com/ericwastl)
-for hosting a wonderful event like Advent of Code every year. Finally, a
-profoundly deep thanks to the late John Conway, who revealed to us how much joy
-can come from the exploration of all things mathematical, a genius who was taken
-away from this world much too soon.
+ephemient, yitz, cyphase, phaazon, glguy, /u/cetttbycettt, /u/bsterc, /u/flwyd,
+and so many others that I probably missed. An especially deep thanks to [Eric
+Wastl](https://twitter.com/ericwastl) for hosting a wonderful event like Advent
+of Code every year. Finally, a profoundly deep thanks to the late John Conway,
+who revealed to us how much joy can come from the exploration of all things
+mathematical, a genius who was taken away from this world much too soon.
 
 And of course, in making this post, I'm inviting you, the reader, to join us
 along in this journey as well! It's hardly over :) Now that you're up to speed
