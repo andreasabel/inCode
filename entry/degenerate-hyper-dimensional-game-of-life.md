@@ -734,8 +734,8 @@ post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_par
 > goes to infinity).
 >
 > ...we can use symmetries coming from permutations, to only track cells where
-> $|x_0| < 6,\, |x_1| < 6,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t$.
-> There's $20^2 \times \sum_{k=0}^{t} { {d-3+k} \choose {k} }$ such cells.
+> $6,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t$. There's
+> $20^2 \times \sum_{k=0}^{t} { {d-3+k} \choose {k} }$ such cells.
 >
 > --- Michal Marsalek
 
@@ -812,7 +812,7 @@ Tseng](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t
 made a post on *Thursday* night with times, but I can't remember if it
 incorporated all the symmetries or originally included 10D. [Michal
 Marsalek](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ggsx9e9/)
-was able to implement the idea that they originally proposed by the following
+was able to implement the idea that he originally proposed by the following
 Wednesday (December 23rd) in Nim to blow everyone's time out of the water: 3
 seconds flat!
 
@@ -1089,13 +1089,13 @@ shoot far past 20D.
 
 It was [Michal Marsalek's coset counts
 post](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/ghre3ce/)
-that set the stage. From the beginning, Michal had always tracked the number of
-cell cosets at the end of the simulation (the number of active "normalized"
-cells), and had been exploring the relationship between dimension and coset
-counts. The discovery was that after a certain "saturation point" (6D for
-Michal's set, 9D for Peter's set, 7D for my set), all of the coset counts were
-*perfectly quadratic*! For mine, it followed the relationship $d^2 + 109d + 70$
-exactly for 7D and higher.
+that set the stage. From the beginning, he had always tracked the number of cell
+cosets at the end of the simulation (the number of active "normalized" cells),
+and had been exploring the relationship between dimension and coset counts. The
+discovery was that after a certain "saturation point" (6D for Michal's set, 9D
+for Peter's set, 7D for my set), all of the coset counts were *perfectly
+quadratic*! For mine, it followed the relationship $d^2 + 109d + 70$ exactly for
+7D and higher.
 
 My best guess as to why this was happening is that, at 7D and above, we enter a
 domain of points where, before t=6, *every* point is at some sort of reflective
@@ -1358,7 +1358,7 @@ routinely explore together (through 25 puzzles each year for five years). Most
 of these discoveries were fun because we always had somebody to share them with,
 or a way to encourage each other and strive for a common goal. I'm definitely
 lucky to be standing on giants as a part of a talented and passionately curious
-community that's excited to explore things like this. Michal Marsalek [has their
+community that's excited to explore things like this. Michal Marsalek [has his
 own writeup of the discoveres mentioned
 here](https://github.com/MichalMarsalek/Advent-of-code/blob/master/2020/misc/day17-highdims/ND_gol_with_low_dimensional_initial_state.pdf),
 that you should check out too if you have the time!
