@@ -231,7 +231,7 @@ Here's a python implementation of the set-based method, using a nice trick I
 learned from [phaazon](https://twitter.com/phaazon_) and
 [glguy](https://github.com/glguy) to get the right neighbors by doing a
 cartesian product against `[0,-1,1]` instead of `[-1,0,1]`, which leaves the
-first item as the `<0,0>` "original point" we want to exclude.
+first item as the `<0,0>` "original point" we want to exclude.[^2]
 
 ``` {.python}
 from itertools import islice, product
@@ -768,7 +768,7 @@ To put a concrete number for context, for that dream of 10D, here are only
 ${ {8+6} \choose 6 }$, or 3003 potential unique `<z,w,...>` points, once you
 factor out symmetries! The number went down from $13^8$ (815,730,721) potential
 unique `<z,w,...>` points to $6^8$ (1,679,616) potential unique points with
-positive/negative symmetry to just 3003 with permutation symmetry.[^2]
+positive/negative symmetry to just 3003 with permutation symmetry.[^3]
 Furthermore, because of the blessing of dimensionality mentioned earlier, we can
 expect more and more of those to be empty as we increase our dimensions.
 
@@ -940,7 +940,7 @@ What do all our valid normalized `<z,w,...>` coordinates look like? Well, they
 are always non-decreasing, and always are less than or equal to the current
 timestep. Keeping t=6 as our goal still, this means that valid coordinates in
 10D are strings of eight numbers, like `0,1,1,1,3,5,5,6`, or `0,0,3,4,4,4,6,6`,
-or `1,1,2,3,3,4,5,5`.[^3]
+or `1,1,2,3,3,4,5,5`.[^4]
 
 We run into problems working with this format, though. For example, if we're
 computing a neighbor of `0,1,1,1,3,5,5,6`, we can imagine that the very first
@@ -1068,7 +1068,7 @@ I believe that this is one of the things that caused us to all collectively get
 "stuck" together around 20 dimensions. The rush of the revelations one after
 within a single week pushed us into trying many different things. I had a couple
 of dead-end forays into pre-cacheing and had a lot of code (that I was ecstatic
-to be able to later delete) working with an sqlite3 database.[^4]
+to be able to later delete) working with an sqlite3 database.[^5]
 
 Another factor that probably contributed to the overall lull was that Advent of
 Code was still running, and we all still enjoyed doing the new puzzles every
@@ -1416,18 +1416,23 @@ or a [BTC donation](bitcoin:3D7rmAYgbDnp4gp4rf22THsGt74fNucPDU)? :)
     `n / 2` or `n >> 1` gives you the number of neighbors and `n % 2` (modulus)
     gives you whether or not that cell was alive.
 
-[^2]: For dramatic effect, I've omitted the fact that while there are only 3003
+[^2]: There's another optimization too you could use that would allow you to
+    ignore this and just treat a cell as its own neighbor; you'd have to tweak
+    the live-or-dead rules slightly, but it does simplify a lot of the
+    propagation logic.
+
+[^3]: For dramatic effect, I've omitted the fact that while there are only 3003
     possible higher-dimensional points, there are $20^2 \times 3003$ actual
     unique points possible factoring in the 20x20 x-y grid. Still, it's a pretty
     big improvement over the original situation ($20^2 \times 815730721$).
 
-[^3]: It's also interesting to note that above 9D (where there are 7
+[^4]: It's also interesting to note that above 9D (where there are 7
     higher-dimensional coordinates), there is always at least one duplicated
     number. Although I don't really know a way to explicitly exploit that fact
     even now, it does mean that there's a qualitative difference between 9D and
     below and 10D and above: anything above 9D is...especially degenerate.
 
-[^4]: One useful lasting thing I did find (that I won't spend too much time on
+[^5]: One useful lasting thing I did find (that I won't spend too much time on
     here) was a way to [index into an
     enumeration](https://www.reddit.com/r/adventofcode/comments/kfb6zx/day_17_getting_to_t6_at_for_higher_spoilerss/gim68l0/)
     of all of the slice cosets (that is, all the normalized higher-dimensional
