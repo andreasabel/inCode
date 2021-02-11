@@ -37,7 +37,7 @@ You can find [all of them
 here](https://github.com/mstksg/advent-of-code-2020/blob/master/reflections.md),
 but here are links to each individual one. Hopefully you can find them helpful.
 And if you haven't yet, why not try [Advent of Code](http://adventofcode.com/)
-yourself? :) And drop by the freenode \#\#advent-of-code channel, we'd love to
+yourself? :) And drop by the freenode `##advent-of-code` channel, we'd love to
 say hi and chat, or help out! Thanks all for reading, and also thanks to Eric
 for a great event this year, as always!
 

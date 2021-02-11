@@ -35,13 +35,14 @@ GoL in 3D instead, and then 4D.
 I submitted my solution on my assigned puzzle input with a naive implementation
 (placing 66 and 66 on the leaderboards for that day), concluding the
 "competitive" part. Of course, the real fun always starts after. When discussing
-with some friends, we started talking about the trade-offs of different
-implementations and realized that the extra dimensionality was no joke: as you
-upped the number of dimensions, the number of points you have to consider grow
-exponentially, and so does the number of neighbors at each point to check. 4D
-can be solved naively, but anything higher is going to be strained. My naive
-solution on 6D took three minutes, and 7D in a reasonable amount of time
-(requiring as much as 612,220,032 points with 2,186 neighbors each) seemed
+with some friends (on the [subreddit](https://www.reddit.com/r/adventofcode) and
+freenode's `##advent-of-code` channel), we started talking about the trade-offs
+of different implementations and realized that the extra dimensionality was no
+joke: as you upped the number of dimensions, the number of points you have to
+consider grow exponentially, and so does the number of neighbors at each point
+to check. 4D can be solved naively, but anything higher is going to be strained.
+My naive solution on 6D took three minutes, and 7D in a reasonable amount of
+time (requiring as much as 612,220,032 points with 2,186 neighbors each) seemed
 *impossible* on commercial consumer hardware because of the sheer number of
 points in 7D space. But I thought...what if a breakthrough in optimization was
 possible? I set an (arbitrary) personal goal of reaching 10D (3,570,467,226,624
