@@ -5,11 +5,11 @@ Breaking a Degenerate Hyper-Dimensional Game of Life
 > [Read online!](https://blog.jle.im/entry/degenerate-hyper-dimensional-game-of-life.html)
 
 tldr: Demonstrated with interactive visualizations and simulations --- over the
-course of a month, we were able to successive new mathematical properties of a
-"degenerate" hyper-dimensional game of life\" to take a "7 dimensions may just
-barely be possible on a supercomputer, could we ever reach 10 dimensions?" to
-"10 dimensions is easy enough to be run on any modern browser, and 40 dimensions
-can be reached with a compiled language".
+course of a month, we were able to discover successive new mathematical
+properties of a "degenerate" hyper-dimensional game of life\" to take a "7
+dimensions may just barely be possible on a commercial PC, could we ever reach
+10 dimensions?" to "10 dimensions is easy enough to be run on any modern
+browser, and 40 dimensions can be reached with a compiled language".
 
 This is a story about breaking the degenerate hyper-dimensional game of life by
 interactive exploratory visualizations and math!
@@ -517,7 +517,7 @@ What u/cetttbycettt saw is what you can see now in the simulation above: it's
 all of the *light yellow* highlighted squares when you mouse-over (highlighting
 even *more* identical slices to the one you are hovering over). In addition to
 the z=0 and w=0 lines (the two lines down the middle, up-down and left-right),
-we also have another line of symmetry: z=w and w=z, the diagonal lines!
+we also have another line of symmetry: z=w and z=-w, the diagonal lines!
 
 That's right, a zw slice at `<z,w>=<3,4>` is *identical* to the one at `<4,3>`,
 and so also `<-3,4>`, `<3,-4>`, `<-3,-4>`, `<-4,3>`, `<4,-3>`, and `<-4,-3>`!
@@ -724,7 +724,7 @@ post](https://www.reddit.com/r/adventofcode/comments/kfjhwh/year_2020_day_17_par
 > goes to infinity).
 >
 > ...we can use symmetries coming from permutations, to only track cells where
-> $|x_0| < 13,\, |x_1| < 13,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t$.
+> $|x_0| < 6,\, |x_1| < 6,\, 0 \leq x_2 \leq x_3 \leq\,\ldots\, \leq x_{d-1} \leq t$.
 > There's $20^2 \times \sum_{k=0}^{t} { {d-3+k} \choose {k} }$ such cells.
 >
 > --- Michal Marsalek
@@ -807,7 +807,7 @@ Wednesday (December 23rd) in Nim to blow everyone's time out of the water: 3
 seconds flat!
 
 At that point, it was pretty unbelievable to me that what started out as a dream
-goal that we couldn't have reasonably completed on a supercomputer had, through
+goal that we couldn't have reasonably completed on a commercial PC had, through
 successive revelations and insights building on each other one by one, could now
 be done in 3 seconds.
 
@@ -1084,7 +1084,7 @@ that set up the stage. From the beginning, Michal had always tracked the number
 of cell cosets at the end of the simulation (the number of active "normalized"
 cells), and had been exploring the relationship between dimension and coset
 counts. The discovery was that after a certain "saturation point" (6D for
-Michael's set, 9D for Peter's set, 7D for my set), all of the coset counts were
+Michal's set, 9D for Peter's set, 7D for my set), all of the coset counts were
 *perfectly quadratic*! For mine, it followed the relationship $d^2 + 109d + 70$
 exactly for 7D and higher.
 
@@ -1369,7 +1369,7 @@ playing around with this too!
 Looking forward at least, there are a some open threads still.
 
 1.  Notice on the [4D simulation](#gol4D), very soon after simulations start,
-    the two diagonals very very empty, and especially the 3x3 region at the
+    the two diagonals become very empty, and especially the 3x3 region at the
     origin where they intersect. It turns out that reflection symmetry
     boundaries are extremely inhospitable because they have *so many neighbors*
     after reflection, especially at higher dimensions (see the top-right slice
