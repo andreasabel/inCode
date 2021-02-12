@@ -1371,7 +1371,7 @@ own writeup of the discoveres mentioned
 here](https://github.com/MichalMarsalek/Advent-of-code/blob/master/2020/misc/day17-highdims/ND_gol_with_low_dimensional_initial_state.pdf),
 that you should check out too if you have the time!
 
-Thank you to so many people --- Michal Marsalek, Peter Tseng, leftylink, sim64,
+Thank you to so many people --- Michal Marsalek, Peter Tseng, leftylink, sim642,
 ephemient, yitz, cyphase, phaazon, glguy, /u/cetttbycettt, /u/bsterc, /u/flwyd,
 and so many others that I probably missed. An especially deep thanks to [Eric
 Wastl](https://twitter.com/ericwastl) for hosting a wonderful event like Advent
