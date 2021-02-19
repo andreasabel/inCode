@@ -36,8 +36,8 @@ I submitted my solution on my assigned puzzle input with a naive implementation
 (placing 66 and 66 on the leaderboards for that day), concluding the
 "competitive" part. Of course, the real fun always starts after. When discussing
 with some friends (on the [subreddit](https://www.reddit.com/r/adventofcode) and
-freenode's `##advent-of-code` channel), we started talking about the trade-offs
-of different implementations and realized that the extra dimensionality was no
+freenode's `##adventofcode` channel), we started talking about the trade-offs of
+different implementations and realized that the extra dimensionality was no
 joke: as you upped the number of dimensions, the number of points you have to
 consider grow exponentially, and so does the number of neighbors at each point
 to check. 4D can be solved naively, but anything higher is going to be strained.
