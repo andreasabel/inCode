@@ -287,7 +287,7 @@ But, hey, this looks a lot like a matrix-vector multiplication! If we make
 $\hat{J}_f$, an $m \times n$ matrix of partial derivatives of $f$
 ($\hat{J}_{fij} = \frac{\partial f_i}{\partial q_j}$) at a given point
 (typically called the [Jacobian matrix of
-f](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant), then we have
+f](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant)), then we have
 a nice expression for $\dot{\mathbf{x}}$:
 
 $$
