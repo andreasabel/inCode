@@ -517,7 +517,7 @@ We can couple together all of these functions in a data type that fully
 describes the physics of our systems (the "shape" of the Hamiltonian):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L26-L33
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L25-L32
 
 data System m n = System
     { sysInertia       :: R m                         -- ^ 'm' vector
@@ -543,7 +543,7 @@ in terms of its generalized positions ($\mathbf{q}$) and generalized velocities
 sometimes called "configuration space":
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L36-L40
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L35-L39
 
 data Config n = Config
     { confPositions  :: R n
@@ -558,7 +558,7 @@ conjugate momenta, $\mathbf{p_q}$). So let's make a type to describe the state
 of our system in phase space:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L43-L47
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L42-L46
 
 data Phase n = Phase
     { phasePositions :: R n
@@ -577,7 +577,7 @@ position in generalized coordinates, and returns the position in the "underlying
 coordinate system":
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L52-L56
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L51-L55
 
 underlyingPosition
     :: System m n
@@ -604,7 +604,7 @@ $$
 We can translate that directly into Haskell code:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L60-L68
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L59-L67
 
 momenta
     :: (KnownNat n, KnownNat m)
@@ -630,7 +630,7 @@ With this, we can write a function to convert any state in configuration space
 to its coordinates in phase space:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L71-L76
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L70-L75
 
 toPhase
     :: (KnownNat n, KnownNat m)
@@ -726,8 +726,8 @@ This gives functions like:
 
 ``` {.haskell}
 -- import qualified Data.Vector.Sorable.Sized as VS
-vecR  :: VS.Vector n Double -> R n
-rVec  :: R n                -> VS.Vector n Double
+gvecR :: V.Vector n Double  -> R n
+grVec :: R n                -> V.Vector n Double
 rowsL :: V.Vector m (R n)   -> L m n
 lRows :: L m n              -> V.Vector m (R n)
 ```
@@ -740,7 +740,7 @@ interpreted it in our original math. So we just need to write an function to
 convert what *ad* gives us to the form we expect. Just a minor reshuffling:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L79-L83
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L78-L82
 
 tr2 :: (KnownNat m, KnownNat n)
     => V.Vector m (L n n)
@@ -753,12 +753,13 @@ We also would need to have a function converting a vector of vectors into a
 matrix:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L86-L90
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L85-L90
 
 vec2l
-    :: V.Vector m (V.Vector n Double)
+    :: KnownNat n
+    => V.Vector m (V.Vector n Double)
     -> L m n
-vec2l = rowsL . fmap (vecR . VG.convert)
+vec2l = rowsL . fmap gvecR
 {-# INLINE vec2l #-}
 ```
 
@@ -768,7 +769,7 @@ Now to make a `System` using just the mass vector, the coordinate conversion
 function, and the potential energy function:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L94-L111
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L94-L108
 
 mkSystem
     :: (KnownNat m, KnownNat n)
@@ -779,20 +780,17 @@ mkSystem
 mkSystem m f u = System
                     -- < convert from      | actual thing | convert to >
     { sysInertia       =                     m
-    , sysCoords        = vecR . cFrom      . f            . cTo . rVec
-    , sysJacobian      = tr   . vec2l      . jacobianT f  . cTo . rVec
-    , sysHessian       = tr2  . fmap vec2l . hessianF f   . cTo . rVec
-    , sysPotential     =                     u            . cTo . rVec
-    , sysPotentialGrad = vecR . cFrom      . grad u       . cTo . rVec
+    , sysCoords        =        gvecR      . f            . grVec
+    , sysJacobian      = tr   . vec2l      . jacobianT f  . grVec
+    , sysHessian       = tr2  . fmap vec2l . hessianF f   . grVec
+    , sysPotential     =                     u            . grVec
+    , sysPotentialGrad =        gvecR      . grad u       . grVec
     }
-  where
-    cTo   = VG.convert
-    cFrom = VG.convert
 ```
 
 Now, I hesitate to call this "trivial"...but, I think it really is a
 straightforward direct translation of the definitions, minus some boilerplate
-conversions back and forth between vector using `VG.convert`, `vecR`, etc.!
+conversions back and forth between vector using `vecR`, `rVec`, etc.!
 
 1.  The vector of masses is just `m`
 2.  The coordinate function is just `f`
@@ -824,7 +822,7 @@ These equations aren't particularly beautiful, but it's straightforward to
 translate them into Haskell (using $\hat{K} = \hat{J}_f^T \hat{M} \hat{J}_f$):
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L115-L132
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L112-L129
 
 hamilEqns
     :: (KnownNat n, KnownNat m)
@@ -839,7 +837,7 @@ hamilEqns s (Phase q p) = (dqdt, dpdt)
     kHat    = trj `mul` mHat `mul` j
     kHatInv = inv kHat
     dqdt    = kHatInv #> p
-    dpdt    = vecR (VG.convert bigUglyThing) - sysPotentialGrad s q
+    dpdt    = gvecR bigUglyThing - sysPotentialGrad s q
       where
         bigUglyThing =
           fmap (\j2 -> -p <.> kHatInv #> trj #> mHat #> j2 #> kHatInv #> p)
@@ -911,7 +909,7 @@ We can directly translate this into Haskell: (using
 component-wise product of two vectors)
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L135-L143
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L132-L140
 
 stepEuler
     :: (KnownNat n, KnownNat m)
@@ -927,7 +925,7 @@ stepEuler s dt ph@(Phase q p) = Phase (q + konst dt * dq) (p + konst dt * dp)
 And repeatedly evolve this system as a lazy list:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L146-L154
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L143-L151
 
 runSystem
     :: (KnownNat n, KnownNat m)
@@ -950,7 +948,7 @@ Let's generate the boring system, a 5kg particle in 2D Cartesian Coordinates
 under gravity --
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L157-L163
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L154-L160
 
 simpleSystem :: System 2 2
 simpleSystem = mkSystem (vec2 5 5) id pot
@@ -970,7 +968,7 @@ peak and moves downwards.
 We can make our initial configuration:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L167-L171
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L164-L168
 
 simpleConfig0 :: Config 2
 simpleConfig0 = Config
@@ -982,7 +980,7 @@ simpleConfig0 = Config
 And then...let it run!
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L173-L177
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L170-L174
 
 simpleMain :: IO ()
 simpleMain =
@@ -1041,7 +1039,7 @@ our initial angular velocity $v_{\theta 0}$ will be 0.1 radians/sec (clockwise),
 as we try to induce harmonic motion:
 
 ``` {.haskell}
--- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L182-L207
+-- source: https://github.com/mstksg/inCode/tree/master/code-samples/hamilton1/Hamilton.hs#L179-L204
 
 pendulum :: System 2 1
 pendulum = mkSystem (vec2 5 5) coords pot      -- 5kg particle
